@@ -1,5 +1,40 @@
 Revision history for mtn-browse.
 
+0.72  Tue Jan 04 19:09:00 2011 Anthony Cooper <support@coosoft.plus.com>
+	- Implemented the `Restrict to' combobox feature in the history window
+	  so that a user can restrict a revision/file history to a selected
+	  branch.
+	- Added the new selectors and selector functions introduced in Monotone
+	  0.99.1.
+	- If supported, now use the get_extended_manifest_of() method for
+	  getting a revision's manifest instead of the get_manifest_of()
+	  method.
+	- Changed the cache_extra_file_info() routine to make use of the
+	  additional information in an extended manifest if it is available.
+	- Got rid of the get_file_details() routine and included it's logic
+	  into the cache_extra_file_info() routine.
+	- Got rid of a redundant `save preferences' code block in the
+	  setup_mtn_object() routine.
+	- List stores associated with the main browser manifest treeview and
+	  the advanced find dialog window are now recreated rather than reused
+	  when reusing the respective windows. This has the effect of resetting
+	  column sorting settings.
+	- Now guard against going off the end of the line input array when
+	  dealing with binary files at the end of a revision difference
+	  listing.
+	- Re-instated the `==========' style file separators when displaying
+	  non-colour highlighted, i.e. plain, revision difference listings.
+	- Icon column in treeview is now allowed to choose its own size.
+	- Corrected a mistake with one of the message dialogs where I didn't
+	  pass the correct number of parameters.
+	- Reformatted my statements to be more consistent with other statements
+	  rather than operators.
+	- Updated the built-in help to document the new selectors introduced in
+	  Monotone version 0.99.1 and the new `Restricted to' comboxbox on the
+	  history window.
+	- Updated all of the screenshot style images to update them to Gnome's
+	  Clearlooks blue theme.
+
 0.71  Wed Aug 18 09:57:00 2010 Anthony Cooper <support@coosoft.plus.com>
 	- Updated to take into account the changes in diff output made in
 	  Monotone version 0.48.

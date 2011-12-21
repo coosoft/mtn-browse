@@ -1,3 +1,35 @@
+Overview Of Changes In mtn-browse 0.72 (2011-01-04 19:09:00)
+============================================================
+
+New:
+- Implemented the `Restrict to' combobox feature in the history window so that
+  a user can restrict a revision/file history to a selected branch.
+- Added the new selectors and selector functions introduced in Monotone 0.99.1.
+
+Changes:
+- If supported, now use the get_extended_manifest_of() method for getting a
+  revision's manifest instead of the get_manifest_of() method. This can
+  considerably speed up certain operations.
+- The scrolling lists associated with the main browser window and the
+  advanced find dialog window now have their column sorting settings reset when
+  that window is resued.
+- Updated the built-in help to document the new selectors introduced in
+  Monotone version 0.99.1 and the new `Restricted to' comboxbox on the history
+  window.
+- Updated all of the screenshot style images to update them to Gnome's
+  Clearlooks blue theme.
+
+Bugs Fixed:
+- Now guard against going off the end of the line input array when dealing with
+  binary files at the end of a revision difference listing.
+- Re-instated the `==========' style file separators when displaying non-colour
+  highlighted, i.e. plain, revision difference listings.
+- Icon column in the scrolling list in a browser window is now allowed to
+  choose its own size.
+- Corrected a mistake with one of the message dialogs where I didn't pass the
+  correct number of parameters.
+
+
 Overview Of Changes In mtn-browse 0.71 (2010-08-18 09:57:00)
 ============================================================
 
@@ -19,6 +51,7 @@ Bugs Fixed:
   state feedback along with status messages when updating ComboBoxEntry
   pulldown lists. Also the display is updated more often and more consistently.
 - The directory up button now honours the static list setting.
+
 
 Overview Of Changes In mtn-browse 0.70 (2010-05-31 14:50:00)
 ============================================================
@@ -57,6 +90,7 @@ Bugs Fixed:
   selection would change but nothing else acted on that selection change).
 - Now deal with errors resulting from trying to open a Monotone database in a
   much more intelligent way.
+
 
 Overview Of Changes In mtn-browse 0.63 (2009-11-08 13:53:00)
 ============================================================
@@ -108,6 +142,7 @@ Bugs Fixed:
 - Set the page size attribute on all spin buttons to zero. This stops warning
   messages on Ubuntu.
 - Corrected typos in the locale README file.
+
 
 Overview Of Changes In mtn-browse 0.62 (2009-05-03 18:00:00)
 ============================================================
