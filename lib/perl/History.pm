@@ -94,6 +94,7 @@ sub comparison_revision_change_log_button_clicked_cb($$);
 sub external_diffs($$$$$$);
 sub external_diffs_button_clicked_cb($$);
 sub file_comparison_combobox_changed_cb($$);
+sub generate_history_report($$);
 sub get_compare_arbitrary_revisions_window();
 sub get_file_history_helper($$$);
 sub get_history_window();
@@ -101,6 +102,7 @@ sub get_revision_comparison_window($);
 sub get_revision_history_helper($$);
 sub history_list_button_clicked_cb($$);
 sub mtn_diff($$$$$;$);
+sub restrict_to_combobox_changed_cb($$);
 sub save_differences_button_clicked_cb($$);
 #
 ##############################################################################
@@ -128,10 +130,7 @@ sub display_revision_change_history($$$)
 
     my ($mtn, $tag, $revision_id) = @_;
 
-    my ($button,
-	@certs_list,
-	$counter,
-	$instance);
+    my $instance;
     my $wm = WindowManager->instance();
 
     $instance = get_history_window();
@@ -177,131 +176,10 @@ sub display_revision_change_history($$$)
 
     # Display the file's history.
 
-    $instance->{appbar}->set_progress_percentage(0);
-    $instance->{appbar}->set_status(__("Displaying revision history"));
-    $wm->update_gui();
-    $counter = 0;
-    $instance->{stop} = 0;
-    $instance->{history_buffer}->set_text("");
-    for my $revision_id (@{$instance->{history}})
-    {
-
-	++ $counter;
-
-	# Print out the revision summary.
-
-	$instance->{mtn}->certs(\@certs_list, $revision_id);
-	generate_revision_report($instance->{history_buffer},
-				 $revision_id,
-				 \@certs_list,
-				 "");
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), "\n\n ");
-
-	# Add the buttons.
-
-	$button = Gtk2::Button->new($__select_id_1);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => "1"});
-	$tooltips->set_tip($button, $__select_id_rev_1_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), " ");
-
-	$button = Gtk2::Button->new($__select_id_2);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => "2"});
-	$tooltips->set_tip($button, $__select_id_rev_2_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), " ");
-
-	$button = Gtk2::Button->new($__browse_rev);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => "browse-revision"});
-	$tooltips->set_tip($button, $__browse_rev_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), " ");
-
-	$button = Gtk2::Button->new($__full_changelog);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => "revision-changelog"});
-	$tooltips->set_tip($button, $__full_changelog_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
-
-	if ($counter % 100 == 0)
-	{
-	    $instance->{appbar}->set_progress_percentage
-		($counter / scalar(@{$instance->{history}}));
-	    $wm->update_gui();
-	}
-
-	# Stop if the user wants to.
-
-	last if ($instance->{stop});
-
-	# If we aren't at the end, print out the revision separator.
-
-	if ($counter < scalar(@{$instance->{history}}))
-	{
-	    $instance->{history_buffer}->
-		insert($instance->{history_buffer}->get_end_iter(), "\n");
-	    $instance->{history_buffer}->
-		insert_pixbuf($instance->{history_buffer}->get_end_iter(),
-			      $line_image);
-	    $instance->{history_buffer}->
-		insert($instance->{history_buffer}->get_end_iter(), "\n");
-	}
-
-    }
-    $instance->{appbar}->set_progress_percentage(1);
-    $wm->update_gui();
+    $instance->{branch_history} = undef;
+    generate_history_report($instance, $instance->{history});
 
     $instance->{stop_button}->set_sensitive(FALSE);
-    set_label_value($instance->{numbers_value_label}, $counter)
-	if ($instance->{stop});
-
-    # Make sure we are at the top.
-
-    $instance->{history_buffer}->
-	place_cursor($instance->{history_buffer}->get_start_iter());
-    $instance->{history_scrolledwindow}->get_vadjustment()->set_value(0);
-    $instance->{history_scrolledwindow}->get_hadjustment()->set_value(0);
-    $instance->{appbar}->set_progress_percentage(0);
-    $instance->{appbar}->set_status("");
     $wm->update_gui();
 
     $instance->{appbar}->pop();
@@ -332,10 +210,7 @@ sub display_file_change_history($$$)
 
     my ($mtn, $revision_id, $file_name) = @_;
 
-    my ($button,
-	@certs_list,
-	$counter,
-	$instance);
+    my $instance;
     my $wm = WindowManager->instance();
 
     $instance = get_history_window();
@@ -355,12 +230,13 @@ sub display_file_change_history($$$)
     $instance->{appbar}->push($instance->{appbar}->get_status()->get_text());
     $wm->update_gui();
 
+    $instance->{stop_button}->set_sensitive(TRUE);
+
     # Get the list of file change revisions. Remember that a warning is
     # generated when one goes back beyond a file's addition revision, so
     # temporarily disable the warning handler.
 
     $instance->{appbar}->set_status(__("Fetching revision list"));
-    $instance->{stop_button}->set_sensitive(TRUE);
     $wm->update_gui();
     $instance->{revision_hits} = {};
     {
@@ -369,7 +245,6 @@ sub display_file_change_history($$$)
 				$revision_id,
 				\$instance->{file_name});
     }
-    $instance->{stop_button}->set_sensitive(FALSE);
 
     # Sort the list.
 
@@ -385,121 +260,10 @@ sub display_file_change_history($$$)
 
     # Display the file's history.
 
-    $instance->{appbar}->set_progress_percentage(0);
-    $instance->{appbar}->set_status(__("Displaying file history"));
-    $wm->update_gui();
-    $counter = 1;
-    $instance->{history_buffer}->set_text("");
-    for my $revision_id (@{$instance->{history}})
-    {
+    $instance->{branch_history} = undef;
+    generate_history_report($instance, $instance->{history});
 
-	# Print out the revision summary.
-
-	$instance->{mtn}->certs(\@certs_list, $revision_id);
-	generate_revision_report($instance->{history_buffer},
-				 $revision_id,
-				 \@certs_list,
-				 "");
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), "\n\n ");
-
-	# Add the buttons.
-
-	$button = Gtk2::Button->new($__select_id_1);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => "1"});
-	$tooltips->set_tip($button, $__select_id_file_1_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), " ");
-
-	$button = Gtk2::Button->new($__select_id_2);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => "2"});
-	$tooltips->set_tip($button, $__select_id_file_2_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), " ");
-
-	$button = Gtk2::Button->new($__browse_file);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => "browse-file"});
-	$tooltips->set_tip($button, $__browse_file_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), " ");
-
-	$button = Gtk2::Button->new($__full_changelog);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => "revision-changelog"});
-	$tooltips->set_tip($button, $__full_changelog_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
-
-	# If we aren't at the end, print out the revision separator.
-
-	if ($counter < scalar(@{$instance->{history}}))
-	{
-	    $instance->{history_buffer}->
-		insert($instance->{history_buffer}->get_end_iter(), "\n");
-	    $instance->{history_buffer}->
-		insert_pixbuf($instance->{history_buffer}->get_end_iter(),
-			      $line_image);
-	    $instance->{history_buffer}->
-		insert($instance->{history_buffer}->get_end_iter(), "\n");
-	}
-
-	if (($counter % 10) == 0)
-	{
-	    $instance->{appbar}->set_progress_percentage
-		($counter / scalar(@{$instance->{history}}));
-	    $wm->update_gui();
-	}
-	++ $counter;
-
-    }
-    $instance->{appbar}->set_progress_percentage(1);
-    $wm->update_gui();
-
-    # Make sure we are at the top.
-
-    $instance->{history_buffer}->
-	place_cursor($instance->{history_buffer}->get_start_iter());
-    $instance->{history_scrolledwindow}->get_vadjustment()->set_value(0);
-    $instance->{history_scrolledwindow}->get_hadjustment()->set_value(0);
-    $instance->{appbar}->set_progress_percentage(0);
-    $instance->{appbar}->set_status("");
+    $instance->{stop_button}->set_sensitive(FALSE);
     $wm->update_gui();
 
     $instance->{appbar}->pop();
@@ -1360,6 +1124,127 @@ sub history_list_button_clicked_cb($$)
 #
 ##############################################################################
 #
+#   Routine      - restrict_to_combobox_changed_cb
+#
+#   Description  - Callback routine called when the user changes the value of
+#                  the restrict to combobox by selecting an entry from its
+#                  pulldown list in a history window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub restrict_to_combobox_changed_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    my ($branch,
+	$iter);
+    my $wm = WindowManager->instance();
+
+    # Get the name of the selected branch, treating the first entry of `All
+    # Branches' as a special case.
+
+    $iter = $instance->{restrict_to_combobox}->get_active_iter();
+    $branch = $instance->{restrict_to_combobox}->get_model()->get($iter, 0);
+
+    # Update the history accordingly.
+
+    $wm->make_busy($instance, 1);
+    $instance->{appbar}->push($instance->{appbar}->get_status()->get_text());
+    $instance->{stop_button}->set_sensitive(TRUE);
+    $wm->update_gui();
+    if ($instance->{restrict_to_combobox}->get_active() == 0)
+    {
+	generate_history_report($instance, $instance->{history});
+    }
+    else
+    {
+	generate_history_report($instance,
+				$instance->{branch_history}->{$branch});
+    }
+    $instance->{stop_button}->set_sensitive(FALSE);
+    $wm->update_gui();
+    $instance->{appbar}->pop();
+    $wm->make_busy($instance, 0);
+
+}
+#
+##############################################################################
+#
+#   Routine      - compare_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the
+#                  revision comparison button in a history window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub compare_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    my @revision_ids;
+
+    # Sort the revisions by date, oldest first.
+
+    @revision_ids = ($instance->{first_revision_id},
+		     $instance->{second_revision_id});
+    $instance->{mtn}->toposort(\@revision_ids, @revision_ids);
+
+    # If a file is being compared and it has been renamed between the two
+    # comparison revisions then we have to fall back on the external helper
+    # application, otherwise we can use Monotone's comparison feature.
+
+    if (defined($instance->{file_name})
+	&& $instance->{revision_hits}->{$revision_ids[0]}
+	!= $instance->{revision_hits}->{$revision_ids[1]})
+    {
+	display_renamed_file_comparison($instance->{window},
+					$instance->{mtn},
+					$revision_ids[0],
+					${$instance->{revision_hits}->
+					  {$revision_ids[0]}},
+					$revision_ids[1],
+					${$instance->{revision_hits}->
+					  {$revision_ids[1]}});
+    }
+    else
+    {
+
+	# Use Monotone's comparison feature.
+
+	display_revision_comparison($instance->{mtn},
+				    $revision_ids[0],
+				    $revision_ids[1],
+				    defined($instance->{file_name})
+				        ? ${$instance->{revision_hits}->
+					    {$revision_ids[0]}}
+				        : undef);
+
+    }
+
+}
+#
+##############################################################################
+#
 #   Routine      - compare_arbitrary_revision_advanced_find_button_clicked_cb
 #
 #   Description  - Callback routine called when the user clicks on either of
@@ -1429,71 +1314,6 @@ sub compare_arbitrary_revision_advanced_find_button_clicked_cb($$)
 	{
 	    $instance->{arbitrary_compare_button}->set_sensitive(FALSE);
 	}
-    }
-
-}
-#
-##############################################################################
-#
-#   Routine      - compare_button_clicked_cb
-#
-#   Description  - Callback routine called when the user clicks on the
-#                  revision comparison button in a history window.
-#
-#   Data         - $widget   : The widget object that received the signal.
-#                  $instance : The window instance that is associated with
-#                              this widget.
-#
-##############################################################################
-
-
-
-sub compare_button_clicked_cb($$)
-{
-
-    my ($widget, $instance) = @_;
-
-    return if ($instance->{in_cb});
-    local $instance->{in_cb} = 1;
-
-    my @revision_ids;
-
-    # Sort the revisions by date, oldest first.
-
-    @revision_ids = ($instance->{first_revision_id},
-		     $instance->{second_revision_id});
-    $instance->{mtn}->toposort(\@revision_ids, @revision_ids);
-
-    # If a file is being compared and it has been renamed between the two
-    # comparison revisions then we have to fall back on the external helper
-    # application, otherwise we can use Monotone's comparison feature.
-
-    if (defined($instance->{file_name})
-	&& $instance->{revision_hits}->{$revision_ids[0]}
-	!= $instance->{revision_hits}->{$revision_ids[1]})
-    {
-	display_renamed_file_comparison($instance->{window},
-					$instance->{mtn},
-					$revision_ids[0],
-					${$instance->{revision_hits}->
-					  {$revision_ids[0]}},
-					$revision_ids[1],
-					${$instance->{revision_hits}->
-					  {$revision_ids[1]}});
-    }
-    else
-    {
-
-	# Use Monotone's comparison feature.
-
-	display_revision_comparison($instance->{mtn},
-				    $revision_ids[0],
-				    $revision_ids[1],
-				    defined($instance->{file_name})
-				        ? ${$instance->{revision_hits}->
-					    {$revision_ids[0]}}
-				        : undef);
-
     }
 
 }
@@ -1707,6 +1527,268 @@ sub comparison_revision_change_log_button_clicked_cb($$)
 #
 ##############################################################################
 #
+#   Routine      - generate_history_report
+#
+#   Description  - Generate a revision history report, complete with buttons,
+#                  for the specified revision ids.
+#
+#   Data         - $instance    : The revision history window instance.
+#                  $history     : A reference to a list of revision ids that
+#                                 represents the history that is to be
+#                                 displayed.
+#
+##############################################################################
+
+
+
+sub generate_history_report($$)
+{
+
+    my ($instance, $history) = @_;
+
+    my (@branches,
+	$browse_button,
+	$browse_button_ttip,
+	$browse_button_type,
+	$button,
+	@certs_list,
+	$no_branch_history,
+	$select_id_1_ttip,
+	$select_id_2_ttip,
+	$update_interval);
+    my $counter = 0;
+    my $wm = WindowManager->instance();
+
+    # Reset the window state before the update.
+
+    if (defined($instance->{file_name}))
+    {
+	$instance->{appbar}->set_status(__("Displaying file history"));
+    }
+    else
+    {
+	$instance->{appbar}->set_status(__("Displaying revision history"));
+    }
+    $instance->{stop} = 0;
+    $instance->{history_buffer}->set_text("");
+    set_label_value($instance->{numbers_value_label}, scalar(@$history));
+    $instance->{appbar}->set_progress_percentage(0);
+    $wm->update_gui();
+
+    # Work out whether we need to generate a branch history as scan the
+    # revisions.
+
+    if (! defined($instance->{branch_history}))
+    {
+	$no_branch_history = 1;
+	$instance->{branch_history} = {};
+    }
+
+    # Determine the buttons to display, their tool tips and update interval
+    # depending upon whether we are displaying a revision or file history.
+
+    if (defined($instance->{file_name}))
+    {
+	$select_id_1_ttip = \$__select_id_file_1_ttip;
+	$select_id_2_ttip = \$__select_id_file_2_ttip;
+	$browse_button_ttip = \$__browse_file_ttip;
+	$browse_button = \$__browse_file;
+	$browse_button_type = "browse-file";
+	$update_interval = 10;
+    }
+    else
+    {
+	$select_id_1_ttip = \$__select_id_rev_1_ttip;
+	$select_id_2_ttip = \$__select_id_rev_2_ttip;
+	$browse_button_ttip = \$__browse_rev_ttip;
+	$browse_button = \$__browse_rev;
+	$browse_button_type = "browse-revision";
+	$update_interval = 100;
+    }
+
+    # Display revision details and associated buttons for each revision in the
+    # specified list.
+
+    for my $revision_id (@$history)
+    {
+
+	++ $counter;
+
+	$instance->{mtn}->certs(\@certs_list, $revision_id);
+
+	# If we haven't done so already, file this revision under the
+	# appropriate branch history lists.
+
+	if ($no_branch_history)
+	{
+	    for my $cert (@certs_list)
+	    {
+		if ($cert->{name} eq "branch")
+		{
+		    if (exists($instance->{branch_history}->{$cert->{value}}))
+		    {
+			push(@{$instance->{branch_history}->{$cert->{value}}},
+			     $revision_id);
+		    }
+		    else
+		    {
+			$instance->{branch_history}->{$cert->{value}} =
+			    [$revision_id];
+		    }
+		}
+	    }
+	}
+
+	# Print out the revision summary.
+
+	generate_revision_report($instance->{history_buffer},
+				 $revision_id,
+				 \@certs_list,
+				 "");
+	$instance->{history_buffer}->
+	    insert($instance->{history_buffer}->get_end_iter(), "\n\n ");
+
+	# Add the buttons.
+
+	$button = Gtk2::Button->new($__select_id_1);
+	$button->signal_connect("clicked",
+				\&history_list_button_clicked_cb,
+				{instance    => $instance,
+				 revision_id => $revision_id,
+				 button_type => "1"});
+	$tooltips->set_tip($button, $$select_id_1_ttip);
+	$instance->{history_textview}->add_child_at_anchor
+	    ($button,
+	     $instance->{history_buffer}->
+	         create_child_anchor($instance->{history_buffer}->
+				     get_end_iter()));
+	$button->show_all();
+	$instance->{history_buffer}->
+	    insert($instance->{history_buffer}->get_end_iter(), " ");
+
+	$button = Gtk2::Button->new($__select_id_2);
+	$button->signal_connect("clicked",
+				\&history_list_button_clicked_cb,
+				{instance    => $instance,
+				 revision_id => $revision_id,
+				 button_type => "2"});
+	$tooltips->set_tip($button, $$select_id_2_ttip);
+	$instance->{history_textview}->add_child_at_anchor
+	    ($button,
+	     $instance->{history_buffer}->
+	         create_child_anchor($instance->{history_buffer}->
+				     get_end_iter()));
+	$button->show_all();
+	$instance->{history_buffer}->
+	    insert($instance->{history_buffer}->get_end_iter(), " ");
+
+	$button = Gtk2::Button->new($$browse_button);
+	$button->signal_connect("clicked",
+				\&history_list_button_clicked_cb,
+				{instance    => $instance,
+				 revision_id => $revision_id,
+				 button_type => $browse_button_type});
+	$tooltips->set_tip($button, $$browse_button_ttip);
+	$instance->{history_textview}->add_child_at_anchor
+	    ($button,
+	     $instance->{history_buffer}->
+	         create_child_anchor($instance->{history_buffer}->
+				     get_end_iter()));
+	$button->show_all();
+	$instance->{history_buffer}->
+	    insert($instance->{history_buffer}->get_end_iter(), " ");
+
+	$button = Gtk2::Button->new($__full_changelog);
+	$button->signal_connect("clicked",
+				\&history_list_button_clicked_cb,
+				{instance    => $instance,
+				 revision_id => $revision_id,
+				 button_type => "revision-changelog"});
+	$tooltips->set_tip($button, $__full_changelog_ttip);
+	$instance->{history_textview}->add_child_at_anchor
+	    ($button,
+	     $instance->{history_buffer}->
+	         create_child_anchor($instance->{history_buffer}->
+				     get_end_iter()));
+	$button->show_all();
+
+	if (($counter % $update_interval) == 0)
+	{
+	    $instance->{appbar}->set_progress_percentage
+		($counter / scalar(@$history));
+	    $wm->update_gui();
+	}
+
+	# Stop if the user wants to.
+
+	last if ($instance->{stop});
+
+	# If we aren't at the end, print out the revision separator.
+
+	if ($counter < scalar(@$history))
+	{
+	    $instance->{history_buffer}->
+		insert($instance->{history_buffer}->get_end_iter(), "\n");
+	    $instance->{history_buffer}->
+		insert_pixbuf($instance->{history_buffer}->get_end_iter(),
+			      $line_image);
+	    $instance->{history_buffer}->
+		insert($instance->{history_buffer}->get_end_iter(), "\n");
+	}
+
+    }
+    $instance->{appbar}->set_progress_percentage(1);
+    $wm->update_gui();
+
+    set_label_value($instance->{numbers_value_label}, $counter)
+	if ($instance->{stop});
+
+    # Make sure we are at the top.
+
+    $instance->{history_buffer}->
+	place_cursor($instance->{history_buffer}->get_start_iter());
+    $instance->{history_scrolledwindow}->get_vadjustment()->set_value(0);
+    $instance->{history_scrolledwindow}->get_hadjustment()->set_value(0);
+
+    # Populate the restrict to combobox if needed.
+
+    if ($no_branch_history)
+    {
+	$instance->{appbar}->set_progress_percentage(0);
+	$instance->{appbar}->set_status(__("Populating branch list"));
+	$wm->update_gui();
+	@branches = sort(keys(%{$instance->{branch_history}}));
+	$counter = 1;
+	$instance->{restrict_to_combobox}->get_model()->clear();
+	$instance->{restrict_to_combobox}->get_model()->set
+	    ($instance->{restrict_to_combobox}->get_model()->append(),
+	     0, __("All Branches"));
+	foreach my $branch (@branches)
+	{
+	    $instance->{restrict_to_combobox}->get_model()->set
+		($instance->{restrict_to_combobox}->get_model()->append(),
+		 0, $branch);
+	    if (($counter % 10) == 0)
+	    {
+		$instance->{appbar}->set_progress_percentage
+		    ($counter / scalar(@branches));
+		$wm->update_gui();
+	    }
+	    ++ $counter;
+	}
+	$instance->{restrict_to_combobox}->set_active(0);
+	$instance->{appbar}->set_progress_percentage(1);
+	$wm->update_gui();
+    }
+
+    $instance->{appbar}->set_progress_percentage(0);
+    $instance->{appbar}->set_status("");
+    $wm->update_gui();
+
+}
+#
+##############################################################################
+#
 #   Routine      - get_history_window
 #
 #   Description  - Creates or prepares an existing history window for use.
@@ -1721,7 +1803,10 @@ sub comparison_revision_change_log_button_clicked_cb($$)
 sub get_history_window()
 {
 
-    my $instance;
+    my ($height,
+	$instance,
+	$renderer,
+	$width);
     my $window_type = "history_window";
     my $wm = WindowManager->instance();
 
@@ -1751,11 +1836,12 @@ sub get_history_window()
 			    "history_label",
 			    "history_textview",
 			    "history_scrolledwindow",
-			    "stop_button",
-			    "compare_button",
 			    "numbers_value_label",
+			    "restrict_to_combobox",
+			    "stop_button",
 			    "revision_id_1_value_label",
-			    "revision_id_2_value_label")
+			    "revision_id_2_value_label",
+			    "compare_button")
 	{
 	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
 	}
@@ -1771,6 +1857,8 @@ sub get_history_window()
 		 hide_find_text($instance->{history_textview});
 		 $widget->hide();
 		 $instance->{history_buffer}->set_text("");
+		 $instance->{restrict_to_combobox}->get_model()->clear();
+		 $instance->{branch_history} = undef;
 		 $instance->{history} = undef;
 		 $instance->{revision_hits} = undef;
 		 $instance->{mtn} = undef;
@@ -1787,6 +1875,33 @@ sub get_history_window()
 	create_format_tags($instance->{history_buffer});
 	$instance->{history_textview}->modify_font($mono_font);
 
+	# Lock the width of the numbers value label so that the combobox button
+	# to its right does not keep shrinking as this label's value increases.
+	# This label has had its value set to 8888888 in Glade (so as to allow
+	# room for a number in the millions) and has been dynamically sized
+	# accordingly by the layout manager. So now take its width and lock its
+	# size to that. Doing it this way neatly avoids issues of font sizes
+	# etc. Once done set the lable's value to be blank.
+
+	($width, $height) =
+	    ($instance->{numbers_value_label}->window()->get_geometry())[2, 3];
+	$instance->{numbers_value_label}->set_size_request($width, $height);
+	set_label_value($instance->{numbers_value_label}, "");
+
+	# Setup the restrict to combobox.
+
+	$instance->{restrict_to_combobox}->
+	    set_model(Gtk2::ListStore->new("Glib::String"));
+	$renderer = Gtk2::CellRendererText->new();
+	$instance->{restrict_to_combobox}->pack_start($renderer, TRUE);
+	$instance->{restrict_to_combobox}->add_attribute($renderer,
+							 "text" => 0);
+	$instance->{restrict_to_combobox}->get_model()->clear();
+	$instance->{restrict_to_combobox}->get_model()->set
+	    ($instance->{restrict_to_combobox}->get_model()->append(),
+	     0, __("All Branches"));
+	$instance->{restrict_to_combobox}->set_active(0);
+
 	# Register the window for management and set up the help callbacks.
 
 	$wm->manage($instance,
@@ -1795,6 +1910,8 @@ sub get_history_window()
 		    $instance->{stop_button});
 	register_help_callbacks
 	    ($instance,
+	     {widget   => "restrict_to_combobox",
+	      help_ref => __("mtnb-lachc-history-buttons")},
 	     {widget   => "stop_button",
 	      help_ref => __("mtnb-lachc-history-buttons")},
 	     {widget   => "compare_button",
@@ -1805,12 +1922,15 @@ sub get_history_window()
     }
     else
     {
-	my ($height,
-	    $width);
 	$instance->{in_cb} = 0;
 	local $instance->{in_cb} = 1;
 	($width, $height) = $instance->{window}->get_default_size();
 	$instance->{window}->resize($width, $height);
+	$instance->{restrict_to_combobox}->get_model()->clear();
+	$instance->{restrict_to_combobox}->get_model()->set
+	    ($instance->{restrict_to_combobox}->get_model()->append(),
+	     0, __("All Branches"));
+	$instance->{restrict_to_combobox}->set_active(0);
 	$instance->{stop_button}->set_sensitive(FALSE);
 	$instance->{compare_button}->set_sensitive(FALSE);
 	set_label_value($instance->{numbers_value_label}, "");
