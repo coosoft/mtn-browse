@@ -1511,8 +1511,8 @@ sub view_button_clicked_cb($$)
     }
     binmode($fh);
     $browser->{mtn}->get_file(\$data,
-			      $browser->{file_being_viewed}->
-			          {manifest_entry}->{file_id});
+			      $browser->{file_being_viewed}->{manifest_entry}->
+			          {file_id});
     $fh->print($data);
     $fh->close();
     $fh = undef;
@@ -2969,8 +2969,16 @@ sub update_browser_state($$)
 		    @certs_list,
 		    $change_log,
 		    $date);
-		$browser->{mtn}->get_manifest_of(\@manifest_list,
-						 $revision_id);
+		if ($browser->{mtn}->supports(MTN_GET_EXTENDED_MANIFEST_OF))
+		{
+		    $browser->{mtn}->get_extended_manifest_of(\@manifest_list,
+							      $revision_id);
+		}
+		else
+		{
+		    $browser->{mtn}->get_manifest_of(\@manifest_list,
+						     $revision_id);
+		}
 		$browser->{mtn}->certs(\@certs_list, $revision_id);
 		$author = $change_log = $date = "";
 		foreach my $cert (@certs_list)
@@ -3592,7 +3600,9 @@ sub determine_mime_type($$$$)
 #   Routine      - setup_mtn_object
 #
 #   Description  - Sets up a new Monotone::AutomateStdio object so that it can
-#                  be used in this application.
+#                  be used in this application and also determines what
+#                  features are available depending upon the version of
+#                  Monotone that is currently in use.
 #
 #   Data         - $mtn    : The Monotone::AutomateStdio object that is to be
 #                            setup.
@@ -3633,22 +3643,6 @@ sub setup_mtn_object($$)
 	    $dialog->destroy();
 	    $user_preferences->{show_suspended} = 0;
 	    $save_prefs = 1;
-	    eval
-	    {
-		save_preferences($user_preferences);
-	    };
-	    if ($@)
-	    {
-		chomp($@);
-		my $dialog = Gtk2::MessageDialog->new
-		    (undef,
-		     ["modal"],
-		     "warning",
-		     "close",
-		     __("Your preferences could not be saved:\n") . $@);
-		$wm->allow_input(sub { $dialog->run(); });
-		$dialog->destroy();
-	    }
 	}
     }
 

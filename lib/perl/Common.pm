@@ -82,7 +82,6 @@ sub file_glob_to_regexp($);
 sub generate_tmp_path($);
 sub get_branch_revisions($$$$$);
 sub get_dir_contents($$$);
-sub get_file_details($$$$$$);
 sub get_revision_ids($$;$);
 sub glade_signal_autoconnect($$);
 sub handle_comboxentry_history($$;$);
@@ -1138,74 +1137,39 @@ sub cache_extra_file_info($$$)
 
     my ($mtn, $revision_id, $manifest_entry) = @_;
 
-    get_file_details($mtn,
-		     $revision_id,
-		     $manifest_entry->{name},
-		     \$manifest_entry->{author},
-		     \$manifest_entry->{last_update},
-		     \$manifest_entry->{last_changed_revision});
-
-}
-#
-##############################################################################
-#
-#   Routine      - get_file_details
-#
-#   Description  - Get the details of the specified file.
-#
-#   Data         - $mtn                   : The Monotone::AutomateStdio object
-#                                           that is to be used.
-#                  $revision_id           : The revision id from where the
-#                                           search for the latest file update
-#                                           is to start, working backwards.
-#                  $file_name             : The full path name of the file.
-#                  $author                : A reference to the variable that
-#                                           is to contain the author's
-#                                           identity.
-#                  $last_update           : A reference to the variable that
-#                                           is to contain the last updated
-#                                           date for the file.
-#                  $last_changed_revision : A reference to the variable that
-#                                           is to contain the revision id on
-#                                           which the file was last updated.
-#
-##############################################################################
-
-
-
-sub get_file_details($$$$$$)
-{
-
-    my ($mtn,
-	$revision_id,
-	$file_name,
-	$author,
-	$last_update,
-	$last_changed_revision) = @_;
-
     my (@certs_list,
 	@revision_list);
 
-    $mtn->get_content_changed(\@revision_list, $revision_id, $file_name);
-    if (scalar(@revision_list) > 1)
+    if (exists($manifest_entry->{content_mark}))
     {
-	$mtn->toposort(\@revision_list, @revision_list);
-	@revision_list = reverse(@revision_list);
+	$revision_list[0] = $manifest_entry->{content_mark};
     }
-    $$last_changed_revision = $revision_list[0];
+    else
+    {
+	$mtn->get_content_changed(\@revision_list,
+				  $revision_id,
+				  $manifest_entry->{name});
+	if (scalar(@revision_list) > 1)
+	{
+	    $mtn->toposort(\@revision_list, @revision_list);
+	    @revision_list = reverse(@revision_list);
+	}
+    }
+    $manifest_entry->{last_changed_revision} = $revision_list[0];
     $mtn->certs(\@certs_list, $revision_list[0]);
-    $$author = $$last_update = "";
+    $manifest_entry->{author} = $manifest_entry->{last_update} = "";
     foreach my $cert (@certs_list)
     {
 	if ($cert->{name} eq "author")
 	{
-	    $$author = $cert->{value};
+	    $manifest_entry->{author} = $cert->{value};
 	}
 	elsif ($cert->{name} eq "date")
 	{
-	    $$last_update = $cert->{value};
+	    $manifest_entry->{last_update} = $cert->{value};
 	}
-	last if ($$author ne "" && $$last_update ne "");
+	last if ($manifest_entry->{author} ne ""
+		 && $manifest_entry->{last_update} ne "");
     }
 
 }
