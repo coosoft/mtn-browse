@@ -190,9 +190,9 @@ sub preferences($)
 
     my $browser = $_[0];
 
-    my($instance,
-       $preferences,
-       $valid);
+    my ($instance,
+	$preferences,
+	$valid);
     my $wm = WindowManager->instance();
 
     # Load in the user's preferences.
@@ -304,9 +304,9 @@ sub preferences($)
 sub load_preferences()
 {
 
-    my($file_name,
-       %preferences,
-       $prefs_file);
+    my ($file_name,
+	%preferences,
+	$prefs_file);
 
     # Determine the name of the user's preferences file.
 
@@ -359,8 +359,8 @@ sub save_preferences($)
 
     my $preferences = $_[0];
 
-    my($file_name,
-       $prefs_file);
+    my ($file_name,
+	$prefs_file);
 
     # Determine the name of the user's preferences file.
 
@@ -403,8 +403,8 @@ sub build_mime_match_table($)
 
     my $mime_info_table = $_[0];
 
-    my($re_str,
-       @table);
+    my ($re_str,
+	@table);
 
     foreach my $entry (@$mime_info_table)
     {
@@ -439,14 +439,14 @@ sub build_mime_match_table($)
 sub defaults_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($defaults,
-       @fields,
-       $page_nr);
+    my ($defaults,
+	@fields,
+	$page_nr);
 
     # Save the current preferences, reset the relevant group depending upon
     # what page is currently selected and the reload the preferenes.
@@ -508,7 +508,7 @@ sub defaults_button_clicked_cb($$)
 sub database_browse_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -538,22 +538,22 @@ sub database_browse_button_clicked_cb($$)
 sub mime_types_treeselection_changed_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($entry,
-       $entry_path,
-       @paths);
+    my ($entry,
+	$entry_path,
+	@paths);
 
     # Get the MIME table entry details for the item that was selected.
 
     @paths = $widget->get_selected_rows();
     if (scalar(@paths) > 0)
     {
-	my($iter,
-	   $model);
+	my ($iter,
+	    $model);
 	($model, $iter) = $widget->get_selected();
 	$entry = $model->get($iter, MTLS_ENTRY_COLUMN);
 	$entry_path = $paths[0]->to_string();
@@ -566,11 +566,11 @@ sub mime_types_treeselection_changed_cb($$)
 	&& (! defined($entry)
 	    || $entry != $instance->{selected_mime_types_entry}))
     {
-	my($iter,
-	   $new_helper,
-	   $new_patterns,
-	   $old_helper,
-	   $old_patterns);
+	my ($iter,
+	    $new_helper,
+	    $new_patterns,
+	    $old_helper,
+	    $old_patterns);
 	$iter = $instance->{mime_types_liststore}->
 	    get_iter_from_string($instance->{selected_mime_types_path});
 	$old_helper =
@@ -620,7 +620,7 @@ sub mime_types_treeselection_changed_cb($$)
 sub mime_type_entry_changed_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -649,13 +649,13 @@ sub mime_type_entry_changed_cb($$)
 sub add_mime_type_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($match,
-       $mime_type);
+    my ($match,
+	$mime_type);
 
     # Check entry to see if it is valid.
 
@@ -730,7 +730,7 @@ sub add_mime_type_button_clicked_cb($$)
 sub remove_mime_type_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -779,7 +779,7 @@ sub remove_mime_type_button_clicked_cb($$)
 sub file_name_patterns_treeselection_changed_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -788,8 +788,8 @@ sub file_name_patterns_treeselection_changed_cb($$)
 
     if ($widget->count_selected_rows() > 0)
     {
-	my($iter,
-	   $model);
+	my ($iter,
+	    $model);
 	($model, $iter) = $widget->get_selected();
 	$instance->{selected_file_name_pattern} = $model->get($iter, 0);
 	$instance->{remove_file_name_pattern_button}->set_sensitive(TRUE);
@@ -820,7 +820,7 @@ sub file_name_patterns_treeselection_changed_cb($$)
 sub file_name_pattern_entry_changed_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -849,14 +849,14 @@ sub file_name_pattern_entry_changed_cb($$)
 sub add_file_name_pattern_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($match,
-       $pattern,
-       $re_text);
+    my ($match,
+	$pattern,
+	$re_text);
 
     # Check entry to see if it is valid.
 
@@ -934,7 +934,7 @@ sub add_file_name_pattern_button_clicked_cb($$)
 sub remove_file_name_pattern_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -992,7 +992,7 @@ sub remove_file_name_pattern_button_clicked_cb($$)
 sub get_preferences_window($$)
 {
 
-    my($parent, $preferences) = @_;
+    my ($parent, $preferences) = @_;
 
     my $instance;
     my $window_type = "preferences_window";
@@ -1004,8 +1004,8 @@ sub get_preferences_window($$)
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my($renderer,
-	   $tv_column);
+	my ($renderer,
+	    $tv_column);
 
 	$instance = {};
 	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
@@ -1169,8 +1169,8 @@ sub get_preferences_window($$)
 	foreach my $col_nr (0 .. 2)
 	{
 
-	    my($button,
-	       $col);
+	    my ($button,
+		$col);
 
 	    next unless (defined($col = $instance->{mime_types_treeview}->
 				 get_column($col_nr)));
@@ -1189,7 +1189,7 @@ sub get_preferences_window($$)
 	    $button->signal_connect
 		("clicked",
 		 sub {
-		     my($widget, $instance) = @_;
+		     my ($widget, $instance) = @_;
 		     return if ($instance->{in_cb});
 		     local $instance->{in_cb} = 1;
 		     my @paths;
@@ -1254,8 +1254,8 @@ sub get_preferences_window($$)
     else
     {
 
-	my($height,
-	   $width);
+	my ($height,
+	    $width);
 
 	$instance->{in_cb} = 0;
 	local $instance->{in_cb} = 1;
@@ -1824,8 +1824,8 @@ sub upgrade_preferences($)
 sub initialise_preferences()
 {
 
-    my($mime_table,
-       %preferences);
+    my ($mime_table,
+	%preferences);
 
     die(__("Cannot load system MIME types.\n"))
 	unless (defined($mime_table = initialise_mime_info_table()));
@@ -1898,15 +1898,15 @@ sub initialise_preferences()
 sub initialise_mime_info_table()
 {
 
-    my($display_internally,
-       $pattern,
-       $globs_file,
-       $line,
-       %lookup,
-       $part,
-       $syntax_highlight,
-       @table,
-       $type);
+    my ($display_internally,
+	$pattern,
+	$globs_file,
+	$line,
+	%lookup,
+	$part,
+	$syntax_highlight,
+	@table,
+	$type);
 
     # Open the MIME globs file and then scan through reading in all the
     # entries.

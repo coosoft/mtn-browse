@@ -93,7 +93,7 @@ our $VERSION = 0.1;
 sub check($$)
 {
 
-    my($dependencies, $err_msg) = @_;
+    my ($dependencies, $err_msg) = @_;
 
     my $met = 1;
 

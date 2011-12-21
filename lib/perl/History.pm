@@ -126,12 +126,12 @@ sub save_differences_button_clicked_cb($$);
 sub display_revision_change_history($$$)
 {
 
-    my($mtn, $tag, $revision_id) = @_;
+    my ($mtn, $tag, $revision_id) = @_;
 
-    my($button,
-       @certs_list,
-       $counter,
-       $instance);
+    my ($button,
+	@certs_list,
+	$counter,
+	$instance);
     my $wm = WindowManager->instance();
 
     $instance = get_history_window();
@@ -330,12 +330,12 @@ sub display_revision_change_history($$$)
 sub display_file_change_history($$$)
 {
 
-    my($mtn, $revision_id, $file_name) = @_;
+    my ($mtn, $revision_id, $file_name) = @_;
 
-    my($button,
-       @certs_list,
-       $counter,
-       $instance);
+    my ($button,
+	@certs_list,
+	$counter,
+	$instance);
     my $wm = WindowManager->instance();
 
     $instance = get_history_window();
@@ -533,12 +533,12 @@ sub display_file_change_history($$$)
 sub display_revision_comparison($$$;$)
 {
 
-    my($mtn, $revision_id_1, $revision_id_2, $file_name) = @_;
+    my ($mtn, $revision_id_1, $revision_id_2, $file_name) = @_;
 
-    my(@files,
-       $i,
-       $instance,
-       $iter);
+    my (@files,
+	$i,
+	$instance,
+	$iter);
     my $wm = WindowManager->instance();
 
     $instance = get_revision_comparison_window($mtn);
@@ -589,7 +589,7 @@ sub display_revision_comparison($$$;$)
 	CachingAutomateStdio->register_error_handler
 	    (MTN_SEVERITY_ALL,
 	     sub {
-		 my($severity, $message, $instance) = @_;
+		 my ($severity, $message, $instance) = @_;
 		 mtn_error_handler($severity, $message)
 		     if ($severity == MTN_SEVERITY_WARNING
 			 || ! $instance->{stop});
@@ -639,18 +639,18 @@ sub display_revision_comparison($$$;$)
     if ($user_preferences->{coloured_diffs})
     {
 
-	my($char,
-	   $file_id_1,
-	   $file_id_2,
-	   $is_binary,
-	   $len,
-	   $line,
-	   @lines,
-	   $max_len,
-	   $name,
-	   $padding,
-	   $rest,
-	   $separator);
+	my ($char,
+	    $file_id_1,
+	    $file_id_2,
+	    $is_binary,
+	    $len,
+	    $line,
+	    @lines,
+	    $max_len,
+	    $name,
+	    $padding,
+	    $rest,
+	    $separator);
 
 	# Yes the user wants pretty printed differences output.
 
@@ -870,10 +870,10 @@ sub display_revision_comparison($$$;$)
     else
     {
 
-	my($file_id_1,
-	   $file_id_2,
-	   $is_binary,
-	   $name);
+	my ($file_id_1,
+	    $file_id_2,
+	    $is_binary,
+	    $name);
 
 	# No the user wants the raw differences output.
 
@@ -1096,18 +1096,18 @@ sub display_revision_comparison($$$;$)
 sub display_renamed_file_comparison($$$$$$)
 {
 
-    my($parent,
-       $mtn,
-       $old_revision_id,
-       $old_file_name,
-       $new_revision_id,
-       $new_file_name) = @_;
+    my ($parent,
+	$mtn,
+	$old_revision_id,
+	$old_file_name,
+	$new_revision_id,
+	$new_file_name) = @_;
 
-    my($answer,
-       $dialog,
-       @manifest,
-       $new_file_id,
-       $old_file_id);
+    my ($answer,
+	$dialog,
+	@manifest,
+	$new_file_id,
+	$old_file_id);
     my $wm = WindowManager->instance();
 
     $dialog = Gtk2::MessageDialog->new
@@ -1230,10 +1230,10 @@ sub display_arbitrary_revision_comparison($)
 sub history_list_button_clicked_cb($$)
 {
 
-    my($widget, $details) = @_;
+    my ($widget, $details) = @_;
 
-    my($instance,
-       $revision_id);
+    my ($instance,
+	$revision_id);
 
     $instance = $details->{instance};
     $revision_id = $details->{revision_id};
@@ -1280,8 +1280,8 @@ sub history_list_button_clicked_cb($$)
     elsif ($details->{button_type} eq "browse-revision")
     {
 
-	my($branch,
-	   @certs_list);
+	my ($branch,
+	    @certs_list);
 
 	# First find out what branch the revision is on (take the first one).
 
@@ -1304,11 +1304,11 @@ sub history_list_button_clicked_cb($$)
     elsif ($details->{button_type} eq "browse-file")
     {
 
-	my($branch,
-	   @certs_list,
-	   $dir,
-	   $file,
-	   $path_ref);
+	my ($branch,
+	    @certs_list,
+	    $dir,
+	    $file,
+	    $path_ref);
 
 	# First find out what branch the revision is on (take the first one).
 
@@ -1370,11 +1370,11 @@ sub history_list_button_clicked_cb($$)
 sub compare_arbitrary_revision_advanced_find_button_clicked_cb($$)
 {
 
-    my($widget, $details) = @_;
+    my ($widget, $details) = @_;
 
-    my(@dummy,
-       $instance,
-       $revision_id);
+    my (@dummy,
+	$instance,
+	$revision_id);
 
     $instance = $details->{instance};
 
@@ -1443,7 +1443,7 @@ sub compare_arbitrary_revision_advanced_find_button_clicked_cb($$)
 sub compare_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -1509,14 +1509,14 @@ sub compare_button_clicked_cb($$)
 sub file_comparison_combobox_changed_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($iter,
-       $line_iter,
-       $line_nr);
+    my ($iter,
+	$line_iter,
+	$line_nr);
 
     # Get the line number related to the selected file and then jump to it.
 
@@ -1571,15 +1571,15 @@ sub file_comparison_combobox_changed_cb($$)
 sub external_diffs_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($file_id_1,
-       $file_id_2,
-       $file_name,
-       $iter);
+    my ($file_id_1,
+	$file_id_2,
+	$file_name,
+	$iter);
 
     # Get the details associated with the currently selected file.
 
@@ -1620,7 +1620,7 @@ sub external_diffs_button_clicked_cb($$)
 sub save_differences_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -1652,14 +1652,14 @@ sub save_differences_button_clicked_cb($$)
 sub comparison_revision_change_log_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($colour,
-       $revision_id,
-       $revision_name);
+    my ($colour,
+	$revision_id,
+	$revision_name);
 
     # Work out what to do.
 
@@ -1757,7 +1757,7 @@ sub get_history_window()
 	$instance->{window}->signal_connect
 	    ("delete_event",
 	     sub {
-		 my($widget, $event, $instance) = @_;
+		 my ($widget, $event, $instance) = @_;
 		 return TRUE if ($instance->{in_cb});
 		 local $instance->{in_cb} = 1;
 		 hide_find_text($instance->{history_textview});
@@ -1797,8 +1797,8 @@ sub get_history_window()
     }
     else
     {
-	my($height,
-	   $width);
+	my ($height,
+	    $width);
 	$instance->{in_cb} = 0;
 	local $instance->{in_cb} = 1;
 	($width, $height) = $instance->{window}->get_default_size();
@@ -1842,7 +1842,7 @@ sub get_history_window()
 sub get_file_history_helper($$$)
 {
 
-    my($instance, $revision_id, $file_name_ref) = @_;
+    my ($instance, $revision_id, $file_name_ref) = @_;
 
     return if ($instance->{stop});
 
@@ -1922,7 +1922,7 @@ sub get_file_history_helper($$$)
 sub get_revision_history_helper($$)
 {
 
-    my($instance, $revision_id) = @_;
+    my ($instance, $revision_id) = @_;
 
     return if ($instance->{stop});
 
@@ -1998,7 +1998,7 @@ sub get_compare_arbitrary_revisions_window()
 	$instance->{window}->signal_connect
 	    ("delete_event",
 	     sub {
-		 my($widget, $event, $instance) = @_;
+		 my ($widget, $event, $instance) = @_;
 		 return TRUE if ($instance->{in_cb});
 		 local $instance->{in_cb} = 1;
 		 $widget->hide();
@@ -2078,10 +2078,10 @@ sub get_revision_comparison_window($)
 
     my $mtn = $_[0];
 
-    my($height,
-       $instance,
-       $renderer,
-       $width);
+    my ($height,
+	$instance,
+	$renderer,
+	$width);
     my $window_type = "revision_comparison_window";
     my $wm = WindowManager->instance();
 
@@ -2126,7 +2126,7 @@ sub get_revision_comparison_window($)
 	$instance->{window}->signal_connect
 	    ("delete_event",
 	     sub {
-		 my($widget, $event, $instance) = @_;
+		 my ($widget, $event, $instance) = @_;
 		 return TRUE if ($instance->{in_cb});
 		 local $instance->{in_cb} = 1;
 		 hide_find_text($instance->{comparison_textview});
@@ -2144,7 +2144,7 @@ sub get_revision_comparison_window($)
 	    $instance->{stop_button}->signal_connect
 		("clicked",
 		 sub {
-		     my($widget, $instance) = @_;
+		     my ($widget, $instance) = @_;
 		     $instance->{stop} = 1;
 		     kill("TERM", $instance->{mtn}->get_pid())
 			 if ($instance->{kill_mtn_subprocess});
@@ -2274,19 +2274,19 @@ sub get_revision_comparison_window($)
 sub external_diffs($$$$$$)
 {
 
-    my($parent,
-       $mtn,
-       $old_file_name,
-       $old_file_id,
-       $new_file_name,
-       $new_file_id) = @_;
+    my ($parent,
+	$mtn,
+	$old_file_name,
+	$old_file_id,
+	$new_file_name,
+	$new_file_id) = @_;
 
-    my($cmd,
-       $data,
-       $new_fh,
-       $new_file,
-       $old_fh,
-       $old_file);
+    my ($cmd,
+	$data,
+	$new_fh,
+	$new_file,
+	$old_fh,
+	$old_file);
     my $wm = WindowManager->instance();
 
     # Just check that we do actually have an external helper application to
@@ -2403,18 +2403,18 @@ sub external_diffs($$$$$$)
 sub mtn_diff($$$$$;$)
 {
 
-    my($list,
-       $abort,
-       $mtn_db,
-       $revision_id_1,
-       $revision_id_2,
-       $file_name) = @_;
+    my ($list,
+	$abort,
+	$mtn_db,
+	$revision_id_1,
+	$revision_id_2,
+	$file_name) = @_;
 
-    my($buffer,
-       @cmd,
-       $cwd,
-       $exception,
-       $ret_val);
+    my ($buffer,
+	@cmd,
+	$cwd,
+	$exception,
+	$ret_val);
 
     # Run mtn diff in the root directory so as to avoid any workspace
     # conflicts.

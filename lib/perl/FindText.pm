@@ -89,7 +89,7 @@ sub get_find_text_window($$);
 sub find_text($$)
 {
 
-    my($parent, $text_view) = @_;
+    my ($parent, $text_view) = @_;
 
     # Only go looking for a spare find text window, creating one if necessary,
     # if there isn't one already mapped for the specified textview widget.
@@ -148,7 +148,7 @@ sub reset_find_text($)
 sub enable_find_text($$)
 {
 
-    my($text_view, $enable) = @_;
+    my ($text_view, $enable) = @_;
 
     my $instance;
 
@@ -202,7 +202,7 @@ sub enable_find_text($$)
 sub hide_find_text($)
 {
 
-    my($text_view, $disable) = @_;
+    my ($text_view, $disable) = @_;
 
     my $instance;
 
@@ -232,13 +232,13 @@ sub hide_find_text($)
 sub find_text_textview_populate_popup_cb($$$)
 {
 
-    my($widget, $menu, $instance) = @_;
+    my ($widget, $menu, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($menu_item,
-       $separator);
+    my ($menu_item,
+	$separator);
 
     # Add a `Find' option to the right-click menu that displays the find text
     # dialog.
@@ -253,7 +253,7 @@ sub find_text_textview_populate_popup_cb($$$)
 	$menu_item->signal_connect
 	    ("activate",
 	     sub {
-		 my($widget, $details) = @_;
+		 my ($widget, $details) = @_;
 		 return if ($details->{instance}->{in_cb});
 		 local $details->{instance}->{in_cb} = 1;
 		 find_text($details->{instance}->{window},
@@ -294,15 +294,15 @@ sub find_text_textview_populate_popup_cb($$$)
 sub find_text_textview_key_press_event_cb($$$)
 {
 
-    my($widget, $event, $instance) = @_;
+    my ($widget, $event, $instance) = @_;
 
     return FALSE if ($instance->{in_cb} || $widget->{find_text_disabled});
     local $instance->{in_cb} = 1;
 
-    my($consumed_modifiers,
-       $keymap,
-       $keyval,
-       $state);
+    my ($consumed_modifiers,
+	$keymap,
+	$keyval,
+	$state);
 
     # Ignore the state of the caps-lock key.
 
@@ -348,23 +348,23 @@ sub find_text_textview_key_press_event_cb($$$)
 sub find_text_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($case_sensitive,
-       $done,
-       $end_iter,
-       $expr,
-       $forward,
-       $found,
-       $line,
-       $match_len,
-       $rect,
-       $search_term,
-       $start_iter,
-       $use_regexp);
+    my ($case_sensitive,
+	$done,
+	$end_iter,
+	$expr,
+	$forward,
+	$found,
+	$line,
+	$match_len,
+	$rect,
+	$search_term,
+	$start_iter,
+	$use_regexp);
 
     # Get the search parameters.
 
@@ -598,7 +598,7 @@ sub find_text_button_clicked_cb($$)
 sub find_comboboxentry_changed_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -658,10 +658,10 @@ sub find_current_window($)
 sub get_find_text_window($$)
 {
 
-    my($parent, $text_view) = @_;
+    my ($parent, $text_view) = @_;
 
-    my($instance,
-       $new);
+    my ($instance,
+	$new);
     my $wm = WindowManager->instance();
 
     # Create a new find text window if an unused one wasn't found, otherwise
@@ -702,7 +702,7 @@ sub get_find_text_window($$)
 	$instance->{window}->signal_connect
 	    ("delete_event",
 	     sub {
-		 my($widget, $event, $instance) = @_;
+		 my ($widget, $event, $instance) = @_;
 		 return TRUE if ($instance->{in_cb});
 		 local $instance->{in_cb} = 1;
 		 $instance->{window}->hide();
@@ -712,7 +712,7 @@ sub get_find_text_window($$)
 	$instance->{glade}->get_widget("close_button")->signal_connect
 	    ("clicked",
 	     sub {
-		 my($widget, $instance) = @_;
+		 my ($widget, $instance) = @_;
 		 return TRUE if ($instance->{in_cb});
 		 local $instance->{in_cb} = 1;
 		 $instance->{window}->hide();

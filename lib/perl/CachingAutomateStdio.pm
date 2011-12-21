@@ -95,7 +95,7 @@ our $VERSION = 0.01;
 sub branches($$)
 {
 
-    my($this, $list) = @_;
+    my ($this, $list) = @_;
 
     my $ret_val = 1;
 

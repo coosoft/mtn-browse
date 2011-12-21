@@ -96,10 +96,10 @@ sub update_advanced_find_state($$);
 sub advanced_find($$$)
 {
 
-    my($browser, $revision_id, $branches) = @_;
+    my ($browser, $revision_id, $branches) = @_;
 
-    my($advanced_find,
-       $ret_val);
+    my ($advanced_find,
+	$ret_val);
     my $wm = WindowManager->instance();
 
     $advanced_find = get_advanced_find_window($browser);
@@ -159,9 +159,9 @@ sub advanced_find($$$)
     $$revision_id = "";
     if ($advanced_find->{selected})
     {
-	my($branch_list,
-	   @certs_list,
-	   $found);
+	my ($branch_list,
+	    @certs_list,
+	    $found);
 
 	$$revision_id = $advanced_find->{revisions_treeview_details}->{value};
 
@@ -220,13 +220,13 @@ sub advanced_find($$$)
 sub simple_query_radiobutton_toggled_cb($$)
 {
 
-    my($widget, $advanced_find) = @_;
+    my ($widget, $advanced_find) = @_;
 
     return if ($advanced_find->{in_cb});
     local $advanced_find->{in_cb} = 1;
 
-    my($len,
-       $value);
+    my ($len,
+	$value);
 
     # Simply enable the relevant find widgets depending upon whether simple or
     # advanced mode is selected.
@@ -263,7 +263,7 @@ sub simple_query_radiobutton_toggled_cb($$)
 sub execute_button_clicked_cb($$)
 {
 
-    my($widget, $advanced_find) = @_;
+    my ($widget, $advanced_find) = @_;
 
     return if ($advanced_find->{in_cb});
     local $advanced_find->{in_cb} = 1;
@@ -293,16 +293,16 @@ sub execute_button_clicked_cb($$)
 sub populate_button_clicked_cb($$)
 {
 
-    my($widget, $advanced_find) = @_;
+    my ($widget, $advanced_find) = @_;
 
     return if ($advanced_find->{in_cb});
     local $advanced_find->{in_cb} = 1;
 
-    my($arg,
-       $pos,
-       $selector,
-       $time_val,
-       $to_insert);
+    my ($arg,
+	$pos,
+	$selector,
+	$time_val,
+	$to_insert);
 
     # Simply get the currently selected selector and then insert it into the
     # user's query string.
@@ -437,17 +437,17 @@ sub populate_button_clicked_cb($$)
 sub term_combobox_changed_cb($$)
 {
 
-    my($widget, $advanced_find) = @_;
+    my ($widget, $advanced_find) = @_;
 
     return if ($advanced_find->{in_cb});
     local $advanced_find->{in_cb} = 1;
 
-    my($arg,
-       $date,
-       $pos,
-       $selector,
-       $time_val,
-       $to_insert);
+    my ($arg,
+	$date,
+	$pos,
+	$selector,
+	$time_val,
+	$to_insert);
 
     # Simply get the currently selected term and then enable/disable the text
     # entry and date entry widgets accordingly.
@@ -492,7 +492,7 @@ sub term_combobox_changed_cb($$)
 sub revisions_treeselection_changed_cb($$)
 {
 
-    my($widget, $advanced_find) = @_;
+    my ($widget, $advanced_find) = @_;
 
     return if ($advanced_find->{in_cb});
     local $advanced_find->{in_cb} = 1;
@@ -501,9 +501,9 @@ sub revisions_treeselection_changed_cb($$)
 
     if ($widget->count_selected_rows() > 0)
     {
-	my($iter,
-	   $model,
-	   $revision_id);
+	my ($iter,
+	    $model,
+	    $revision_id);
 	($model, $iter) = $widget->get_selected();
 	$revision_id = $model->get($iter, AFLS_REVISION_ID_COLUMN);
 	if ($revision_id
@@ -552,7 +552,7 @@ sub revisions_treeselection_changed_cb($$)
 sub revisions_treeview_row_activated_cb($$$$)
 {
 
-    my($widget, $tree_path, $tree_view_column, $advanced_find) = @_;
+    my ($widget, $tree_path, $tree_view_column, $advanced_find) = @_;
 
     return if ($advanced_find->{in_cb});
     local $advanced_find->{in_cb} = 1;
@@ -563,7 +563,7 @@ sub revisions_treeview_row_activated_cb($$$$)
 
     $widget->get_selection()->selected_foreach
 	(sub {
-	     my($model, $path, $iter) = @_;
+	     my ($model, $path, $iter) = @_;
 	     $revision_id = $model->get($iter, AFLS_REVISION_ID_COLUMN); });
 
     if (defined($revision_id))
@@ -606,10 +606,10 @@ sub get_advanced_find_window($)
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my(@delete_list,
-	   $index,
-	   $renderer,
-	   $tv_column);
+	my (@delete_list,
+	    $index,
+	    $renderer,
+	    $tv_column);
 
 	$instance = {};
 	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
@@ -693,7 +693,7 @@ sub get_advanced_find_window($)
 	$index = 0;
 	$instance->{term_combobox}->get_model()->foreach
 	    (sub {
-		 my($model, $path, $iter) = @_;
+		 my ($model, $path, $iter) = @_;
 		 my $value = $model->get($iter, 0);
 		 push(@delete_list, $index)
 		     if (($value eq __("Key")
@@ -827,8 +827,8 @@ sub get_advanced_find_window($)
     else
     {
 
-	my($height,
-	   $width);
+	my ($height,
+	    $width);
 
 	$instance->{in_cb} = 0;
 	local $instance->{in_cb} = 1;
@@ -885,7 +885,7 @@ sub get_advanced_find_window($)
 sub update_advanced_find_state($$)
 {
 
-    my($advanced_find, $changed) = @_;
+    my ($advanced_find, $changed) = @_;
 
     my $matches;
     my $wm = WindowManager->instance();
@@ -900,9 +900,9 @@ sub update_advanced_find_state($$)
     if ($changed & BRANCH)
     {
 
-	my(@branch_list,
-	   $counter,
-	   $update_interval);
+	my (@branch_list,
+	    $counter,
+	    $update_interval);
 
 	# Reset the query mode.
 
@@ -965,9 +965,9 @@ sub update_advanced_find_state($$)
     if ($changed & REVISION)
     {
 
-	my($counter,
-	   @revision_list,
-	   $update_interval);
+	my ($counter,
+	    @revision_list,
+	    $update_interval);
 
 	# Reset the revision selection.
 
@@ -1032,8 +1032,8 @@ sub update_advanced_find_state($$)
     if ($changed & REVISION_LIST)
     {
 
-	my($i,
-	   @revision_ids);
+	my ($i,
+	    @revision_ids);
 
 	# Reset the revisions tree view.
 
@@ -1055,8 +1055,8 @@ sub update_advanced_find_state($$)
 	else
 	{
 
-	    my($exception,
-	       $query);
+	    my ($exception,
+		$query);
 
 	    $query = $advanced_find->{search_term_comboboxentry}->child()->
 		get_text();
@@ -1067,7 +1067,7 @@ sub update_advanced_find_state($$)
 	    CachingAutomateStdio->register_error_handler
 		(MTN_SEVERITY_ALL,
 		 sub {
-		     my($severity, $message) = @_;
+		     my ($severity, $message) = @_;
 		     my $dialog;
 		     $dialog = Gtk2::MessageDialog->new_with_markup
 			 ($advanced_find->{window},
@@ -1127,10 +1127,10 @@ sub update_advanced_find_state($$)
 	while ($i < scalar(@revision_ids) && ! $advanced_find->{stop})
 	{
 
-	    my($branch,
-	       %branch_hits,
-	       $nr_revisions,
-	       @revision_group);
+	    my ($branch,
+		%branch_hits,
+		$nr_revisions,
+		@revision_group);
 
 	    # Build up a list of revision ids that share the same branch.
 
@@ -1139,13 +1139,13 @@ sub update_advanced_find_state($$)
 		 ++ $i, ++ $nr_revisions)
 	    {
 
-		my($author,
-		   @certs,
-		   $date,
-		   $found,
-		   $key,
-		   %unique,
-		   $value);
+		my ($author,
+		    @certs,
+		    $date,
+		    $found,
+		    $key,
+		    %unique,
+		    $value);
 
 		$advanced_find->{mtn}->certs(\@certs, $revision_ids[$i]);
 
@@ -1246,8 +1246,8 @@ sub update_advanced_find_state($$)
 
 	if ($advanced_find->{revisions_treeview_details}->{value} ne "")
 	{
-	    my(@certs_list,
-	       @revision_details);
+	    my (@certs_list,
+		@revision_details);
 
 	    $advanced_find->{details_buffer}->set_text("");
 	    $advanced_find->{mtn}->certs

@@ -88,13 +88,13 @@ sub hide_tooltip_window();
 sub activate_auto_completion($$)
 {
 
-    my($comboboxentry, $instance) = @_;
+    my ($comboboxentry, $instance) = @_;
 
-    my($change_state,
-       $combo_details,
-       $details,
-       $move_to_end,
-       $name);
+    my ($change_state,
+	$combo_details,
+	$details,
+	$move_to_end,
+	$name);
 
     # Sort out the precise details depending upon which comboboxentry widget
     # has been passed.
@@ -164,7 +164,7 @@ sub activate_auto_completion($$)
 sub tagged_checkbutton_toggled_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -194,7 +194,7 @@ sub tagged_checkbutton_toggled_cb($$)
 sub auto_completion_comboboxentry_changed_cb($$)
 {
 
-    my($widget, $details) = @_;
+    my ($widget, $details) = @_;
 
     my $instance = $details->{instance};
 
@@ -257,7 +257,7 @@ sub auto_completion_comboboxentry_changed_cb($$)
 sub auto_completion_comboboxentry_key_release_event_cb($$$)
 {
 
-    my($widget, $event, $details) = @_;
+    my ($widget, $event, $details) = @_;
 
     my $instance = $details->{instance};
 
@@ -275,10 +275,10 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
     if ($value ne $old_value)
     {
 
-	my($busy,
-	   $completion,
-	   $len,
-	   $success);
+	my ($busy,
+	    $completion,
+	    $len,
+	    $success);
 	my $change_state = $details->{change_state};
 	my $complete = 0;
 	my $name = $details->{name};
@@ -334,11 +334,11 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
 
 		if ($user_preferences->{completion_tooltips})
 		{
-		    my($height,
-		       $root_x,
-		       $root_y,
-		       $x,
-		       $y);
+		    my ($height,
+			$root_x,
+			$root_y,
+			$x,
+			$y);
 		    ($x, $y) =
 			$widget->translate_coordinates($instance->{window},
 						       0,
@@ -398,8 +398,8 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
 	    if (! $user_preferences->{static_lists})
 	    {
 
-		my($counter,
-		   $update_interval);
+		my ($counter,
+		    $update_interval);
 
 		$instance->{appbar}->set_progress_percentage(0);
 		$instance->{appbar}->push(__x("Populating {name} list",
@@ -476,10 +476,10 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
 sub get_tooltip_window($$$$)
 {
 
-    my($parent, $message, $x, $y) = @_;
+    my ($parent, $message, $x, $y) = @_;
 
-    my($instance,
-       $new);
+    my ($instance,
+	$new);
     my $wm = WindowManager->instance();
 
     # Create a new tooltip window if an existing one wasn't found, otherwise

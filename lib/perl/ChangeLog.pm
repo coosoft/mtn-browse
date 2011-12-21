@@ -100,11 +100,11 @@ sub get_change_log_window();
 sub display_change_log($$;$$)
 {
 
-    my($mtn, $revision_id, $text_colour, $tag) = @_;
+    my ($mtn, $revision_id, $text_colour, $tag) = @_;
 
-    my(@certs_list,
-       $instance,
-       @revision_details);
+    my (@certs_list,
+	$instance,
+	@revision_details);
 
     $instance = get_change_log_window();
     $instance->{changelog_buffer}->set_text("");
@@ -157,20 +157,20 @@ sub display_change_log($$;$$)
 sub generate_revision_report($$$$;$)
 {
 
-    my($text_buffer, $revision_id, $certs_list, $colour, $revision_details)
+    my ($text_buffer, $revision_id, $certs_list, $colour, $revision_details)
 	= @_;
 
-    my($bold,
-       $cert_max_len,
-       @change_logs,
-       $i,
-       $italics,
-       $manifest_id,
-       $normal,
-       @parent_revision_ids,
-       %revision_data,
-       %seen,
-       @unique);
+    my ($bold,
+	$cert_max_len,
+	@change_logs,
+	$i,
+	$italics,
+	$manifest_id,
+	$normal,
+	@parent_revision_ids,
+	%revision_data,
+	%seen,
+	@unique);
 
     # Sort out colour attributes.
 
@@ -401,9 +401,9 @@ sub generate_revision_report($$$$;$)
 sub get_change_log_window()
 {
 
-    my($height,
-       $instance,
-       $width);
+    my ($height,
+	$instance,
+	$width);
     my $window_type = "changelog_window";
     my $wm = WindowManager->instance();
 
@@ -440,7 +440,7 @@ sub get_change_log_window()
 	$instance->{window}->signal_connect
 	    ("delete_event",
 	     sub {
-		 my($widget, $event, $instance) = @_;
+		 my ($widget, $event, $instance) = @_;
 		 return TRUE if ($instance->{in_cb});
 		 local $instance->{in_cb} = 1;
 		 hide_find_text($instance->{changelog_textview});

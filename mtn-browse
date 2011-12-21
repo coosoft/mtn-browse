@@ -45,7 +45,6 @@ require 5.008005;
 BEGIN
 {
     use constant APPLICATION_NAME    => "mtn-browse";
-    use constant APPLICATION_VERSION => 0.71;
     use constant FILE_COMPARE_CMD    => "@INST:FILE_COMPARE_CMD@";
     use constant HTML_VIEWER_CMD     => "@INST:HTML_VIEWER_CMD@";
     use constant LIB_DIR             => "@INST:LIB_DIR@";
@@ -199,10 +198,10 @@ sub view_button_clicked_cb($$);
 
 {
 
-    my($branch,
-       $browser,
-       $mtn,
-       $revision_id);
+    my ($branch,
+	$browser,
+	$mtn,
+	$revision_id);
 
     # Initialise stuff.
 
@@ -475,14 +474,14 @@ sub view_button_clicked_cb($$);
 sub connect_to_server_activate_cb($$)
 {
 
-    my($widget, $details) = @_;
+    my ($widget, $details) = @_;
 
     return if ($details->{browser}->{in_cb});
     local $details->{browser}->{in_cb} = 1;
 
-    my($exception,
-       $host,
-       $mtn);
+    my ($exception,
+	$host,
+	$mtn);
     my $browser = $details->{browser};
     my $wm = WindowManager->instance();
 
@@ -497,7 +496,7 @@ sub connect_to_server_activate_cb($$)
     CachingAutomateStdio->register_error_handler
 	(MTN_SEVERITY_ALL,
 	 sub {
-	     my($severity, $message) = @_;
+	     my ($severity, $message) = @_;
 	     my $dialog;
 	     $message =~ s/mtn: warning: //g;
 	     $message =~ s/mtn: error: //g;
@@ -577,7 +576,7 @@ sub connect_to_server_activate_cb($$)
 sub manage_server_bookmarks_activate_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -635,7 +634,7 @@ sub manage_server_bookmarks_activate_cb($$)
 sub quit_activate_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -672,7 +671,7 @@ sub quit_activate_cb($$)
 sub compare_arbitrary_revisions_activate_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -699,7 +698,7 @@ sub compare_arbitrary_revisions_activate_cb($$)
 sub help_on_window_activate_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     # No need to protect against recursion here as this simply activates a help
     # callback which deals with it.
@@ -726,7 +725,7 @@ sub help_on_window_activate_cb($$)
 sub context_help_activate_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -753,7 +752,7 @@ sub context_help_activate_cb($$)
 sub home_page_activate_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -797,7 +796,7 @@ sub home_page_activate_cb($$)
 sub about_activate_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -835,7 +834,7 @@ sub about_activate_cb($$)
 sub new_toolbutton_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -885,7 +884,7 @@ sub new_toolbutton_clicked_cb($$)
 sub new_blank_menu_item_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -914,7 +913,7 @@ sub new_blank_menu_item_clicked_cb($$)
 sub open_toolbutton_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -949,7 +948,7 @@ sub open_toolbutton_clicked_cb($$)
 sub close_toolbutton_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -980,7 +979,7 @@ sub close_toolbutton_clicked_cb($$)
 sub reload_toolbutton_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1028,7 +1027,7 @@ sub reload_toolbutton_clicked_cb($$)
 sub preferences_toolbutton_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1060,7 +1059,7 @@ sub preferences_toolbutton_clicked_cb($$)
 sub help_toolbutton_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1087,7 +1086,7 @@ sub help_toolbutton_clicked_cb($$)
 sub advanced_find_button_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1114,13 +1113,13 @@ sub advanced_find_button_clicked_cb($$)
 sub revision_change_history_button_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
 
-    my(@revision_ids,
-       $tag);
+    my (@revision_ids,
+	$tag);
 
     get_revision_ids($browser, \@revision_ids, \$tag);
     display_revision_change_history($browser->{mtn}, $tag, $revision_ids[0]);
@@ -1145,13 +1144,13 @@ sub revision_change_history_button_clicked_cb($$)
 sub revision_change_log_button_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
 
-    my(@revision_ids,
-       $tag);
+    my (@revision_ids,
+	$tag);
 
     # Get the currently selected revision id and then display its change log.
 
@@ -1178,14 +1177,14 @@ sub revision_change_log_button_clicked_cb($$)
 sub monotone_viz_button_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
 
-    my($cmd,
-       $db_name,
-       @revision_ids);
+    my ($cmd,
+	$db_name,
+	@revision_ids);
 
     # Make sure we have monotone-viz installed first.
 
@@ -1234,7 +1233,7 @@ sub monotone_viz_button_clicked_cb($$)
 sub directory_up_button_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1265,10 +1264,10 @@ sub directory_up_button_clicked_cb($$)
 	if (! $user_preferences->{static_lists})
 	{
 
-	    my($counter,
-	       @directory_list,
-	       $len,
-	       $update_interval);
+	    my ($counter,
+		@directory_list,
+		$len,
+		$update_interval);
 
 	    $len = length($value);
 	    $browser->{appbar}->set_progress_percentage(0);
@@ -1335,13 +1334,13 @@ sub directory_up_button_clicked_cb($$)
 sub find_files_button_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
 
-    my(@revision_ids,
-       $tag);
+    my (@revision_ids,
+	$tag);
 
     get_revision_ids($browser, \@revision_ids, \$tag);
     display_find_files($browser->{mtn},
@@ -1370,7 +1369,7 @@ sub find_files_button_clicked_cb($$)
 sub show_line_numbers_togglebutton_toggled_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1397,7 +1396,7 @@ sub show_line_numbers_togglebutton_toggled_cb($$)
 sub search_text_button_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1424,7 +1423,7 @@ sub search_text_button_clicked_cb($$)
 sub save_as_button_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1458,19 +1457,19 @@ sub save_as_button_clicked_cb($$)
 sub view_button_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
 
-    my($app,
-       $data,
-       $fh,
-       $file_name,
-       $helper,
-       $mime_details,
-       $mime_obj,
-       $mime_type);
+    my ($app,
+	$data,
+	$fh,
+	$file_name,
+	$helper,
+	$mime_details,
+	$mime_obj,
+	$mime_type);
 
     # Generate temporary disk file name.
 
@@ -1635,7 +1634,7 @@ sub view_button_clicked_cb($$)
 sub annotate_button_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1668,7 +1667,7 @@ sub annotate_button_clicked_cb($$)
 sub file_change_history_button_clicked_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1701,20 +1700,20 @@ sub file_change_history_button_clicked_cb($$)
 sub manifest_browser_treeselection_changed_cb($$)
 {
 
-    my($widget, $browser) = @_;
+    my ($widget, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
 
-    my($manifest_entry,
-       $short_name);
+    my ($manifest_entry,
+	$short_name);
 
     # Get the manifest entry details for the item that was selected.
 
     if ($widget->count_selected_rows() > 0)
     {
-	my($iter,
-	   $model);
+	my ($iter,
+	    $model);
 	($model, $iter) = $widget->get_selected();
 	$short_name = $model->get($iter, MLS_NAME_COLUMN);
 	$manifest_entry = $model->get($iter, MLS_MANIFEST_ENTRY_COLUMN);
@@ -1756,7 +1755,7 @@ sub manifest_browser_treeselection_changed_cb($$)
 sub manifest_browser_treeview_row_activated_cb($$$$)
 {
 
-    my($widget, $tree_path, $tree_view_column, $browser) = @_;
+    my ($widget, $tree_path, $tree_view_column, $browser) = @_;
 
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1767,7 +1766,7 @@ sub manifest_browser_treeview_row_activated_cb($$$$)
 
     $widget->get_selection()->selected_foreach
 	(sub {
-	     my($model, $path, $iter) = @_;
+	     my ($model, $path, $iter) = @_;
 	     $manifest_entry = $model->get($iter, MLS_MANIFEST_ENTRY_COLUMN);
 	 });
 
@@ -1811,7 +1810,7 @@ sub manifest_browser_treeview_row_activated_cb($$$$)
 sub main_window_delete_event_cb($$$)
 {
 
-    my($widget, $event, $browser) = @_;
+    my ($widget, $event, $browser) = @_;
 
     return TRUE if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
@@ -1884,7 +1883,7 @@ sub main_window_delete_event_cb($$$)
 sub get_browser_window(;$$$$$)
 {
 
-    my($mtn, $branch, $revision_id, $directory, $file) = @_;
+    my ($mtn, $branch, $revision_id, $directory, $file) = @_;
 
     my $browser;
     my $wm = WindowManager->instance();
@@ -1895,13 +1894,13 @@ sub get_browser_window(;$$$$$)
     if (! defined($browser = $wm->find_unused($window_type)))
     {
 
-	my($cb,
-	   $image,
-	   $menu_item,
-	   $renderer,
-	   $submenu,
-	   $subsubmenu,
-	   $tv_column);
+	my ($cb,
+	    $image,
+	    $menu_item,
+	    $renderer,
+	    $submenu,
+	    $subsubmenu,
+	    $tv_column);
 
 	$browser = {};
 	$browser->{mtn} = $mtn;
@@ -1981,7 +1980,7 @@ sub get_browser_window(;$$$$$)
 	$submenu = Gtk2::Menu->new();
 	$cb = sub
 	{
-	    my($widget, $details) = @_;
+	    my ($widget, $details) = @_;
 	    return if ($details->{instance}->{in_cb});
 	    local $details->{instance}->{in_cb} = 1;
 	    $details->{instance}->{appbar}->set_status
@@ -2025,7 +2024,7 @@ sub get_browser_window(;$$$$$)
 	$submenu = Gtk2::Menu->new();
 	$cb = sub
 	{
-	    my($widget, $details) = @_;
+	    my ($widget, $details) = @_;
 	    return if ($details->{instance}->{in_cb});
 	    local $details->{instance}->{in_cb} = 1;
 	    $details->{instance}->{appbar}->set_status
@@ -2262,8 +2261,8 @@ sub get_browser_window(;$$$$$)
     else
     {
 
-	my($height,
-	   $width);
+	my ($height,
+	    $width);
 
 	$browser->{in_cb} = 0;
 	local $browser->{in_cb} = 1;
@@ -2368,9 +2367,9 @@ sub create_browser_widgets()
 	|| $user_preferences->{toolbar_settings}->{fixed})
     {
 
-	my($file,
-	   @glade_data,
-	   $seen_toolbar);
+	my ($file,
+	    @glade_data,
+	    $seen_toolbar);
 	my $fixed     = $user_preferences->{toolbar_settings}->{fixed};
 	my $hide_text = $user_preferences->{toolbar_settings}->{hide_text};
 
@@ -2463,9 +2462,9 @@ sub update_server_bookmarks_menu($)
 
     my $browser = $_[0];
 
-    my($menu_item,
-       $old_menu,
-       $submenu);
+    my ($menu_item,
+	$old_menu,
+	$submenu);
 
     # Create a new connect to server submenu.
 
@@ -2530,7 +2529,7 @@ sub update_server_bookmarks_menu($)
 sub update_browser_state($$)
 {
 
-    my($browser, $changed) = @_;
+    my ($browser, $changed) = @_;
 
     my $use_advanced_find;
     my $wm = WindowManager->instance();
@@ -2611,9 +2610,9 @@ sub update_browser_state($$)
     if ($changed & BRANCH)
     {
 
-	my(@branch_list,
-	   $counter,
-	   $update_interval);
+	my (@branch_list,
+	    $counter,
+	    $update_interval);
 
 	# Reset the branch selection.
 
@@ -2670,9 +2669,9 @@ sub update_browser_state($$)
     if ($changed & REVISION)
     {
 
-	my($counter,
-	   @revision_list,
-	   $update_interval);
+	my ($counter,
+	    @revision_list,
+	    $update_interval);
 
 	# If auto-selection of the head revision is wanted by the user and it
 	# is appropriate then preset the revision id.
@@ -2707,8 +2706,8 @@ sub update_browser_state($$)
 	    elsif (scalar(@revision_ids) > 1)
 	    {
 
-		my($response,
-		   $revision_id);
+		my ($response,
+		    $revision_id);
 
 		# Ask the user what they want to do.
 
@@ -2840,10 +2839,10 @@ sub update_browser_state($$)
     if ($changed & DIRECTORY)
     {
 
-	my($counter,
-	   @directory_list,
-	   @manifest_list,
-	   $update_interval);
+	my ($counter,
+	    @directory_list,
+	    @manifest_list,
+	    $update_interval);
 
 	# Reset the directory combo.
 
@@ -2873,8 +2872,8 @@ sub update_browser_state($$)
 	if ($browser->{revision_combo_details}->{complete})
 	{
 
-	    my($revision_id,
-	       @revision_ids);
+	    my ($revision_id,
+		@revision_ids);
 
 	    # Get the revision id(s) that match what the user has selected.
 	    # More than one revision id may be returned if the selected tag
@@ -2960,10 +2959,10 @@ sub update_browser_state($$)
 
 	    if (defined($revision_id))
 	    {
-		my($author,
-		   @certs_list,
-		   $change_log,
-		   $date);
+		my ($author,
+		    @certs_list,
+		    $change_log,
+		    $date);
 		$browser->{mtn}->get_manifest_of(\@manifest_list,
 						 $revision_id);
 		$browser->{mtn}->certs(\@certs_list, $revision_id);
@@ -3048,12 +3047,12 @@ sub update_browser_state($$)
     if ($changed & DIRECTORY_VIEW)
     {
 
-	my($author,
-	   $counter,
-	   @directory_entry_list,
-	   $last_update,
-	   @revision_ids,
-	   $taking_our_time);
+	my ($author,
+	    $counter,
+	    @directory_entry_list,
+	    $last_update,
+	    @revision_ids,
+	    $taking_our_time);
 
 	# Reset the manifest tree view.
 
@@ -3179,8 +3178,8 @@ sub update_browser_state($$)
 	    if ($browser->{file_displayed_id} ne $manifest_entry->{file_id})
 	    {
 
-		my($last_update,
-		   $textual_data);
+		my ($last_update,
+		    $textual_data);
 
 		# Enable the file buttons, keeping the ones relating to text
 		# files disabled, and reset any associated find text window.
@@ -3290,10 +3289,10 @@ sub handle_advanced_find($)
 
     my $browser = $_[0];
 
-    my(@branches,
-       $preset_branch,
-       $revision_id,
-       $state);
+    my (@branches,
+	$preset_branch,
+	$revision_id,
+	$state);
 
     if (advanced_find($browser, \$revision_id, \@branches))
     {
@@ -3359,13 +3358,13 @@ sub handle_advanced_find($)
 sub display_file($$)
 {
 
-    my($browser, $textual_data) = @_;
+    my ($browser, $textual_data) = @_;
 
-    my($contents,
-       $iter,
-       $lang,
-       $mime_details,
-       $mime_type);
+    my ($contents,
+	$iter,
+	$lang,
+	$mime_details,
+	$mime_type);
 
     $$textual_data = 0;
 
@@ -3544,7 +3543,7 @@ sub display_file($$)
 sub determine_mime_type($$$$)
 {
 
-    my($file_name, $contents, $mime_type, $mime_details) = @_;
+    my ($file_name, $contents, $mime_type, $mime_details) = @_;
 
     $$mime_type = $$mime_details = undef;
 
@@ -3601,7 +3600,7 @@ sub determine_mime_type($$$$)
 sub setup_mtn_object($$)
 {
 
-    my($mtn, $parent) = @_;
+    my ($mtn, $parent) = @_;
 
     my $save_prefs;
     my $wm = WindowManager->instance();
@@ -3705,7 +3704,7 @@ sub setup_mtn_object($$)
 sub mtn_db_locked_handler($$)
 {
 
-    my($mtn, $parent) = @_;
+    my ($mtn, $parent) = @_;
 
     my $dialog;
     my $wm = WindowManager->instance();
@@ -3741,7 +3740,7 @@ sub mtn_db_locked_handler($$)
 sub mtn_error_handler($$)
 {
 
-    my($severity, $message) = @_;
+    my ($severity, $message) = @_;
 
     my $dialog;
     my $wm = WindowManager->instance();
@@ -3874,8 +3873,8 @@ sub setup_sigchld_handler($)
 
     my $handler = $_[0];
 
-    my($reader,
-       $writer);
+    my ($reader,
+	$writer);
 
     # Basically set up a SIGCHLD handler that simply writes a character down an
     # anonymous pipe in order to wake up the actual handler that is registered

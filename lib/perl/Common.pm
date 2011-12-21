@@ -121,8 +121,8 @@ sub generate_tmp_path($)
 
     my $file_name = $_[0];
 
-    my($path,
-       $i);
+    my ($path,
+	$i);
 
     # Loop through looking for a temporary subdirectory not containing the
     # specified file.
@@ -170,18 +170,18 @@ sub generate_tmp_path($)
 sub run_command($$@)
 {
 
-    my($buffer, $abort, @args) = @_;
+    my ($buffer, $abort, @args) = @_;
 
-    my($dummy_flag,
-       @err,
-       $fd_err,
-       $fd_in,
-       $fd_out,
-       $my_pid,
-       $pid,
-       $stop,
-       $total_bytes,
-       $watcher);
+    my ($dummy_flag,
+	@err,
+	$fd_err,
+	$fd_in,
+	$fd_out,
+	$my_pid,
+	$pid,
+	$stop,
+	$total_bytes,
+	$watcher);
 
     $abort = \$dummy_flag unless (defined($abort));
 
@@ -423,15 +423,15 @@ sub run_command($$@)
 sub get_dir_contents($$$)
 {
 
-    my($path, $manifest, $result) = @_;
+    my ($path, $manifest, $result) = @_;
 
-    my(@dir_list,
-       $entry,
-       $extract_re,
-       @file_list,
-       $list,
-       $match_re,
-       $name);
+    my (@dir_list,
+	$entry,
+	$extract_re,
+	@file_list,
+	$list,
+	$match_re,
+	$name);
 
     # Manifests are already sorted alphabetically. However, if the user wishes
     # it, place folders before files.
@@ -505,11 +505,11 @@ sub get_dir_contents($$$)
 sub open_database($$$)
 {
 
-    my($parent, $mtn, $file_name) = @_;
+    my ($parent, $mtn, $file_name) = @_;
 
-    my($chooser_dialog,
-       $done,
-       $ret_val);
+    my ($chooser_dialog,
+	$done,
+	$ret_val);
 
     $chooser_dialog = Gtk2::FileChooserDialog->new(__("Open Database"),
 						   $parent,
@@ -525,10 +525,10 @@ sub open_database($$$)
 	if ($chooser_dialog->run() eq "ok")
 	{
 
-	    my($exception,
-	       $fh,
-	       $fname,
-	       $mtn_obj);
+	    my ($exception,
+		$fh,
+		$fname,
+		$mtn_obj);
 
 	    $fname = $chooser_dialog->get_filename();
 
@@ -559,7 +559,7 @@ sub open_database($$$)
 		CachingAutomateStdio->register_error_handler
 		    (MTN_SEVERITY_ALL,
 		     sub {
-			 my($severity, $message) = @_;
+			 my ($severity, $message) = @_;
 			 my $dialog;
 			 $message =~ s/mtn: misuse: //g;
 			 $message =~ s/^Corrupt\/missing mtn [^\n]+\n//g;
@@ -638,11 +638,11 @@ sub open_database($$$)
 sub save_as_file($$$)
 {
 
-    my($parent, $file_name, $data) = @_;
+    my ($parent, $file_name, $data) = @_;
 
-    my($chooser_dialog,
-       $continue,
-       $done);
+    my ($chooser_dialog,
+	$continue,
+	$done);
 
     $chooser_dialog = Gtk2::FileChooserDialog->new(__("Save As"),
 						   $parent,
@@ -659,8 +659,8 @@ sub save_as_file($$$)
 	if ($chooser_dialog->run() eq "ok")
 	{
 
-	    my($fh,
-	       $fname);
+	    my ($fh,
+		$fname);
 
 	    $continue = 1;
 	    $fname = $chooser_dialog->get_filename();
@@ -739,14 +739,14 @@ sub save_as_file($$$)
 sub treeview_setup_search_column_selection($@)
 {
 
-    my($treeview, @columns) = @_;
+    my ($treeview, @columns) = @_;
 
     foreach my $col_nr (@columns)
     {
 
-	my($button,
-	   $col,
-	   $label);
+	my ($button,
+	    $col,
+	    $label);
 
 	next unless (defined($col = $treeview->get_column($col_nr)));
 
@@ -774,14 +774,14 @@ sub treeview_setup_search_column_selection($@)
 	    ("button_press_event",
 	     sub {
 
-		 my($widget, $event, $data) = @_;
+		 my ($widget, $event, $data) = @_;
 
 		 # We are only interested in right button mouse clicks.
 
 		 return FALSE unless ($event->button() == 3);
 
-		 my($menu,
-		    $menu_item);
+		 my ($menu,
+		     $menu_item);
 
 		 # Create a popup menu with the search option in it.
 
@@ -798,7 +798,7 @@ sub treeview_setup_search_column_selection($@)
 		     ("activate",
 		      sub {
 
-			  my($widget, $data) = @_;
+			  my ($widget, $data) = @_;
 
 			  $data->{treeview}->
 			      set_search_column($data->{col_nr});
@@ -848,10 +848,10 @@ sub treeview_setup_search_column_selection($@)
 sub treeview_column_searcher($$$$)
 {
 
-    my($model, $column, $key, $iter) = @_;
+    my ($model, $column, $key, $iter) = @_;
 
-    my($re,
-       $value);
+    my ($re,
+	$value);
 
     # Get the value in the treeview's cell.
 
@@ -916,17 +916,17 @@ sub treeview_column_searcher($$$$)
 sub get_branch_revisions($$$$$)
 {
 
-    my($mtn, $branch, $tags, $appbar, $revisions) = @_;
+    my ($mtn, $branch, $tags, $appbar, $revisions) = @_;
 
     @$revisions = ();
 
     if ($tags)
     {
 
-	my(%rev_id_to_tags,
-	   %seen,
-	   @sorted_rev_ids,
-	   @tags);
+	my (%rev_id_to_tags,
+	    %seen,
+	    @sorted_rev_ids,
+	    @tags);
 
 	# Get the list of revision tags.
 
@@ -1093,7 +1093,7 @@ sub get_branch_revisions($$$$$)
 sub get_revision_ids($$;$)
 {
 
-    my($instance, $revision_ids, $tag) = @_;
+    my ($instance, $revision_ids, $tag) = @_;
 
     @$revision_ids=();
     $$tag = undef if (defined($tag));
@@ -1136,7 +1136,7 @@ sub get_revision_ids($$;$)
 sub cache_extra_file_info($$$)
 {
 
-    my($mtn, $revision_id, $manifest_entry) = @_;
+    my ($mtn, $revision_id, $manifest_entry) = @_;
 
     get_file_details($mtn,
 		     $revision_id,
@@ -1176,15 +1176,15 @@ sub cache_extra_file_info($$$)
 sub get_file_details($$$$$$)
 {
 
-    my($mtn,
-       $revision_id,
-       $file_name,
-       $author,
-       $last_update,
-       $last_changed_revision) = @_;
+    my ($mtn,
+	$revision_id,
+	$file_name,
+	$author,
+	$last_update,
+	$last_changed_revision) = @_;
 
-    my(@certs_list,
-       @revision_list);
+    my (@certs_list,
+	@revision_list);
 
     $mtn->get_content_changed(\@revision_list, $revision_id, $file_name);
     if (scalar(@revision_list) > 1)
@@ -1230,9 +1230,9 @@ sub file_glob_to_regexp($)
 
     my $file_glob = $_[0];
 
-    my($escaping,
-       $first,
-       $re_text);
+    my ($escaping,
+	$first,
+	$re_text);
 
     $escaping = 0;
     $first = 1;
@@ -1304,7 +1304,7 @@ sub file_glob_to_regexp($)
 sub program_valid($;$)
 {
 
-    my($program, $parent) = @_;
+    my ($program, $parent) = @_;
 
     my $found;
 
@@ -1370,7 +1370,7 @@ sub program_valid($;$)
 sub handle_comboxentry_history($$;$)
 {
 
-    my($widget, $history_name, $value) = @_;
+    my ($widget, $history_name, $value) = @_;
 
     my $update_history = 1;
     my $history_ref = $user_preferences->{histories}->{$history_name};
@@ -1574,7 +1574,7 @@ sub display_html($)
 sub register_help_callbacks($@)
 {
 
-    my($instance, @details) = @_;
+    my ($instance, @details) = @_;
 
     my $wm = WindowManager->instance();
 
@@ -1589,7 +1589,7 @@ sub register_help_callbacks($@)
 	$wm->help_connect($instance,
 			  $widget,
 			  sub {
-			      my($widget, $instance) = @_;
+			      my ($widget, $instance) = @_;
 			      return if ($instance->{in_cb});
 			      local $instance->{in_cb} = 1;
 			      display_help($help_ref);
@@ -1692,9 +1692,9 @@ sub hex_dump($)
 
     my $data = $_[0];
 
-    my($buffer,
-       $counter,
-       @line);
+    my ($buffer,
+	$counter,
+	@line);
 
     $counter = 0;
     foreach my $byte (split(//, $$data))
@@ -1753,11 +1753,11 @@ sub data_is_binary($)
 
     my $data = $_[0];
 
-    my($chunk,
-       $length,
-       $non_printable,
-       $offset,
-       $total_length);
+    my ($chunk,
+	$length,
+	$non_printable,
+	$offset,
+	$total_length);
 
     $offset = 0;
     $total_length = length($$data);
@@ -1822,7 +1822,7 @@ sub colour_to_string($)
 sub set_label_value($$)
 {
 
-    my($widget, $value) = @_;
+    my ($widget, $value) = @_;
 
     $widget->set_text($value);
     $tooltips->set_tip($widget->get_parent(), $value);
@@ -1849,15 +1849,20 @@ sub set_label_value($$)
 sub glade_signal_autoconnect($$)
 {
 
-    my($glade, $client_data) = @_;
+    my ($glade, $client_data) = @_;
 
     my $caller_package = caller();
     $caller_package = "main" if (! defined($caller_package));
 
     $glade->signal_autoconnect
 	(sub {
-	     my($callback_name, $widget, $signal_name, $signal_data,
-		$connect_object, $after, $user_data) = @_;
+	     my ($callback_name,
+		 $widget,
+		 $signal_name,
+		 $signal_data,
+		 $connect_object,
+		 $after,
+		 $user_data) = @_;
 	     my $func = $after ? "signal_connect_after" : "signal_connect";
 
 	     # Need to fully qualify any callback name that isn't prefixed by
@@ -1892,14 +1897,14 @@ sub glade_signal_autoconnect($$)
 sub build_help_ref_to_url_map()
 {
 
-    my($dir,
-       $dir_path,
-       $fname,
-       $locale,
-       @lparts,
-       $nr_parts,
-       $prog,
-       $tmp);
+    my ($dir,
+	$dir_path,
+	$fname,
+	$locale,
+	@lparts,
+	$nr_parts,
+	$prog,
+	$tmp);
 
     # Ask Gnome where the based help directory is, failing that have an
     # educated guess.
@@ -1967,8 +1972,8 @@ sub build_help_ref_to_url_map()
     return unless (defined($dir = IO::Dir->new($dir_path)));
     while (defined($fname = $dir->read()))
     {
-	my($file,
-	   $full_name);
+	my ($file,
+	    $full_name);
 	$full_name = File::Spec->catfile($dir_path, $fname);
 	$full_name = File::Spec->rel2abs($full_name);
 
@@ -1981,12 +1986,12 @@ sub build_help_ref_to_url_map()
 	    while (defined($line = $file->getline()))
 	    {
 
-		my($dir_string,
-		   @dirs,
-		   $file_name,
-		   @list,
-		   $url,
-		   $volume);
+		my ($dir_string,
+		    @dirs,
+		    $file_name,
+		    @list,
+		    $url,
+		    $volume);
 
 		# Mangle the file name into a URL.
 
@@ -2051,7 +2056,7 @@ sub build_help_ref_to_url_map()
 sub calculate_update_interval($;$)
 {
 
-    my($list_ref, $granularity) = @_;
+    my ($list_ref, $granularity) = @_;
 
     my $update_interval;
 

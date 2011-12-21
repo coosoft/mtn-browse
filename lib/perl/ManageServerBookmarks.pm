@@ -89,11 +89,11 @@ sub servers_treeselection_changed_cb($$);
 sub manage_server_bookmarks($$)
 {
 
-    my($parent, $bookmarks) = @_;
+    my ($parent, $bookmarks) = @_;
 
-    my($changed,
-       $instance,
-       $response);
+    my ($changed,
+	$instance,
+	$response);
 
     # Only go looking for a spare find text window, creating one if necessary,
     # if there isn't one already mapped for the specified textview widget.
@@ -131,7 +131,7 @@ sub manage_server_bookmarks($$)
 sub servers_treeselection_changed_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -141,8 +141,8 @@ sub servers_treeselection_changed_cb($$)
 
     if ($widget->count_selected_rows() > 0)
     {
-	my($iter,
-	   $model);
+	my ($iter,
+	    $model);
 	($model, $iter) = $widget->get_selected();
 	$instance->{selected_server} = $model->get($iter, 0);
 	$instance->{remove_server_button}->set_sensitive(TRUE);
@@ -174,7 +174,7 @@ sub servers_treeselection_changed_cb($$)
 sub server_entry_changed_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -203,7 +203,7 @@ sub server_entry_changed_cb($$)
 sub add_server_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -271,7 +271,7 @@ sub add_server_button_clicked_cb($$)
 sub remove_server_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -322,10 +322,10 @@ sub remove_server_button_clicked_cb($$)
 sub get_manage_server_bookmarks_window($$)
 {
 
-    my($parent, $bookmarks) = @_;
+    my ($parent, $bookmarks) = @_;
 
-    my($instance,
-       $new);
+    my ($instance,
+	$new);
     my $wm = WindowManager->instance();
 
     # Create a new manage server bookmarks window if an unused one wasn't
@@ -334,8 +334,8 @@ sub get_manage_server_bookmarks_window($$)
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my($renderer,
-	   $tv_column);
+	my ($renderer,
+	    $tv_column);
 
 	$new = 1;
 	$instance = {};

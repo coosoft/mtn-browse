@@ -83,10 +83,10 @@ sub get_multiple_revisions_window($);
 sub multiple_revisions_selection($$$@)
 {
 
-    my($parent, $message, $selected_revision, @revision_ids) = @_;
+    my ($parent, $message, $selected_revision, @revision_ids) = @_;
 
-    my($instance,
-       $response);
+    my ($instance,
+	$response);
 
     $instance = get_multiple_revisions_window($parent);
     local $instance->{in_cb} = 1;
@@ -149,8 +149,8 @@ sub get_multiple_revisions_window($)
 
     my $parent = $_[0];
 
-    my($instance,
-       $new);
+    my ($instance,
+	$new);
     my $window_type = "multiple_revisions_window";
     my $wm = WindowManager->instance();
 

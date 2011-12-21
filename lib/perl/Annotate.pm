@@ -81,19 +81,19 @@ sub mtn_annotate($$$$);
 sub display_annotation($$$)
 {
 
-    my($mtn, $revision_id, $file_name) = @_;
+    my ($mtn, $revision_id, $file_name) = @_;
 
-    my($i,
-       $instance,
-       $iter,
-       $len,
-       @lines,
-       $max_len,
-       $padding,
-       @prefix,
-       $prefix_tag,
-       $template,
-       $text_tag);
+    my ($i,
+	$instance,
+	$iter,
+	$len,
+	@lines,
+	$max_len,
+	$padding,
+	@prefix,
+	$prefix_tag,
+	$template,
+	$text_tag);
     my $wm = WindowManager->instance();
 
     $instance = get_annotation_window();
@@ -238,17 +238,17 @@ sub display_annotation($$$)
 sub annotation_textview_populate_popup_cb($$$)
 {
 
-    my($widget, $menu, $instance) = @_;
+    my ($widget, $menu, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($menu_item,
-       $revision_part,
-       $separator,
-       $start_iter,
-       $x,
-       $y);
+    my ($menu_item,
+	$revision_part,
+	$separator,
+	$start_iter,
+	$x,
+	$y);
 
     # Extract the revision id relating to the block of text directly under the
     # mouse cursor.
@@ -257,10 +257,10 @@ sub annotation_textview_populate_popup_cb($$$)
     ($x, $y) = $widget->window_to_buffer_coords("widget", $x, $y);
     if (defined($start_iter = ($widget->get_line_at_y($y))[0]))
     {
-	my($end_iter,
-	   $prefix,
-	   $no_more,
-	   $text_buffer);
+	my ($end_iter,
+	    $prefix,
+	    $no_more,
+	    $text_buffer);
 	$end_iter = ($widget->get_line_at_y($y))[0];
 	$end_iter->forward_to_line_end();
 	$text_buffer = $widget->get_buffer();
@@ -307,7 +307,7 @@ sub annotation_textview_populate_popup_cb($$$)
 	     \&annotation_textview_popup_menu_item_cb,
 	     {instance         => $instance,
 	      cb               => sub {
-		                      my($instance, $revision_id) = @_;
+		                      my ($instance, $revision_id) = @_;
 				      display_change_log($instance->{mtn},
 							 $revision_id,
 							 "",
@@ -331,7 +331,7 @@ sub annotation_textview_populate_popup_cb($$$)
 	     \&annotation_textview_popup_menu_item_cb,
 	     {instance         => $instance,
 	      cb               => sub {
-		                      my($instance, $revision_id) = @_;
+		                      my ($instance, $revision_id) = @_;
 				      my $old_file_name;
 				      $instance->{mtn}->get_corresponding_path
 					  (\$old_file_name,
@@ -361,7 +361,7 @@ sub annotation_textview_populate_popup_cb($$$)
 	     \&annotation_textview_popup_menu_item_cb,
 	     {instance         => $instance,
 	      cb               => sub {
-		                      my($instance, $revision_id) = @_;
+		                      my ($instance, $revision_id) = @_;
 				      display_revision_change_history
 					  ($instance->{mtn},
 					   undef,
@@ -390,7 +390,7 @@ sub annotation_textview_populate_popup_cb($$$)
 	     \&annotation_textview_popup_menu_item_cb,
 	     {instance         => $instance,
 	      cb               => sub {
-		                      my($instance, $revision_id) = @_;
+		                      my ($instance, $revision_id) = @_;
 				      compare_file_with_previous($instance,
 								 $revision_id);
 				  },
@@ -413,7 +413,7 @@ sub annotation_textview_populate_popup_cb($$$)
 	     \&annotation_textview_popup_menu_item_cb,
 	     {instance         => $instance,
 	      cb               => sub {
-		                      my($instance, $revision_id) = @_;
+		                      my ($instance, $revision_id) = @_;
 				      compare_revision_with_parent
 					  ($instance, $revision_id);
 				  },
@@ -446,7 +446,7 @@ sub annotation_textview_populate_popup_cb($$$)
 sub annotation_textview_popup_menu_item_cb($$)
 {
 
-    my($widget, $details) = @_;
+    my ($widget, $details) = @_;
 
     return if ($details->{instance}->{in_cb});
     local $details->{instance}->{in_cb} = 1;
@@ -501,12 +501,12 @@ sub annotation_textview_popup_menu_item_cb($$)
 sub compare_file_with_previous($$)
 {
 
-    my($instance, $revision_id) = @_;
+    my ($instance, $revision_id) = @_;
 
-    my(@chg_ancestors,
-       $file_name,
-       $old_file_name,
-       @parents);
+    my (@chg_ancestors,
+	$file_name,
+	$old_file_name,
+	@parents);
     my $wm = WindowManager->instance();
 
     # Remember that a warning is generated when one goes back beyond a file's
@@ -639,7 +639,7 @@ sub compare_file_with_previous($$)
 sub compare_revision_with_parent($$)
 {
 
-    my($instance, $revision_id) = @_;
+    my ($instance, $revision_id) = @_;
 
     my @parents;
     my $wm = WindowManager->instance();
@@ -735,7 +735,7 @@ sub get_annotation_window()
 	$instance->{window}->signal_connect
 	    ("delete_event",
 	     sub {
-		 my($widget, $event, $instance) = @_;
+		 my ($widget, $event, $instance) = @_;
 		 return TRUE if ($instance->{in_cb});
 		 local $instance->{in_cb} = 1;
 		 hide_find_text($instance->{annotation_textview});
@@ -763,8 +763,8 @@ sub get_annotation_window()
     }
     else
     {
-	my($height,
-	   $width);
+	my ($height,
+	    $width);
 	$instance->{in_cb} = 0;
 	local $instance->{in_cb} = 1;
 	($width, $height) = $instance->{window}->get_default_size();
@@ -805,13 +805,13 @@ sub get_annotation_window()
 sub mtn_annotate($$$$)
 {
 
-    my($list, $mtn_db, $revision_id, $file_name) = @_;
+    my ($list, $mtn_db, $revision_id, $file_name) = @_;
 
-    my($buffer,
-       @cmd,
-       $cwd,
-       $exception,
-       $ret_val);
+    my ($buffer,
+	@cmd,
+	$cwd,
+	$exception,
+	$ret_val);
 
     # Run mtn annotate in the root directory so as to avoid any workspace
     # conflicts.

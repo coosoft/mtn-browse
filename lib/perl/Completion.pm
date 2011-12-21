@@ -94,10 +94,10 @@ sub new($;$)
     my $class = (ref($_[0]) ne "") ? ref($_[0]) : $_[0];
     my $list = $_[1];
 
-    my($char,
-       $item,
-       $level,
-       $this);
+    my ($char,
+	$item,
+	$level,
+	$this);
 
     $this = {tree => {}};
 
@@ -156,7 +156,7 @@ sub new($;$)
 sub get_completion($$$$)
 {
 
-    my($this, $value, $result, $complete) = @_;
+    my ($this, $value, $result, $complete) = @_;
 
     my $match = 1;
 
@@ -167,8 +167,8 @@ sub get_completion($$$$)
     if (scalar(%{$this->{tree}}))
     {
 
-	my($char,
-	   $level);
+	my ($char,
+	    $level);
 
 	# Lookup value, stopping when it becomes ambiguous, we get no match or
 	# we get to the end of $value.

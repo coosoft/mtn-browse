@@ -114,7 +114,7 @@ sub validate_query($$);
 sub display_find_files($$$$$)
 {
 
-    my($mtn, $tag, $revision_id, $manifest, $starting_point) = @_;
+    my ($mtn, $tag, $revision_id, $manifest, $starting_point) = @_;
 
     my $instance;
 
@@ -155,7 +155,7 @@ sub display_find_files($$$$$)
 sub date_range_checkbutton_toggled_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -211,7 +211,7 @@ sub date_range_checkbutton_toggled_cb($$)
 sub between_range_radiobutton_toggled_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -262,7 +262,7 @@ sub between_range_radiobutton_toggled_cb($$)
 sub size_comparitor_combobox_changed_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -304,21 +304,21 @@ sub size_comparitor_combobox_changed_cb($$)
 sub search_files_button_clicked_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($contents_re,
-       $counter,
-       $file_glob_re,
-       $file_prefix_length,
-       $manifest,
-       $matches,
-       $name,
-       $period,
-       $query,
-       $size);
+    my ($contents_re,
+	$counter,
+	$file_glob_re,
+	$file_prefix_length,
+	$manifest,
+	$matches,
+	$name,
+	$period,
+	$query,
+	$size);
     my $wm = WindowManager->instance();
 
     # Get the query from the GUI and validate it.
@@ -428,8 +428,8 @@ sub search_files_button_clicked_cb($$)
     if (exists($query->{period}))
     {
 
-	my($time,
-	   @time_val);
+	my ($time,
+	    @time_val);
 
 	# Please note:
 	#     1) Values from localtime etc start from 0.
@@ -454,9 +454,9 @@ sub search_files_button_clicked_cb($$)
 	}
 	elsif ($query->{period_units} == DURATION_MONTHS)
 	{
-	    my($month,
-	       $query_months,
-	       $year);
+	    my ($month,
+		$query_months,
+		$year);
 	    $query_months = $query->{period};
 	    ($month, $year) = (@time_val)[4, 5];
 	    if ($query_months > 12)
@@ -537,8 +537,8 @@ sub search_files_button_clicked_cb($$)
 	    if (exists($query->{older_date}) || exists($query->{period})
 		|| $query->{modified_by} ne "")
 	    {
-		my($author,
-		   $last_update);
+		my ($author,
+		    $last_update);
 		if (! exists($entry->{author}))
 		{
 		    cache_extra_file_info($instance->{mtn},
@@ -681,24 +681,24 @@ sub search_files_button_clicked_cb($$)
 sub results_treeselection_changed_cb($$)
 {
 
-    my($widget, $instance) = @_;
+    my ($widget, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my($author,
-       $file_id,
-       $last_changed_revision,
-       $last_update);
+    my ($author,
+	$file_id,
+	$last_changed_revision,
+	$last_update);
 
     # Get the manifest entry details for the item that was selected and then
     # display them if appropriate.
 
     if ($widget->count_selected_rows() > 0)
     {
-	my($iter,
-	   $manifest_entry,
-	   $model);
+	my ($iter,
+	    $manifest_entry,
+	    $model);
 	($model, $iter) = $widget->get_selected();
 	$manifest_entry = $model->get($iter, RLS_MANIFEST_ENTRY_COLUMN);
 	if ($manifest_entry->{type} eq "file")
@@ -751,7 +751,7 @@ sub results_treeselection_changed_cb($$)
 sub results_treeview_row_activated_cb($$$$)
 {
 
-    my($widget, $tree_path, $tree_view_column, $instance) = @_;
+    my ($widget, $tree_path, $tree_view_column, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
@@ -762,15 +762,15 @@ sub results_treeview_row_activated_cb($$$$)
 
     $widget->get_selection()->selected_foreach
 	(sub {
-	     my($model, $path, $iter) = @_;
+	     my ($model, $path, $iter) = @_;
 	     $manifest_entry = $model->get($iter, RLS_MANIFEST_ENTRY_COLUMN);
 	 });
 
     if (defined($manifest_entry))
     {
 
-	my($branch,
-	   @certs_list);
+	my ($branch,
+	    @certs_list);
 
 	# First find out what branch the revision is on (take the first one).
 
@@ -790,8 +790,8 @@ sub results_treeview_row_activated_cb($$$$)
 
 	if ($manifest_entry->{type} eq "file")
 	{
-	    my($dir,
-	       $file);
+	    my ($dir,
+		$file);
 	    $dir = dirname($manifest_entry->{name});
 	    $dir = "" if ($dir eq ".");
 	    $file = basename($manifest_entry->{name});
@@ -839,8 +839,8 @@ sub get_find_files_window()
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my($renderer,
-	   $tv_column);
+	my ($renderer,
+	    $tv_column);
 
 	$instance = {};
 	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
@@ -934,7 +934,7 @@ sub get_find_files_window()
 	$instance->{window}->signal_connect
 	    ("delete_event",
 	     sub {
-		 my($widget, $event, $instance) = @_;
+		 my ($widget, $event, $instance) = @_;
 		 return TRUE if ($instance->{in_cb});
 		 local $instance->{in_cb} = 1;
 		 $widget->hide();
@@ -1015,8 +1015,8 @@ sub get_find_files_window()
     else
     {
 
-	my($height,
-	   $width);
+	my ($height,
+	    $width);
 
 	$instance->{in_cb} = 0;
 	local $instance->{in_cb} = 1;
@@ -1067,7 +1067,7 @@ sub get_find_files_window()
 sub validate_query($$)
 {
 
-    my($instance, $query) = @_;
+    my ($instance, $query) = @_;
 
     my $re_text;
     my $wm = WindowManager->instance();
@@ -1138,7 +1138,7 @@ sub validate_query($$)
 
     if (exists($query->{period}))
     {
-	my($month, $year) = (localtime())[4, 5];
+	my ($month, $year) = (localtime())[4, 5];
 	if ($query->{period_units} == DURATION_MONTHS
 	    && $query->{period} > ((($year - 70) * 12) + $month))
 	{

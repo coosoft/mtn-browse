@@ -68,13 +68,13 @@ use IO::File;
 
 {
 
-    my($globs_file,
-       $infile,
-       $input,
-       $lib_dir,
-       $mas_dir,
-       $outfile,
-       $prefix_dir);
+    my ($globs_file,
+	$infile,
+	$input,
+	$lib_dir,
+	$mas_dir,
+	$outfile,
+	$prefix_dir);
 
     print("Linux development in-place installer for mtn-browse\n\n");
 

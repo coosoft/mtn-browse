@@ -160,7 +160,7 @@ sub instance($)
 			["shift-mask"],
 			[],
 			sub {
-			    my($accel, $widget, $key_code, $modifier) = @_;
+			    my ($accel, $widget, $key_code, $modifier) = @_;
 			    my $entry;
 			    my $this = WindowManager->instance();
 			    return TRUE
@@ -255,7 +255,7 @@ sub cleanup($)
 sub manage($$$$;$)
 {
 
-    my($this, $instance, $type, $window, $grab_widget) = @_;
+    my ($this, $instance, $type, $window, $grab_widget) = @_;
 
     my $list;
 
@@ -312,7 +312,7 @@ sub manage($$$$;$)
 sub help_connect($$$$)
 {
 
-    my($this, $instance, $widget, $callback) = @_;
+    my ($this, $instance, $widget, $callback) = @_;
 
     $widget = "" if (! defined($widget));
 
@@ -350,7 +350,7 @@ sub help_connect($$$$)
 sub find_unused($$)
 {
 
-    my($this, $type) = @_;
+    my ($this, $type) = @_;
 
     foreach my $win_instance (@{$this->{managed_windows}})
     {
@@ -390,7 +390,7 @@ sub find_unused($$)
 sub cond_find($$&)
 {
 
-    my($this, $type, $predicate) = @_;
+    my ($this, $type, $predicate) = @_;
 
     foreach my $win_instance (@{$this->{managed_windows}})
     {
@@ -430,7 +430,7 @@ sub cond_find($$&)
 sub make_busy($$$;$)
 {
 
-    my($this, $instance, $busy, $exclude) = @_;
+    my ($this, $instance, $busy, $exclude) = @_;
 
     # When making things busy filter out keyboard and mouse button events
     # unless they relate to the grab widget (usually a `stop' button) or the
@@ -599,7 +599,7 @@ sub update_gui()
 sub allow_input($&)
 {
 
-    my($this, $code) = @_;
+    my ($this, $code) = @_;
 
     local $this->{allow_input} = 1;
 
@@ -627,7 +627,7 @@ sub allow_input($&)
 sub activate_context_sensitive_help($$)
 {
 
-    my($this, $activate) = @_;
+    my ($this, $activate) = @_;
 
     # Ignore duplicate calls.
 
@@ -741,7 +741,7 @@ sub activate_context_sensitive_help($$)
 sub display_window_help($$)
 {
 
-    my($this, $instance) = @_;
+    my ($this, $instance) = @_;
 
     my $entry = $this->find_record($instance);
 
@@ -804,7 +804,7 @@ sub reset_state($)
 sub window_is_busy($$)
 {
 
-    my($this, $window) = @_;
+    my ($this, $window) = @_;
 
     my $gdk_window = (ref($window) eq "Gtk2::Gdk::Window")
 	? $window : $window->window();
@@ -840,7 +840,7 @@ sub window_is_busy($$)
 sub find_record($$)
 {
 
-    my($this, $instance) = @_;
+    my ($this, $instance) = @_;
 
     foreach my $win_instance (@{$this->{managed_windows}})
     {
@@ -872,7 +872,7 @@ sub find_record($$)
 sub find_event_record($$)
 {
 
-    my($this, $event) = @_;
+    my ($this, $event) = @_;
 
     my $event_widget;
 
@@ -903,7 +903,7 @@ sub find_event_record($$)
 sub find_window_record($$)
 {
 
-    my($this, $window) = @_;
+    my ($this, $window) = @_;
 
     foreach my $win_instance (@{$this->{managed_windows}})
     {
@@ -961,7 +961,7 @@ sub head_of_busy_state_stack($)
 sub find_gdk_windows($$)
 {
 
-    my($widget, $list) = @_;
+    my ($widget, $list) = @_;
 
     if ($widget->isa("Gtk2::Window"))
     {
@@ -1002,8 +1002,8 @@ sub find_top_level_window($)
 
     my $widget = $_[0];
 
-    my($current,
-       $parent);
+    my ($current,
+	$parent);
 
     $current = $widget;
     while (defined($parent = $current->get_parent()))
@@ -1034,7 +1034,7 @@ sub find_top_level_window($)
 sub busy_event_filter($$)
 {
 
-    my($event, $client_data) = @_;
+    my ($event, $client_data) = @_;
 
     my $event_widget   = Gtk2->get_event_widget($event);
     my $exclude_window = $client_data->{exclude_window};
@@ -1139,7 +1139,7 @@ sub busy_event_filter($$)
 sub help_event_filter($$)
 {
 
-    my($event, $this) = @_;
+    my ($event, $this) = @_;
 
     my $type = $event->type();
 
@@ -1151,11 +1151,11 @@ sub help_event_filter($$)
     if ($type eq "key-press")
     {
 
-	my($consumed_modifiers,
-	   $entry,
-	   $keymap,
-	   $keyval,
-	   $state);
+	my ($consumed_modifiers,
+	    $entry,
+	    $keymap,
+	    $keyval,
+	    $state);
 
 	# Ignore the state of the caps-lock key.
 
@@ -1199,9 +1199,9 @@ sub help_event_filter($$)
 	    if (defined($event_widget = Gtk2->get_event_widget($event)))
 	    {
 
-		my($entry,
-		   $help_cb,
-		   $widget);
+		my ($entry,
+		    $help_cb,
+		    $widget);
 
 		# Find the active window for the event. Ignore the event if
 		# there isn't an active window or if it is busy.

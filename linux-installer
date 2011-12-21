@@ -74,31 +74,31 @@ use Installer;
 
 {
 
-    my($confirm,
-       $dep_level,
-       $dest_dir,
-       $dir,
-       $file,
-       $file_comparison,
-       $globs_file,
-       $help,
-       $html_viewer,
-       $infile,
-       $input,
-       $installer,
-       $interactive,
-       $lib_dest_dir,
-       $lib_dir,
-       $lib_prefix_dir,
-       $locale,
-       $man,
-       $mas_path,
-       $outfile,
-       $parser,
-       $prefix_dir,
-       $prefix_dest_dir,
-       $quiet,
-       $use_dists_mas_lib);
+    my ($confirm,
+	$dep_level,
+	$dest_dir,
+	$dir,
+	$file,
+	$file_comparison,
+	$globs_file,
+	$help,
+	$html_viewer,
+	$infile,
+	$input,
+	$installer,
+	$interactive,
+	$lib_dest_dir,
+	$lib_dir,
+	$lib_prefix_dir,
+	$locale,
+	$man,
+	$mas_path,
+	$outfile,
+	$parser,
+	$prefix_dir,
+	$prefix_dest_dir,
+	$quiet,
+	$use_dists_mas_lib);
 
     # Assign defaults.
 
@@ -139,9 +139,9 @@ use Installer;
     if ($dep_level > 0)
     {
 
-	my(%deps,
-	   $err_msg,
-	   $met);
+	my (%deps,
+	    $err_msg,
+	    $met);
 
 	# Build up the dependency list.
 
@@ -479,12 +479,12 @@ use Installer;
     while (defined($locale = $dir->read()))
     {
 	next if ($locale eq "." || $locale eq "..");
-	my($figures_dir,
-	   $img_file);
+	my ($figures_dir,
+	    $img_file);
 	if ($html_viewer ne "")
 	{
-	    my($html_file,
-	       $subdir);
+	    my ($html_file,
+		$subdir);
 	    die("IO::Dir failed with $!")
 		if (! defined($subdir =
 			      IO::Dir->new("locale/help/${locale}")));
