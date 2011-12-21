@@ -2802,10 +2802,20 @@ Date (&lt;=)
 Date (&gt;)
 Head Revision
 Identifier
+Key
 Logical And
+Logical Or
 Message
 Parent
-Tag</property>
+Tag
+ancestors()
+children()
+descendants()
+difference()
+lca()
+max()
+parents()
+pick()</property>
 				  <signal name="changed" handler="term_combobox_changed_cb" last_modification_time="Sat, 19 Jan 2008 16:11:23 GMT"/>
 				</widget>
 			      </child>

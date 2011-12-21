@@ -2324,6 +2324,7 @@ sub external_diffs($$$$$$)
 	    ($parent,
 	     ["modal"],
 	     "warning",
+	     "close",
 	     __x("Cannot generate temporary file name:\n{error_message}.",
 		 error_message => $!));
 	$wm->allow_input(sub { $dialog->run(); });

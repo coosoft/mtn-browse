@@ -346,9 +346,17 @@ sub populate_button_clicked_cb($$)
     {
 	$to_insert = "i:" . (($arg eq "") ? __("<Revision Id>") : $arg);
     }
+    elsif ($selector eq __("Key"))
+    {
+	$to_insert = "k:" . (($arg eq "") ? __("<Signing Key>") : $arg);
+    }
     elsif ($selector eq __("Logical And"))
     {
 	$to_insert = "/";
+    }
+    elsif ($selector eq __("Logical Or"))
+    {
+	$to_insert = "|";
     }
     elsif ($selector eq __("Message"))
     {
@@ -361,6 +369,44 @@ sub populate_button_clicked_cb($$)
     elsif ($selector eq __("Tag"))
     {
 	$to_insert = "t:" . (($arg eq "") ? __("<Tag Name>") : $arg);
+    }
+    elsif ($selector eq __("ancestors()"))
+    {
+	$to_insert =
+	    "ancestors(" . (($arg eq "") ? __("<Selector>") : $arg) . ")";
+    }
+    elsif ($selector eq __("children()"))
+    {
+	$to_insert =
+	    "children(" . (($arg eq "") ? __("<Selector>") : $arg) . ")";
+    }
+    elsif ($selector eq __("descendants()"))
+    {
+	$to_insert =
+	    "descendants(" . (($arg eq "") ? __("<Selector>") : $arg) . ")";
+    }
+    elsif ($selector eq __("difference()"))
+    {
+	$to_insert = "difference("
+	    . (($arg eq "") ? __("<Selector 1>;<Selector 2>") : $arg) . ")";
+    }
+    elsif ($selector eq __("lca()"))
+    {
+	$to_insert = "lca("
+	    . (($arg eq "") ? __("<Selector 1>;<Selector 2>") : $arg) . ")";
+    }
+    elsif ($selector eq __("max()"))
+    {
+	$to_insert = "max(" . (($arg eq "") ? __("<Selector>") : $arg) . ")";
+    }
+    elsif ($selector eq __("parents()"))
+    {
+	$to_insert =
+	    "parents(" . (($arg eq "") ? __("<Selector>") : $arg) . ")";
+    }
+    elsif ($selector eq __("pick()"))
+    {
+	$to_insert = "pick(" . (($arg eq "") ? __("<Selector>") : $arg) . ")";
     }
 
     $pos =
@@ -650,10 +696,18 @@ sub get_advanced_find_window($)
 		 my($model, $path, $iter) = @_;
 		 my $value = $model->get($iter, 0);
 		 push(@delete_list, $index)
-		     if (($value eq __("Message")
-			  && ! $instance->{mtn}->supports(MTN_M_SELECTOR))
+		     if (($value eq __("Key")
+			  && ! $instance->{mtn}->supports(MTN_K_SELECTOR))
+			 || ($value eq __("Logical Or")
+			     && ! $instance->{mtn}->supports
+			         (MTN_SELECTOR_OR_OPERATOR))
+			 || ($value eq __("Message")
+			     && ! $instance->{mtn}->supports(MTN_M_SELECTOR))
 			 || ($value eq __("Parent")
-			     && ! $instance->{mtn}->supports(MTN_P_SELECTOR)));
+			     && ! $instance->{mtn}->supports(MTN_P_SELECTOR))
+			 || ($value =~ m/^[a-z0-9_]+\(\)$/
+			     && ! $instance->{mtn}->supports
+			         (MTN_SELECTOR_FUNCTIONS)));
 		 ++ $index;
 		 return FALSE;
 	     });
