@@ -6,7 +6,7 @@
 
     <!ENTITY APP "Monotone Browser">
     <!ENTITY APP-CMD "mtn-browse">
-    <!ENTITY VERSION "0.03">
+    <!ENTITY VERSION "0.04">
 
   ]
 >
@@ -19,8 +19,8 @@ Details About Taking Screen Shots
 =================================
 
 The screenshots were taken using Gimp using either the window or
-full-screen-shot options. The desktop was KDE 3.3, using the Plastik widget and
-window decoration style. The colour scheme was KDE 2.
+full-screen-shot options. The desktop was Gnome 2.14, using the Clearlooks
+theme. The colour scheme was the default blue.
 
 Use any text editor to edit this document, but I used xemacs as it has an XML
 mode that allows one to insert the correct tokens.
@@ -118,8 +118,16 @@ GNOME or DocBook.
         </revdescription>
       </revision>
       <revision>
-        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <revnumber>&APP; Manual V0.03</revnumber>
         <date>23 May 2010</date>
+        <revdescription>
+          <para role="author">Anthony Cooper</para>
+          <para role="publisher">CooSoft</para>
+        </revdescription>
+      </revision>
+      <revision>
+        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <date>04 January 2011</date>
         <revdescription>
           <para role="author">Anthony Cooper</para>
           <para role="publisher">CooSoft</para>
@@ -687,7 +695,7 @@ GNOME or DocBook.
 	</screenshot>
       </figure>
 
-      <para>Of course one could simply use the <guilabel>Revisions</guilabel> combobox in the above dialog window, but in most cases people would not know the id of the revision that they are after.</para>
+      <para>Of course one could simply use the <guilabel>Revisions</guilabel> combobox in the above dialog window, but in most cases one would not know the id of the revision that you are after.</para>
 
       <para>Once you have completed your simple query, a list of matching revisions will be displayed in the <guilabel>Revisions</guilabel> panel. When one of these revisions is selected, its full change log is displayed in the <guilabel>Details</guilabel> panel on the right. Left clicking on the <guilabel>OK</guilabel> button will dismiss the <guilabel>Advanced Find</guilabel> dialog window and load the selected revision into the parent <guilabel>Monotone Browser</guilabel> window.</para>
 
@@ -786,7 +794,13 @@ GNOME or DocBook.
               <para><guilabel>Identifier</guilabel> - This selector allows one to select revisions based upon their revision id. This is Monotone's <literal>i:</literal> selector. It takes one parameter, the id of a revision, in the form of a hexadecimal string. The revision id need not be complete.</para>
             </listitem>
             <listitem>
-              <para><guilabel>Logical And</guilabel> - This is a logical AND operator. Currently Monotone does not directly support an OR operator. This is Monotone's <literal>/</literal> selector operator. It takes no parameters but instead combines two other selectors together.</para>
+              <para><guilabel>Key</guilabel> - This selector allows one to select revisions based upon whether at least one of their certificates has been signed by the specified key. This is Monotone's <literal>k:</literal> selector. It takes one parameter, the key, in the form of either its given name, its local name or its full hexadecimal hash id.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>Logical And</guilabel> - This is a logical AND operator. This is Monotone's <literal>/</literal> selector operator. It takes no parameters but instead combines two other selectors together.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>Logical Or</guilabel> - This is a logical OR operator. This is Monotone's <literal>|</literal> selector operator. It takes no parameters but instead combines two other selectors together.</para>
             </listitem>
             <listitem>
               <para><guilabel>Message</guilabel> - This selector allows one to select revisions based upon whether their <literal>changelog</literal> or <literal>comment</literal> certificates contain certain text phrases. This is Monotone's <literal>m:</literal> selector. It takes one parameter, the text that is to be matched, with <literal>*</literal> being a wildcard character.</para>
@@ -796,6 +810,30 @@ GNOME or DocBook.
             </listitem>
             <listitem>
               <para><guilabel>Tag</guilabel> - This selector allows one to select revisions based upon whether they are tagged with a particular tag. This is Monotone's <literal>t:</literal> selector. It takes one parameter, the name of a tag.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>ancestors()</guilabel> - This composite selector allows one to select all revisions that are ancestors of the revisions that match the specified selector. It takes one parameter, a revision selector.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>children()</guilabel> - This composite selector allows one to select all revisions that are children of the revisions that match the specified selector. It takes one parameter, a revision selector.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>descendants()</guilabel> - This composite selector allows one to select all revisions that are descendants of the revisions that match the specified selector. It takes one parameter, a revision selector.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>difference()</guilabel> - This composite selector allows one to select all revisions that match the first selector but not the second. It takes two parameters, both of which are revision selectors.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>lca()</guilabel> - This composite selector allows one to select the revision that is the least or youngest common ancestor of the revisions that match the two selectors. This composite selector would typically be used to find either the last propagation point between two branches or the original branch point if no propagation had been done yet. It takes two parameters, both of which are revision selectors.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>max()</guilabel> - This composite selector allows one to select all revisions that match the specified selector but are not themselves ancestors of other revisions that match that same selector. In effect this composite selector selects the youngest revision on each branch or fork in the revision history specified by the selector. It takes one parameter, a revision selector.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>parents()</guilabel> - This composite selector allows one to select all revisions that are parents of the revisions that match the specified selector. It takes one parameter, a revision selector.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>pick()</guilabel> - This composite selector allows one to select a single revision from the revisions that match the specified selector. One cannot determine the revision it picks, but it would typically be used when the operation concerned insists on having a single revision (for example, attempting to select the head revision on a branch that may have more than one head due to a divergence). It takes one parameter, a revision selector.</para>
             </listitem>
           </itemizedlist>
 
@@ -1185,6 +1223,10 @@ GNOME or DocBook.
               <row valign="top">
                 <entry><para><guilabel>Full Change Log</guilabel></para></entry>
                 <entry><para>Displays a <guilabel>Change Log</guilabel> window containing the full change log for that revision. In addition to the summary information already displayed, a full change log also contains the list of files changed and the parent and manifest ids.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><guilabel>Restrict to</guilabel></para></entry>
+                <entry><para>Allows one to restrict the file or revision history to the selected branch. Initially the entire history, irrespective of branch, is displayed.</para></entry>
               </row>
               <row valign="top">
                 <entry><para><inlinegraphic fileref="figures/stop-button.png" format="png" valign="middle"/></para></entry>
