@@ -48,8 +48,12 @@ use warnings;
 
 # ***** GLOBAL DATA DECLARATIONS *****
 
-# Constants for the columns within the manifest liststore widget.
+# Constants for the columns within the advanced find liststore widget.
 
+use constant AFLS_COLUMN_TYPES       => ("Glib::String",
+					 "Glib::String",
+					 "Glib::String",
+					 "Glib::String");
 use constant AFLS_REVISION_ID_COLUMN => 0;
 use constant AFLS_BRANCH_COLUMN      => 1;
 use constant AFLS_DATE_COLUMN        => 2;
@@ -720,10 +724,7 @@ sub get_advanced_find_window($)
 	# Setup the revisions list browser.
 
 	$instance->{revisions_liststore} =
-	    Gtk2::ListStore->new("Glib::String",
-				 "Glib::String",
-				 "Glib::String",
-				 "Glib::String");
+	    Gtk2::ListStore->new(AFLS_COLUMN_TYPES);
 	$instance->{revisions_treeview}->
 	    set_model($instance->{revisions_liststore});
 
@@ -845,6 +846,11 @@ sub get_advanced_find_window($)
 	$instance->{revision_combo_details}->{preset} = 0;
 	$instance->{appbar}->set_progress_percentage(0);
 	$instance->{appbar}->clear_stack();
+	$instance->{revisions_liststore}->clear();
+	$instance->{revisions_liststore} =
+	    Gtk2::ListStore->new(AFLS_COLUMN_TYPES);
+	$instance->{revisions_treeview}->
+	    set_model($instance->{revisions_liststore});
 	$instance->{revisions_treeview}->
 	    set_search_column(AFLS_REVISION_ID_COLUMN);
 	&{$instance->{update_handler}}($instance, NEW_FIND);

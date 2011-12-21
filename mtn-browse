@@ -45,6 +45,7 @@ require 5.008005;
 BEGIN
 {
     use constant APPLICATION_NAME    => "mtn-browse";
+    use constant APPLICATION_VERSION => 0.71;
     use constant FILE_COMPARE_CMD    => "@INST:FILE_COMPARE_CMD@";
     use constant HTML_VIEWER_CMD     => "@INST:HTML_VIEWER_CMD@";
     use constant LIB_DIR             => "@INST:LIB_DIR@";
@@ -114,6 +115,11 @@ use WindowManager;
 
 # Constants for the columns within the manifest liststore widget.
 
+use constant MLS_COLUMN_TYPES          => ("Glib::String",
+					   "Glib::String",
+					   "Glib::String",
+					   "Glib::String",
+					   "Glib::Scalar");
 use constant MLS_ICON_COLUMN           => 0;
 use constant MLS_NAME_COLUMN           => 1;
 use constant MLS_DATE_COLUMN           => 2;
@@ -2101,11 +2107,8 @@ sub get_browser_window(;$$$$$)
 
 	# Setup the tree view manifest file browser.
 
-	$browser->{manifest_liststore} = Gtk2::ListStore->new("Glib::String",
-							      "Glib::String",
-							      "Glib::String",
-							      "Glib::String",
-							      "Glib::Scalar");
+	$browser->{manifest_liststore} =
+	    Gtk2::ListStore->new(MLS_COLUMN_TYPES);
 	$browser->{manifest_browser_treeview}->
 	    set_model($browser->{manifest_liststore});
 
@@ -2114,8 +2117,6 @@ sub get_browser_window(;$$$$$)
 	$image->show_all();
 	$tv_column->set_widget($image);
 	$tv_column->set_resizable(FALSE);
-	$tv_column->set_sizing("fixed");
-	$tv_column->set_fixed_width(25);
 	$tv_column->set_sort_column_id(MLS_ICON_COLUMN);
 	$renderer = Gtk2::CellRendererPixbuf->new();
 	$tv_column->pack_start($renderer, TRUE);
@@ -2280,6 +2281,11 @@ sub get_browser_window(;$$$$$)
 	$browser->{directory_combo_details}->{preset} = 0;
 	$browser->{file_being_viewed_preset_value} = "";
 	$browser->{file_displayed_id} = "";
+	$browser->{manifest_liststore}->clear();
+	$browser->{manifest_liststore} =
+	    Gtk2::ListStore->new(MLS_COLUMN_TYPES);
+	$browser->{manifest_browser_treeview}->
+	    set_model($browser->{manifest_liststore});
 	$browser->{manifest_browser_treeview}->
 	    set_search_column(MLS_NAME_COLUMN);
 	if ($user_preferences->{show_line_numbers})
