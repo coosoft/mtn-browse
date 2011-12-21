@@ -742,7 +742,8 @@ sub display_revision_comparison($$$;$)
 		{
 		    $name = $1;
 		}
-		elsif ($lines[$i + 1] =~ m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
+		elsif (($i + 1) < scalar(@lines)
+		       && $lines[$i + 1] =~ m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
 		{
 		    $name = $1;
 		}
@@ -902,8 +903,9 @@ sub display_revision_comparison($$$;$)
 		{
 		    $name = $1;
 		}
-		elsif ($instance->{diff_output}->[$i + 1] =~
-		       m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
+		elsif (($i + 1) < scalar(@{$instance->{diff_output}})
+		       && $instance->{diff_output}->[$i + 1] =~
+		           m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
 		{
 		    $name = $1;
 		}
@@ -940,6 +942,12 @@ sub display_revision_comparison($$$;$)
 		    $is_binary = 1;
 		    $file_id_1 = $file_id_2 = "";
 		}
+
+		# Print out the separator line that we previously skipped over.
+
+		$instance->{comparison_buffer}->insert
+		    ($instance->{comparison_buffer}->get_end_iter(),
+		     $instance->{diff_output}->[$i - 1] . "\n");
 
 		# Print out the details for the first file.
 
