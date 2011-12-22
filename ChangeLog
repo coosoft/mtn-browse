@@ -1,6 +1,6 @@
 Revision history for mtn-browse.
 
-0.72  Tue Jan 04 19:09:00 2011 Anthony Cooper <support@coosoft.plus.com>
+0.72  Sun Feb 20 10:40:00 2011 Anthony Cooper <support@coosoft.plus.com>
 	- Implemented the `Restrict to' combobox feature in the history window
 	  so that a user can restrict a revision/file history to a selected
 	  branch.
@@ -24,16 +24,24 @@ Revision history for mtn-browse.
 	  listing.
 	- Re-instated the `==========' style file separators when displaying
 	  non-colour highlighted, i.e. plain, revision difference listings.
+	- Changed the history report generator routine such that if the user
+	  should truncate the history gathering process that this is reflected
+	  if he should change branches and then switch back to `All Branches'.
 	- Icon column in treeview is now allowed to choose its own size.
 	- Corrected a mistake with one of the message dialogs where I didn't
 	  pass the correct number of parameters.
+	- Now use the OO style calling convention for IO handle style objects
+	  rather than the functional style that was used in some places.
 	- Reformatted my statements to be more consistent with other statements
 	  rather than operators.
+	- Cleaned up a few clumsy statements and comments.
 	- Updated the built-in help to document the new selectors introduced in
 	  Monotone version 0.99.1 and the new `Restricted to' comboxbox on the
 	  history window.
 	- Updated all of the screenshot style images to update them to Gnome's
 	  Clearlooks blue theme.
+	- Updated the POT file in preparation for translation updates.
+	- Updated German translation.
 
 0.71  Wed Aug 18 09:57:00 2010 Anthony Cooper <support@coosoft.plus.com>
 	- Updated to take into account the changes in diff output made in
