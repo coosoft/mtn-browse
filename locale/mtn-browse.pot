@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mtn-browse 0.1\n"
 "Report-Msgid-Bugs-To: support@coosoft.plus.com\n"
-"POT-Creation-Date: 2011-01-04 19:31+0000\n"
+"POT-Creation-Date: 2011-01-24 23:20+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -48,7 +48,7 @@ msgstr ""
 msgid "Connecting to server `{server}'"
 msgstr ""
 
-#: mtn-browse:606 mtn-browse:3677 lib/perl/Common.pm:1378
+#: mtn-browse:606 mtn-browse:3677 lib/perl/Common.pm:1377
 #: lib/perl/Preferences.pm:273
 msgid "Your preferences could not be saved:\n"
 msgstr ""
@@ -81,14 +81,14 @@ msgstr ""
 msgid "Populating directory list"
 msgstr ""
 
-#: mtn-browse:1491 lib/perl/History.pm:2456
+#: mtn-browse:1491 lib/perl/History.pm:2464
 #, perl-brace-format
 msgid ""
 "Cannot generate temporary file name:\n"
 "{error_message}."
 msgstr ""
 
-#: mtn-browse:1507 lib/perl/Common.pm:695 lib/perl/History.pm:2473
+#: mtn-browse:1507 lib/perl/Common.pm:694 lib/perl/History.pm:2481
 #, perl-brace-format
 msgid "{error_message}."
 msgstr ""
@@ -203,7 +203,7 @@ msgstr ""
 msgid "Fetching branch list"
 msgstr ""
 
-#: mtn-browse:2646 lib/perl/AdvancedFind.pm:942 lib/perl/History.pm:1758
+#: mtn-browse:2646 lib/perl/AdvancedFind.pm:942 lib/perl/History.pm:1766
 msgid "Populating branch list"
 msgstr ""
 
@@ -680,7 +680,7 @@ msgid ""
 "<b><i>{error_message}</b></i>"
 msgstr ""
 
-#: lib/perl/Common.pm:316
+#: lib/perl/Common.pm:315
 #, perl-brace-format
 msgid ""
 "The {name} subprocess failed with an exit status\n"
@@ -688,55 +688,55 @@ msgid ""
 "<b><i>{error_message}</i></b>"
 msgstr ""
 
-#: lib/perl/Common.pm:337
+#: lib/perl/Common.pm:336
 #, perl-brace-format
 msgid "The {name} subprocess was terminated by signal {number}."
 msgstr ""
 
-#: lib/perl/Common.pm:389
+#: lib/perl/Common.pm:388
 #, perl-brace-format
 msgid ""
 "waitpid failed with:\n"
 "<b><i>{error_message}</i></b>"
 msgstr ""
 
-#: lib/perl/Common.pm:513
+#: lib/perl/Common.pm:512
 msgid "Open Database"
 msgstr ""
 
-#: lib/perl/Common.pm:574
+#: lib/perl/Common.pm:573
 #, perl-brace-format
 msgid ""
 "There is a problem opening the database, the details are:\n"
 "<b><i>{error_message}</i></b>"
 msgstr ""
 
-#: lib/perl/Common.pm:646
+#: lib/perl/Common.pm:645
 msgid "Save As"
 msgstr ""
 
-#: lib/perl/Common.pm:677
+#: lib/perl/Common.pm:676
 msgid ""
 "File already exists.\n"
 "Do you want to replace it?"
 msgstr ""
 
-#: lib/perl/Common.pm:678
+#: lib/perl/Common.pm:677
 msgid "Confirm"
 msgstr ""
 
-#: lib/perl/Common.pm:789
+#: lib/perl/Common.pm:788
 msgid "Select As Search Column"
 msgstr ""
 
-#: lib/perl/Common.pm:1302
+#: lib/perl/Common.pm:1301
 #, perl-brace-format
 msgid ""
 "The program `{program_name}' cannot be found.\n"
 "Is it installed?"
 msgstr ""
 
-#: lib/perl/Common.pm:1460
+#: lib/perl/Common.pm:1459
 msgid ""
 "The requested help section\n"
 "cannot be found or is not known."
@@ -954,62 +954,62 @@ msgstr ""
 msgid "unified_diff.patch"
 msgstr ""
 
-#: lib/perl/History.pm:1765 lib/perl/History.pm:1902 lib/perl/History.pm:1932
+#: lib/perl/History.pm:1773 lib/perl/History.pm:1910 lib/perl/History.pm:1940
 msgid "All Branches"
 msgstr ""
 
-#: lib/perl/History.pm:1914 lib/perl/History.pm:1916 lib/perl/History.pm:1918
+#: lib/perl/History.pm:1922 lib/perl/History.pm:1924 lib/perl/History.pm:1926
 msgid "mtnb-lachc-history-buttons"
 msgstr ""
 
-#: lib/perl/History.pm:1920
+#: lib/perl/History.pm:1928
 msgid "mtnb-lachc-the-revision-and-file-history-windows"
 msgstr ""
 
-#: lib/perl/History.pm:2161 lib/perl/History.pm:2164 lib/perl/History.pm:2167
+#: lib/perl/History.pm:2169 lib/perl/History.pm:2172 lib/perl/History.pm:2175
 msgid "mtnb-lachc-compare-arbitrary-revisions-buttons"
 msgstr ""
 
-#: lib/perl/History.pm:2170
+#: lib/perl/History.pm:2178
 msgid "mtnb-lachc-the-compare-arbitrary-revisions-window"
 msgstr ""
 
-#: lib/perl/History.pm:2322 lib/perl/History.pm:2329
+#: lib/perl/History.pm:2330 lib/perl/History.pm:2337
 msgid "Revision Change Log"
 msgstr ""
 
-#: lib/perl/History.pm:2335
+#: lib/perl/History.pm:2343
 msgid "- Revision Change Log"
 msgstr ""
 
-#: lib/perl/History.pm:2337
+#: lib/perl/History.pm:2345
 msgid "+ Revision Change Log"
 msgstr ""
 
-#: lib/perl/History.pm:2349 lib/perl/History.pm:2351
+#: lib/perl/History.pm:2357 lib/perl/History.pm:2359
 msgid "mtnb-lachc-differences-buttons"
 msgstr ""
 
-#: lib/perl/History.pm:2353
+#: lib/perl/History.pm:2361
 msgid "mtnb-lachc-the-differences-window"
 msgstr ""
 
-#: lib/perl/History.pm:2431
+#: lib/perl/History.pm:2439
 msgid ""
 "Cannot call the external helper application\n"
 "to do the comparison as one has not been\n"
 "specified in the user's preferences."
 msgstr ""
 
-#: lib/perl/History.pm:2445
+#: lib/perl/History.pm:2453
 msgid "OLDER_"
 msgstr ""
 
-#: lib/perl/History.pm:2448
+#: lib/perl/History.pm:2456
 msgid "NEWER_"
 msgstr ""
 
-#: lib/perl/History.pm:2576
+#: lib/perl/History.pm:2584
 #, perl-brace-format
 msgid ""
 "Problem running mtn diff, got:\n"
