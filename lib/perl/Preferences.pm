@@ -1911,7 +1911,7 @@ sub initialise_mime_info_table()
     # Open the MIME globs file and then scan through reading in all the
     # entries.
 
-    return if (! defined($globs_file = IO::File->new(MIME_GLOB_FILE, "r")));
+    return unless (defined($globs_file = IO::File->new(MIME_GLOB_FILE, "r")));
 
     while (defined($line = $globs_file->getline()))
     {
@@ -1962,7 +1962,7 @@ sub initialise_mime_info_table()
     }
     $globs_file->close();
 
-    # Sort the results and convert file name globs into res.
+    # Sort the results.
 
     @table = sort({ $a->{name} cmp $b->{name} } @table);
     foreach my $entry (@table)

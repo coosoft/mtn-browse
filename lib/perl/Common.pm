@@ -234,13 +234,12 @@ sub run_command($$@)
     $total_bytes = 0;
     $$buffer = "";
     $watcher = Gtk2::Helper->add_watch
-	(fileno($fd_out), "in",
+	($fd_out->fileno(), "in",
 	 sub {
 	     my $bytes_read;
-	     if (($bytes_read = sysread($fd_out,
-					$$buffer,
-					32768,
-					$total_bytes))
+	     if (($bytes_read = $fd_out->sysread($$buffer,
+						 32768,
+						 $total_bytes))
 		     == 0
 		 || ! defined($bytes_read))
 	     {
@@ -267,12 +266,12 @@ sub run_command($$@)
     }
     else
     {
-	@err = readline($fd_err) unless ($$abort);
+	@err = $fd_err->getlines() unless ($$abort);
     }
 
-    close($fd_in);
-    close($fd_out);
-    close($fd_err);
+    $fd_in->close();
+    $fd_out->close();
+    $fd_err->close();
 
     # Reap the process and deal with any errors.
 
