@@ -1740,8 +1740,16 @@ sub generate_history_report($$)
     $instance->{appbar}->set_progress_percentage(1);
     $wm->update_gui();
 
-    set_label_value($instance->{numbers_value_label}, $counter)
-	if ($instance->{stop});
+    # If the user stopped the history generation process then update the
+    # counter and truncate the history list to reflect this if this is the
+    # initial history gathering stage (which can be determined by the absence
+    # of individual branch histories when we first entered this routine).
+
+    if ($instance->{stop})
+    {
+	set_label_value($instance->{numbers_value_label}, $counter);
+	@$history = splice(@$history, 0, $counter) if ($no_branch_history);
+    }
 
     # Make sure we are at the top.
 
