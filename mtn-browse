@@ -62,12 +62,14 @@ use warnings;
 
 use Cwd qw(getcwd);
 use Data::Dumper;
+use Digest::MD5 qw(md5);
 use Encode;
 use File::Basename;
 use File::Spec;
 use File::Temp qw(tempdir);
 use Glib qw(FALSE TRUE);
 use Gnome2;
+use Gnome2::Canvas;
 use Gnome2::VFS -init;
 use Gtk2 -init;
 use Gtk2::Gdk::Keysyms;
@@ -78,9 +80,10 @@ use Gtk2::SourceView;
 use IO::Dir;
 use IO::File;
 use IPC::Open3;
+use List::Util qw(max);
 use Locale::TextDomain (APPLICATION_NAME,
 			File::Spec->catfile(PREFIX_DIR, "share", "locale"));
-use POSIX qw(:errno_h :locale_h :sys_wait_h strftime);
+use POSIX qw(:errno_h :locale_h :sys_wait_h floor strftime);
 use Symbol qw(gensym);
 use Text::Tabs;
 use Time::Local;
@@ -103,10 +106,13 @@ use ChangeLog;
 use ComboAutoCompletion;
 use Common;
 use Completion;
+use DateRange;
 use FindFiles;
 use FindText;
 use History;
+use HistoryGraph;
 use ManageServerBookmarks;
+use ManageTagWeightings;
 use MultipleRevisions;
 use Preferences;
 use WindowManager;
@@ -126,13 +132,12 @@ use constant MLS_DATE_COLUMN           => 2;
 use constant MLS_AUTHOR_COLUMN         => 3;
 use constant MLS_MANIFEST_ENTRY_COLUMN => 4;
 
-# Constants for various program names and file paths.
+# Constant for user interface directory.
 
-use constant MONOTONE_VIZ => "monotone-viz";
-use constant UI_DIR       => File::Spec->catfile(PREFIX_DIR,
-						 "share",
-						 APPLICATION_NAME,
-						 "glade");
+use constant UI_DIR => File::Spec->catfile(PREFIX_DIR,
+					   "share",
+					   APPLICATION_NAME,
+					   "glade");
 
 # The type of window that is going to be managed by this module.
 
@@ -163,12 +168,12 @@ sub get_browser_window(;$$$$$);
 sub handle_advanced_find($);
 sub help_on_window_activate_cb($$);
 sub help_toolbutton_clicked_cb($$);
+sub history_graph_button_clicked_cb($$);
 sub home_page_activate_cb($$);
 sub main_window_delete_event_cb($$$);
 sub manage_server_bookmarks_activate_cb($$);
 sub manifest_browser_treeselection_changed_cb($$);
 sub manifest_browser_treeview_row_activated_cb($$$$);
-sub monotone_viz_button_clicked_cb($$);
 sub mtn_db_locked_handler($$);
 sub mtn_error_handler($$);
 sub new_blank_menu_item_clicked_cb($$);
@@ -176,6 +181,7 @@ sub new_toolbutton_clicked_cb($$);
 sub open_toolbutton_clicked_cb($$);
 sub preferences_toolbutton_clicked_cb($$);
 sub quit_activate_cb($$);
+sub quit_from_gtk2();
 sub reload_toolbutton_clicked_cb($$);
 sub revision_change_history_button_clicked_cb($$);
 sub revision_change_log_button_clicked_cb($$);
@@ -206,6 +212,8 @@ sub view_button_clicked_cb($$);
 
     my ($branch,
 	$browser,
+	$icon_factory,
+	$icon_set,
 	$mtn,
 	$revision_id);
 
@@ -221,6 +229,15 @@ sub view_button_clicked_cb($$);
     $tooltips = Gtk2::Tooltips->new();
     $line_image = Gtk2::Gdk::Pixbuf->
 	new_from_file(File::Spec->catfile(UI_DIR, "line.png"));
+    Gtk2::Stock->add({stock_id => "mtnb-weighting",
+		      label    => __("Weighting")});
+    $icon_set = Gtk2::IconSet->new_from_pixbuf
+	(Gtk2::Gdk::Pixbuf->new_from_file(File::Spec->catfile
+					  (UI_DIR, "weightings.png")));
+    $icon_factory = Gtk2::IconFactory->new();
+    $icon_factory->add("mtnb-weighting", $icon_set);
+    $icon_factory->add_default();
+    $icon_factory = $icon_set = undef;
 
     # Set up the default database locked and I/O wait handlers for the Monotone
     # class.
@@ -383,7 +400,13 @@ sub view_button_clicked_cb($$);
     else
     {
 	my $buffer;
-	if (run_command(\$buffer, undef, "mtn", "automate", "keys"))
+	if (run_command(\$buffer,
+			undef,
+			undef,
+			undef,
+			"mtn",
+			"automate",
+			"keys"))
 	{
 	    my $name;
 	    my @lines = split(/\n/, $buffer);
@@ -645,17 +668,7 @@ sub quit_activate_cb($$)
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
 
-    # Hide all the windows, close all the database handles and then exit Gtk2.
-
-    WindowManager->instance()->cond_find
-	(undef,
-	 sub {
-	     my $instance = $_[0];
-	     $instance->{window}->hide() if ($instance->{window}->mapped());
-	     $instance->{mtn} = undef if (exists($instance->{mtn}));
-	     return;
-	 });
-    Gtk2->main_quit();
+    quit_from_gtk2();
 
 }
 #
@@ -1103,6 +1116,95 @@ sub advanced_find_button_clicked_cb($$)
 #
 ##############################################################################
 #
+#   Routine      - history_graph_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the history
+#                  graph button in a main browser window.
+#
+#   Data         - $widget  : The widget object that received the signal.
+#                  $browser : The browser instance that is associated with
+#                             this widget.
+#
+##############################################################################
+
+
+
+sub history_graph_button_clicked_cb($$)
+{
+
+    my ($widget, $browser) = @_;
+
+    return if ($browser->{in_cb});
+    local $browser->{in_cb} = 1;
+
+    my (@branches,
+	$from_date,
+	$revision_id,
+	@revision_ids,
+	$to_date);
+
+    # Ok work out what revision we are going to graph and how far back we want
+    # to graph.
+
+    # Get the details that the user has selected in the browser window.
+
+    push(@branches, $browser->{branch_combo_details}->{value})
+	if ($browser->{branch_combo_details}->{complete});
+    get_revision_ids($browser, \@revision_ids)
+	if ($browser->{revision_combo_details}->{complete});
+
+    # If we don't have a revision but we do have a branch then use it's head
+    # revision, otherwise the user has explicitly selected a revision so make a
+    # note of this.
+
+    if (scalar(@revision_ids) == 0)
+    {
+	$browser->{mtn}->heads(\@revision_ids, $branches[0])
+	    if (scalar(@branches) > 0);
+    }
+    else
+    {
+	$revision_id = $revision_ids[0];
+    }
+
+    # Ok if we now have a revision then get its date and adjust that back by
+    # six months. Also if the user explicitly specified the revision then use
+    # its date as a to-date value so that we don't go and graph a whole load of
+    # revisions after the selected one.
+
+    if (scalar(@revision_ids) > 0)
+    {
+	my (@certs,
+	    @local_time);
+	$browser->{mtn}->certs(\@certs, $revision_ids[0]);
+	for my $cert (@certs)
+	{
+	    if ($cert->{name} eq "date")
+	    {
+		$from_date = $cert->{value};
+		$to_date = $from_date if (defined($revision_id));
+		last;
+	    }
+	}
+	@local_time = localtime(mtn_time_string_to_time($from_date));
+	adjust_time(\@local_time, 6, DURATION_MONTHS);
+	$from_date = strftime(MTN_TIME_STRING, @local_time);
+    }
+
+    # Now graph it. If the user explicitly specified the revision then we give
+    # it's date as the to-date along with the revision id so that it can be
+    # pre-selected in the graph.
+
+    display_history_graph($browser->{mtn},
+			  \@branches,
+			  $from_date,
+			  $to_date,
+			  $revision_id);
+
+}
+#
+##############################################################################
+#
 #   Routine      - revision_change_history_button_clicked_cb
 #
 #   Description  - Callback routine called when the user clicks on the
@@ -1162,62 +1264,6 @@ sub revision_change_log_button_clicked_cb($$)
 
     get_revision_ids($browser, \@revision_ids, \$tag);
     display_change_log($browser->{mtn}, $revision_ids[0], "", $tag);
-
-}
-#
-##############################################################################
-#
-#   Routine      - monotone_viz_button_clicked_cb
-#
-#   Description  - Callback routine called when the user clicks on the
-#                  monotone-viz button in a main browser window.
-#
-#   Data         - $widget  : The widget object that received the signal.
-#                  $browser : The browser instance that is associated with
-#                             this widget.
-#
-##############################################################################
-
-
-
-sub monotone_viz_button_clicked_cb($$)
-{
-
-    my ($widget, $browser) = @_;
-
-    return if ($browser->{in_cb});
-    local $browser->{in_cb} = 1;
-
-    my ($cmd,
-	$db_name,
-	@revision_ids);
-
-    # Make sure we have monotone-viz installed first.
-
-    return unless (program_valid(MONOTONE_VIZ, $browser->{window}));
-
-    # Build up the monotone-viz command, we need the database name and then
-    # optionally the branch and revision ids.
-
-    $cmd = MONOTONE_VIZ . " ";
-    if (! defined($db_name = $browser->{mtn}->get_db_name()))
-    {
-	$browser->{mtn}->get_option(\$db_name, "database");
-    }
-    $cmd .= $db_name;
-    if ($browser->{branch_combo_details}->{complete})
-    {
-	$cmd .= " " . $browser->{branch_combo_details}->{value};
-	if ($browser->{revision_combo_details}->{complete})
-	{
-	    get_revision_ids($browser, \@revision_ids);
-	    $cmd .= " " . $revision_ids[0];
-	}
-    }
-
-    # Launch Monotone-Viz.
-
-    system($cmd . " &");
 
 }
 #
@@ -1850,7 +1896,7 @@ sub main_window_delete_event_cb($$$)
     $browser->{file_being_viewed_preset_value} = "";
     &{$browser->{update_handler}}($browser, DATABASE_CHANGED);
 
-    Gtk2->main_quit() unless ($others_mapped);
+    quit_from_gtk2() unless ($others_mapped);
 
     return TRUE;
 
@@ -1941,7 +1987,7 @@ sub get_browser_window(;$$$$$)
 			    "branch_comboboxentry",
 			    "revision_comboboxentry",
 			    "tagged_checkbutton",
-			    "monotone_viz_button",
+			    "history_graph_button",
 			    "directory_comboboxentry",
 			    "directory_up_button",
 			    "find_files_button",
@@ -2583,7 +2629,7 @@ sub update_browser_state($$)
 		    ($browser->{database_name_value_label},
 		     __x("<Service> ({service_name})",
 			 service_name => $browser->{mtn}->get_service_name()));
-		$browser->{monotone_viz_button}->set_sensitive(FALSE);
+		$browser->{history_graph_button}->set_sensitive(FALSE);
 	    }
 	    else
 	    {
@@ -2599,7 +2645,7 @@ sub update_browser_state($$)
 				    __x("<WorkSpace> ({database_name})",
 					database_name => $db_name));
 		}
-		$browser->{monotone_viz_button}->set_sensitive(TRUE);
+		$browser->{history_graph_button}->set_sensitive(TRUE);
 	    }
 
 	    # Make sure that the branch comboboxentry has the focus and not the
@@ -3498,7 +3544,7 @@ sub display_file($$)
 		    $browser->{file_view_svbuffer}->set_language($lang);
 		}
 
-		# Load in the contents (ensuring UTF-8 encoding).
+		# Load in the contents (ensuring UTF-8 encoding if possible).
 
 		eval
 		{
@@ -3593,6 +3639,44 @@ sub determine_mime_type($$$$)
 	    }
 	}
     }
+
+}
+#
+##############################################################################
+#
+#   Routine      - quit_from_gtk2
+#
+#   Description  - Routine called when this application wants to quit from
+#                  Gtk2. This routine hides all windows and then calls any
+#                  registered cleanup handlers (this is mainly used to deal
+#                  with Gnome2 canvases which are buggy when being destroyed.
+#
+#   Data         - None.
+#
+##############################################################################
+
+
+
+sub quit_from_gtk2()
+{
+
+    # Hide all the windows, close all the database handles, call all cleanup
+    # handlers and then quit out of Gtk2.
+
+    WindowManager->instance()->cond_find
+	(undef,
+	 sub {
+	     my $instance = $_[0];
+	     $instance->{window}->hide() if ($instance->{window}->mapped());
+	     $instance->{mtn} = undef if (exists($instance->{mtn}));
+	     if (exists($instance->{cleanup_handler})
+		 && defined($instance->{cleanup_handler}))
+	     {
+		 $instance->{cleanup_handler}($instance);
+	     }
+	     return;
+	 });
+    Gtk2->main_quit();
 
 }
 #

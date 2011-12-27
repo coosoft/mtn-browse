@@ -69,6 +69,10 @@ use warnings;
 
 # Constants for the columns within the MIME types liststore widget.
 
+use constant MTLS_COLUMN_TYPES    => ("Glib::String",
+				      "Glib::String",
+				      "Glib::String",
+				      "Glib::Scalar");
 use constant MTLS_NAME_COLUMN     => 0;
 use constant MTLS_PATTERNS_COLUMN => 1;
 use constant MTLS_HELPER_COLUMN   => 2;
@@ -80,7 +84,7 @@ use constant PREFERENCES_FILE_NAME => ".mtn-browserc";
 
 # Constant for the preferences file's format version.
 
-use constant PREFERENCES_FORMAT_VERSION => 11;
+use constant PREFERENCES_FORMAT_VERSION => 12;
 
 # Text viewable application MIME types.
 
@@ -191,8 +195,7 @@ sub preferences($)
     my $browser = $_[0];
 
     my ($instance,
-	$preferences,
-	$valid);
+	$preferences);
     my $wm = WindowManager->instance();
 
     # Load in the user's preferences.
@@ -219,37 +222,23 @@ sub preferences($)
 
     $instance = get_preferences_window($browser->{window}, $preferences);
 
-    # Allow the user to change their preferences, validating anything that is
-    # saved.
+    # Handle all events until the dialog is dismissed with valid preferences.
 
     $wm->make_busy($instance, 1, 1);
-    do
+    while (! $instance->{done})
     {
-
-	# Handle all events until the dialog is dismissed.
-
-	$instance->{done} = 0;
-	$instance->{preferences_to_be_saved} = 0;
 	while (! $instance->{done})
 	{
 	    Gtk2->main_iteration();
 	}
-
-	# Validate any changes.
-
 	if ($instance->{preferences_to_be_saved})
 	{
 	    local $instance->{in_cb} = 1;
 	    save_preferences_from_gui($instance);
-	    $valid = validate_preferences($instance);
+	    $instance->{done} = $instance->{preferences_to_be_saved} =
+		validate_preferences($instance);
 	}
-	else
-	{
-	    $valid = 1;
-	}
-
     }
-    while (! $valid);
     $wm->make_busy($instance, 0);
     local $instance->{in_cb} = 1;
     $instance->{window}->hide();
@@ -1114,10 +1103,7 @@ sub get_preferences_window($$)
 	# Setup the MIME types list.
 
 	$instance->{mime_types_liststore} =
-	    Gtk2::ListStore->new("Glib::String",
-				 "Glib::String",
-				 "Glib::String",
-				 "Glib::Scalar");
+	    Gtk2::ListStore->new(MTLS_COLUMN_TYPES);
 	$instance->{mime_types_treeview}->
 	    set_model($instance->{mime_types_liststore});
 
@@ -1266,8 +1252,13 @@ sub get_preferences_window($$)
 	$instance->{window}->resize($width, $height);
 	$instance->{mime_types_hpaned}->set_position(700);
 	$instance->{window}->set_transient_for($parent);
-	$instance->{preferences} = $preferences;
+	$instance->{mime_types_liststore}->clear();
+	$instance->{mime_types_liststore} =
+	    Gtk2::ListStore->new(MTLS_COLUMN_TYPES);
+	$instance->{mime_types_treeview}->
+	    set_model($instance->{mime_types_liststore});
 	$instance->{mime_types_treeview}->set_search_column(MTLS_NAME_COLUMN);
+	$instance->{preferences} = $preferences;
 	load_preferences_into_gui($instance);
 	$instance->{window}->show_all();
 	$instance->{window}->present();
@@ -1801,6 +1792,11 @@ sub upgrade_preferences($)
     {
 	$preferences->{remote_connections} = 0;
 	$preferences->{server_bookmarks} = [];
+	$preferences->{version} = 11;
+    }
+    if ($preferences->{version} == 11)
+    {
+	$preferences->{tag_weightings} = [];
     }
 
     $preferences->{version} = PREFERENCES_FORMAT_VERSION;
@@ -1874,7 +1870,8 @@ sub initialise_preferences()
 				 find_files_modified_by => [],
 				 find_text              => []},
 	 remote_connections  => 0,
-	 server_bookmarks    => []);
+	 server_bookmarks    => [],
+	 tag_weightings      => []);
 
     return \%preferences;
 

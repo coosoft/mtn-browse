@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use IO::File;
+
+my ($dot_fh,
+    $line,
+    $log_fh);
+
+die("IO::File->new() failed with $!")
+    unless (defined($dot_fh =
+		    IO::File->new("| /opt/graphviz-2.8/bin/dot -q -y -s72")));
+die("IO::File->new() failed with $!")
+    unless (defined($log_fh = IO::File->new("dot-file.txt", "w")));
+while (defined($line = STDIN->getline()))
+{
+    $dot_fh->print($line);
+    $log_fh->print($line);
+}
+$dot_fh->close();
+$log_fh->close();
+
+exit(0);

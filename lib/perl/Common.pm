@@ -71,6 +71,7 @@ my %help_ref_to_url_map;
 
 # Public routines.
 
+sub adjust_time($$$);
 sub cache_extra_file_info($$$);
 sub calculate_update_interval($;$);
 sub colour_to_string($);
@@ -86,10 +87,11 @@ sub get_revision_ids($$;$);
 sub glade_signal_autoconnect($$);
 sub handle_comboxentry_history($$;$);
 sub hex_dump($);
+sub mtn_time_string_to_time($);
 sub open_database($$$);
 sub program_valid($;$);
 sub register_help_callbacks($@);
-sub run_command($$@);
+sub run_command($$$$@);
 sub save_as_file($$$);
 sub set_label_value($$);
 sub treeview_column_searcher($$$$);
@@ -154,6 +156,13 @@ sub generate_tmp_path($)
 #
 #   Data         - $buffer      : A reference to the buffer that is to contain
 #                                 the output from the command.
+#                  $input_cb    : Either a reference to a callback routine
+#                                 that is to be called in order to provide
+#                                 data on STDIN or undef if no such callback
+#                                 routine is required (i.e. no data is to be
+#                                 sent via STDIN).
+#                  $details     : Any client data that is to be passed to the
+#                                 input callback routine.
 #                  $abort       : Either a reference to a boolean that is set
 #                                 to true if the command is to be aborted or
 #                                 undef if no abort checking is required.
@@ -166,10 +175,10 @@ sub generate_tmp_path($)
 
 
 
-sub run_command($$@)
+sub run_command($$$$@)
 {
 
-    my ($buffer, $abort, @args) = @_;
+    my ($buffer, $input_cb, $details, $abort, @args) = @_;
 
     my ($dummy_flag,
 	@err,
@@ -228,8 +237,7 @@ sub run_command($$@)
 	}
     }
 
-    # Setup a watch handler to read our data and handle GTK2 events whilst the
-    # command is running.
+    # Setup a watch handler to read our data when we hand control over to GTK2.
 
     $total_bytes = 0;
     $$buffer = "";
@@ -251,6 +259,15 @@ sub run_command($$@)
 	     }
 	     return TRUE;
 	 });
+
+    # Call the input callback routine if we have one. It is allowed to close
+    # STDIN if it wishes to.
+
+    &$input_cb($fd_in, $details) if (defined($input_cb));
+
+    # Hand control over to GTK2 whilst we read in the output from the
+    # subprocess.
+
     while (! $stop && ! $$abort)
     {
 	Gtk2->main_iteration();
@@ -269,7 +286,7 @@ sub run_command($$@)
 	@err = $fd_err->getlines() unless ($$abort);
     }
 
-    $fd_in->close();
+    $fd_in->close() if ($fd_in->opened());
     $fd_out->close();
     $fd_err->close();
 
@@ -789,7 +806,7 @@ sub treeview_setup_search_column_selection($@)
 		 $menu->append($menu_item);
 		 $menu_item->show();
 
-		 # Setup a callback that will set up that column for searchin
+		 # Setup a callback that will set up that column for searching
 		 # if the user should select the option.
 
 		 $menu_item->signal_connect
@@ -2022,13 +2039,142 @@ sub build_help_ref_to_url_map()
 #
 ##############################################################################
 #
+#   Routine      - adjust_time
+#
+#   Description  - This routine adjusts the specified localtime() style time
+#                  by subtracting the specified time period from it.
+#
+#   Data         - $time_value : A reference to the localtime() style list
+#                                that is to be adjusted.
+#                  $period     : The time period to subtract.
+#                  $units      : The units that the time period is expressed
+#                                in.
+#
+##############################################################################
+
+
+
+sub adjust_time($$$)
+{
+
+    my ($time_value, $period, $units) = @_;
+
+    my $time;
+
+    # Please note that values from localtime() etc start from 0. Also the
+    # apparently needless:
+    #     @time_value = localtime(timelocal(@time_value[0 .. 5))
+    # is so that the wday, yday and isdst fields are correctly recalculated.
+
+    if ($units == DURATION_MONTHS)
+    {
+	my ($month,
+	    $year);
+	($month, $year) = @$time_value[4, 5];
+	if ($period > 12)
+	{
+	    $year -= floor($period / 12);
+	    $period %= 12;
+	}
+	if ($period > $month)
+	{
+	    -- $year;
+	    $month = 12 - ($period - $month);
+	}
+	else
+	{
+	    $month -= $period;
+	}
+	@$time_value[4, 5] = ($month, $year);
+	$time = timelocal(@$time_value[0 .. 5]);
+    }
+    elsif ($units == DURATION_YEARS)
+    {
+	@$time_value[5] -= $period;
+	$time = timelocal(@$time_value[0 .. 5]);
+    }
+    else
+    {
+	$time = timelocal(@$time_value[0 .. 5]);
+	if ($units == DURATION_MINUTES)
+	{
+	    $time -= $period * 60;
+	}
+	elsif ($units == DURATION_HOURS)
+	{
+	    $time -= $period * 60 * 60;
+	}
+	elsif ($units == DURATION_DAYS)
+	{
+	    $time -= $period * 60 * 60 * 24;
+	}
+    }
+
+    # Return the adjusted time back to the caller.
+
+    @$time_value = localtime($time);
+
+}
+#
+##############################################################################
+#
+#   Routine      - mtn_time_string_to_time
+#
+#   Description  - This routine converts a Monotone time string into a time_t
+#                  value as returned from time().
+#
+#   Data         - $time_string : The Monotone date/time string that is to be
+#                                 converted.
+#                  Return Value : A time() style time code on success,
+#                                 otherwise undef on failure.
+#
+##############################################################################
+
+
+
+sub mtn_time_string_to_time($)
+{
+
+    my $time_string = $_[0];
+
+    if ($time_string =~ m/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/)
+    {
+
+	my ($day_of_month,
+	    $hours,
+	    $minutes,
+	    $month,
+	    $seconds,
+	    $year);
+
+	($year, $month, $day_of_month, $hours, $minutes, $seconds) =
+	    ($1, $2, $3, $4, $5, $6);
+	$month -= 1;
+	$year -= 1900;
+	return timelocal($seconds,
+			 $minutes,
+			 $hours,
+			 $day_of_month,
+			 $month,
+			 $year);
+
+    }
+
+    return;
+
+}
+#
+##############################################################################
+#
 #   Routine      - calculate_update_interval
 #
 #   Description  - Given a list of items to display or process, calculate the
 #                  update interval (in number of items processed) for updating
 #                  the display.
 #
-#   Data         - $list_ref    : A reference to the list containing the items
+#   Data         - $items       : Either a reference to a container containing
+#                                 the items that are to be processed or a
+#                                 scalar containing the number of items to
 #                                 that are to be processed.
 #                  $granularity : The number of times the display is to be
 #                                 updated whilst processing the list of items.
@@ -2042,12 +2188,25 @@ sub build_help_ref_to_url_map()
 sub calculate_update_interval($;$)
 {
 
-    my ($list_ref, $granularity) = @_;
+    my ($items, $granularity) = @_;
 
-    my $update_interval;
+    my ($nr_items,
+	$update_interval);
 
     $granularity = 20 unless (defined($granularity));
-    $update_interval = int(scalar(@{$list_ref}) / $granularity);
+    if (ref($items) eq "ARRAY")
+    {
+	$nr_items = scalar(@$items);
+    }
+    elsif (ref($items) eq "HASH")
+    {
+	$nr_items = scalar(keys(%$items));
+    }
+    else
+    {
+	$nr_items = $items;
+    }
+    $update_interval = floor($nr_items / $granularity);
     $update_interval = 1 if ($update_interval < 1);
 
     return $update_interval;

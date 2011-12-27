@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg4210"
+   sodipodi:version="0.32"
+   inkscape:version="0.45.1"
+   sodipodi:docbase="/home/aecoope/code/monotone.ca/mtn-browse/artwork"
+   sodipodi:docname="weighting.svg"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape"
+   inkscape:export-filename="/home/aecoope/code/monotone.ca/mtn-browse/lib/ui/pixmaps/weightings.png"
+   inkscape:export-xdpi="3.1900001"
+   inkscape:export-ydpi="3.1900001">
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     gridtolerance="10000"
+     guidetolerance="10"
+     objecttolerance="50"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.78204693"
+     inkscape:cx="370.81547"
+     inkscape:cy="602.49545"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:object-points="true"
+     inkscape:object-bbox="false"
+     inkscape:grid-points="true"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:window-width="1067"
+     inkscape:window-height="922"
+     inkscape:window-x="205"
+     inkscape:window-y="47"
+     inkscape:grid-bbox="true"
+     inkscape:object-nodes="true">
+    <sodipodi:guide
+       orientation="horizontal"
+       position="822.26417"
+       id="guide4288" />
+    <sodipodi:guide
+       orientation="horizontal"
+       position="329.10408"
+       id="guide3483" />
+    <sodipodi:guide
+       orientation="horizontal"
+       position="1021.2843"
+       id="guide3485" />
+    <sodipodi:guide
+       orientation="vertical"
+       position="38.218539"
+       id="guide3487" />
+    <sodipodi:guide
+       orientation="vertical"
+       position="698.54996"
+       id="guide3489" />
+  </sodipodi:namedview>
+  <defs
+     id="defs4212">
+    <marker
+       id="TriangleOutL"
+       orient="auto"
+       inkscape:stockid="TriangleOutL"
+       refX="0.0"
+       refY="0.0"
+       style="overflow:visible">
+      <path
+         id="path4417"
+         d="M 5.77,0.0 L -2.88,5.0 L -2.88,-5.0 L 5.77,0.0 z "
+         transform="scale(0.8)"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none" />
+    </marker>
+    <marker
+       id="SemiCircleIn"
+       orient="auto"
+       inkscape:stockid="SemiCircleIn"
+       refX="0.0"
+       refY="0.0"
+       style="overflow:visible">
+      <path
+         id="path4435"
+         d="M -0.37450702,-0.045692580 C -0.37450702,2.7143074 1.8654930,4.9543074 4.6254930,4.9543074 L 4.6254930,-5.0456926 C 1.8654930,-5.0456926 -0.37450702,-2.8056926 -0.37450702,-0.045692580 z "
+         transform="scale(0.6)"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none;marker-end:none" />
+    </marker>
+    <marker
+       id="Arrow2Mstart"
+       orient="auto"
+       inkscape:stockid="Arrow2Mstart"
+       refX="0.0"
+       refY="0.0"
+       style="overflow:visible">
+      <path
+         id="path4343"
+         d="M 8.7185878,4.0337352 L -2.2072895,0.016013256 L 8.7185884,-4.0017078 C 6.9730900,-1.6296469 6.9831476,1.6157441 8.7185878,4.0337352 z "
+         transform="scale(0.6) translate(0,0)"
+         style="font-size:12.0;fill-rule:evenodd;stroke-width:0.62500000;stroke-linejoin:round" />
+    </marker>
+    <marker
+       id="Arrow2Lstart"
+       orient="auto"
+       inkscape:stockid="Arrow2Lstart"
+       refX="0.0"
+       refY="0.0"
+       style="overflow:visible">
+      <path
+         id="path4337"
+         d="M 8.7185878,4.0337352 L -2.2072895,0.016013256 L 8.7185884,-4.0017078 C 6.9730900,-1.6296469 6.9831476,1.6157441 8.7185878,4.0337352 z "
+         transform="scale(1.1) translate(1,0)"
+         style="font-size:12.0;fill-rule:evenodd;stroke-width:0.62500000;stroke-linejoin:round" />
+    </marker>
+    <marker
+       id="Arrow1Lstart"
+       orient="auto"
+       inkscape:stockid="Arrow1Lstart"
+       refX="0.0"
+       refY="0.0"
+       style="overflow:visible">
+      <path
+         id="path4319"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         transform="scale(0.8) translate(12.5,0)"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none" />
+    </marker>
+    <marker
+       id="Arrow1Lstarth"
+       orient="auto"
+       inkscape:stockid="Arrow1Lstarth"
+       refX="0.0"
+       refY="0.0"
+       style="overflow:visible">
+      <path
+         id="path6522"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         transform="scale(0.8) translate(12.5,0)"
+         style="marker-start:none;stroke:#4d4d4d;stroke-width:1.0pt;fill:#4d4d4d;fill-rule:evenodd" />
+    </marker>
+    <marker
+       id="Arrow1LstartX"
+       orient="auto"
+       inkscape:stockid="Arrow1LstartX"
+       refX="0.0"
+       refY="0.0"
+       style="overflow:visible">
+      <path
+         id="path6572"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         transform="scale(0.8) translate(12.5,0)"
+         style="marker-start:none;stroke:#4d4d4d;stroke-width:1.0pt;fill:#4d4d4d;fill-rule:evenodd" />
+    </marker>
+    <marker
+       id="Arrow1LstarthK"
+       orient="auto"
+       inkscape:stockid="Arrow1LstarthK"
+       refX="0.0"
+       refY="0.0"
+       style="overflow:visible">
+      <path
+         id="path6620"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         transform="scale(0.8) translate(12.5,0)"
+         style="fill-rule:evenodd;marker-start:none;stroke:#808080;stroke-width:1.0pt;fill:#808080" />
+    </marker>
+    <marker
+       id="Arrow1LstartXD"
+       orient="auto"
+       inkscape:stockid="Arrow1LstartXD"
+       refX="0.0"
+       refY="0.0"
+       style="overflow:visible">
+      <path
+         id="path6623"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         transform="scale(0.8) translate(12.5,0)"
+         style="fill-rule:evenodd;marker-start:none;stroke:#808080;stroke-width:1.0pt;fill:#808080" />
+    </marker>
+    <marker
+       id="Arrow1LstarthKl"
+       orient="auto"
+       inkscape:stockid="Arrow1LstarthKl"
+       refX="0.0"
+       refY="0.0"
+       style="overflow:visible">
+      <path
+         id="path6679"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         transform="scale(0.8) translate(12.5,0)"
+         style="marker-start:none;stroke:#666666;stroke-width:1.0pt;fill:#666666;fill-rule:evenodd" />
+    </marker>
+    <marker
+       id="Arrow1LstartXDy"
+       orient="auto"
+       inkscape:stockid="Arrow1LstartXDy"
+       refX="0.0"
+       refY="0.0"
+       style="overflow:visible">
+      <path
+         id="path6682"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         transform="scale(0.8) translate(12.5,0)"
+         style="marker-start:none;stroke:#666666;stroke-width:1.0pt;fill:#666666;fill-rule:evenodd" />
+    </marker>
+  </defs>
+  <metadata
+     id="metadata4215">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer">
+    <path
+       id="path3830"
+       inkscape:export-xdpi="3.1900001"
+       inkscape:export-ydpi="3.1900001"
+       inkscape:export-filename="/home/aecoope/code/monotone.ca/mtn-browse/lib/ui/pixmaps/path3830.png"
+       d="M 488.03511,692.91585 C 488.03511,356.49205 488.03511,356.49205 488.03511,356.49205"
+       style="fill:#666666;fill-opacity:1;fill-rule:evenodd;stroke:#666666;stroke-width:32.89669037px;stroke-linecap:butt;stroke-linejoin:miter;marker-start:url(#Arrow1LstartXDy);marker-end:none;stroke-opacity:1" />
+    <path
+       id="path4199"
+       inkscape:export-xdpi="3.1900001"
+       inkscape:export-ydpi="3.1900001"
+       inkscape:export-filename="/home/aecoope/code/monotone.ca/mtn-browse/lib/ui/pixmaps/path3830.png"
+       d="M 220,232.36218 C 220,568.78598 220,568.78598 220,568.78598"
+       style="fill:#666666;fill-rule:evenodd;stroke:#666666;stroke-width:32.89669037px;stroke-linecap:butt;stroke-linejoin:miter;marker-start:url(#Arrow1LstarthKl);marker-end:none;stroke-opacity:1" />
+  </g>
+</svg>

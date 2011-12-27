@@ -46,12 +46,6 @@ use locale;
 use strict;
 use warnings;
 
-# ***** GLOBAL DATA DECLARATIONS *****
-
-# The type of window that is going to be managed by this module.
-
-my $window_type = "manage_server_bookmarks_window";
-
 # ***** FUNCTIONAL PROTOTYPES *****
 
 # Public routines.
@@ -74,8 +68,8 @@ sub servers_treeselection_changed_cb($$);
 #   Description  - Displays the manage server bookmarks window and then lets
 #                  the user change the server bookmark list.
 #
-#   Data         - $parent      : The parent window widget for the find text
-#                                 window.
+#   Data         - $parent      : The parent window widget for the manage
+#                                 server bookmarks window.
 #                  $bookmarks   : The list of server bookmarks that is to be
 #                                 edited.
 #                  Return Value : True if the server bookmarks list was
@@ -94,9 +88,6 @@ sub manage_server_bookmarks($$)
     my ($changed,
 	$instance,
 	$response);
-
-    # Only go looking for a spare find text window, creating one if necessary,
-    # if there isn't one already mapped for the specified textview widget.
 
     $instance = get_manage_server_bookmarks_window($parent, $bookmarks);
     $response = $instance->{window}->run();
@@ -326,6 +317,7 @@ sub get_manage_server_bookmarks_window($$)
 
     my ($instance,
 	$new);
+    my $window_type = "manage_server_bookmarks_window";
     my $wm = WindowManager->instance();
 
     # Create a new manage server bookmarks window if an unused one wasn't
@@ -390,7 +382,7 @@ sub get_manage_server_bookmarks_window($$)
     local $instance->{in_cb} = 1;
 
     $instance->{selected_server} = undef;
-    $instance->{server_bookmarks} = [];
+    $instance->{server_bookmarks} = undef;
 
     # Disable the add and remove buttons and make sure the server entry field
     # is empty.
@@ -453,12 +445,12 @@ sub load_servers_treeview($)
     # Load up the server bookmarks treeview.
 
     $instance->{servers_liststore}->clear();
-    foreach my $pattern (@{$instance->{server_bookmarks}})
+    foreach my $entry (@{$instance->{server_bookmarks}})
     {
 	$instance->{servers_liststore}->
 	    set($instance->{servers_liststore}->append(),
 		0,
-		$pattern);
+		$entry);
     }
     $instance->{servers_treeview}->scroll_to_point(0, 0)
 	if ($instance->{servers_treeview}->realized());

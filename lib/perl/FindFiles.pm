@@ -55,12 +55,6 @@ use constant RLS_MANIFEST_ENTRY_COLUMN => 1;
 
 # Constants for representing combobox values.
 
-use constant DURATION_MINUTES => 0;
-use constant DURATION_HOURS   => 1;
-use constant DURATION_DAYS    => 2;
-use constant DURATION_MONTHS  => 3;
-use constant DURATION_YEARS   => 4;
-
 use constant CMP_ANY_SIZE => 0;
 use constant CMP_AT_LEAST => 1;
 use constant CMP_AT_MOST  => 2;
@@ -78,15 +72,12 @@ sub display_find_files($$$$$);
 
 # Private routines.
 
-sub between_range_radiobutton_toggled_cb($$);
-sub date_range_checkbutton_toggled_cb($$);
 sub get_find_files_window();
 sub results_treeselection_changed_cb($$);
 sub results_treeview_row_activated_cb($$$$);
-sub save_query_from_gui($);
+sub save_query_from_gui_and_validate($);
 sub search_files_button_clicked_cb($$);
 sub size_comparitor_combobox_changed_cb($$);
-sub validate_query($$);
 #
 ##############################################################################
 #
@@ -134,112 +125,6 @@ sub display_find_files($$$$$)
 
     $instance->{window}->show_all();
     $instance->{window}->present();
-
-}
-#
-##############################################################################
-#
-#   Routine      - date_range_checkbutton_toggled_cb
-#
-#   Description  - Callback routine called when the user changes the value of
-#                  the date range check button in the find files window.
-#
-#   Data         - $widget   : The widget object that received the signal.
-#                  $instance : The window instance that is associated with
-#                              this widget.
-#
-##############################################################################
-
-
-
-sub date_range_checkbutton_toggled_cb($$)
-{
-
-    my ($widget, $instance) = @_;
-
-    return if ($instance->{in_cb});
-    local $instance->{in_cb} = 1;
-
-    # Simply enable and disable the appropriate widgets.
-
-    if ($instance->{date_range_checkbutton}->get_active())
-    {
-	for my $widget (@{$instance->{date_sensitive_group}})
-	{
-	    $widget->set_sensitive(TRUE);
-	}
-	if ($instance->{between_range_radiobutton}->get_active())
-	{
-	    for my $widget (@{$instance->{during_dates_sensitive_group}})
-	    {
-		$widget->set_sensitive(FALSE);
-	    }
-	}
-	else
-	{
-	    for my $widget (@{$instance->{between_dates_sensitive_group}})
-	    {
-		$widget->set_sensitive(FALSE);
-	    }
-	}
-    }
-    else
-    {
-	for my $widget (@{$instance->{date_sensitive_group}})
-	{
-	    $widget->set_sensitive(FALSE);
-	}
-    }
-
-}
-#
-##############################################################################
-#
-#   Routine      - between_range_radiobutton_toggled_cb
-#
-#   Description  - Callback routine called when the user changes the value of
-#                  the between radio button in the find files window.
-#
-#   Data         - $widget   : The widget object that received the signal.
-#                  $instance : The window instance that is associated with
-#                              this widget.
-#
-##############################################################################
-
-
-
-sub between_range_radiobutton_toggled_cb($$)
-{
-
-    my ($widget, $instance) = @_;
-
-    return if ($instance->{in_cb});
-    local $instance->{in_cb} = 1;
-
-    # Simply enable and disable the appropriate widgets.
-
-    if ($instance->{between_range_radiobutton}->get_active())
-    {
-	for my $widget (@{$instance->{between_dates_sensitive_group}})
-	{
-	    $widget->set_sensitive(TRUE);
-	}
-	for my $widget (@{$instance->{during_dates_sensitive_group}})
-	{
-	    $widget->set_sensitive(FALSE);
-	}
-    }
-    else
-    {
-	for my $widget (@{$instance->{during_dates_sensitive_group}})
-	{
-	    $widget->set_sensitive(TRUE);
-	}
-	for my $widget (@{$instance->{between_dates_sensitive_group}})
-	{
-	    $widget->set_sensitive(FALSE);
-	}
-    }
 
 }
 #
@@ -316,15 +201,14 @@ sub search_files_button_clicked_cb($$)
 	$manifest,
 	$matches,
 	$name,
-	$period,
 	$query,
 	$size);
     my $wm = WindowManager->instance();
 
     # Get the query from the GUI and validate it.
 
-    $query = save_query_from_gui($instance);
-    return if (! validate_query($instance, $query));
+    return
+	unless (defined($query = save_query_from_gui_and_validate($instance)));
 
     $wm->make_busy($instance, 1);
     $instance->{appbar}->push($instance->{appbar}->get_status()->get_text());
@@ -425,64 +309,6 @@ sub search_files_button_clicked_cb($$)
 	}
 
     }
-    if (exists($query->{period}))
-    {
-
-	my ($time,
-	    @time_val);
-
-	# Please note:
-	#     1) Values from localtime etc start from 0.
-	#     2) You may think that gmtime() should be used instead of
-	#        localtime(), but what happens when the user jumps back in time
-	#        by 5 months and goes from say GMT to BST? Would they expect
-	#        the hours to be adjusted? Probably not.
-
-	@time_val = localtime();
-	$time = timelocal(@time_val[0 .. 5]);
-	if ($query->{period_units} == DURATION_MINUTES)
-	{
-	    $time -= ($query->{period} * 60);
-	}
-	elsif ($query->{period_units} == DURATION_HOURS)
-	{
-	    $time -= ($query->{period} * 60 * 60);
-	}
-	elsif ($query->{period_units} == DURATION_DAYS)
-	{
-	    $time -= ($query->{period} * 60 * 60 * 24);
-	}
-	elsif ($query->{period_units} == DURATION_MONTHS)
-	{
-	    my ($month,
-		$query_months,
-		$year);
-	    $query_months = $query->{period};
-	    ($month, $year) = (@time_val)[4, 5];
-	    if ($query_months > 12)
-	    {
-		$year -= int($query_months / 12);
-		$query_months %= 12;
-	    }
-	    if ($query_months > $month)
-	    {
-		-- $year;
-		$month = 12 - ($query_months - $month);
-	    }
-	    else
-	    {
-		$month -= $query_months;
-	    }
-	    @time_val[4, 5] = ($month, $year);
-	    $time = timegm(@time_val[0 .. 5]);
-	}
-	else
-	{
-	    $time_val[5] -= $query->{period};
-	    $time = timegm(@time_val[0 .. 5]);
-	}
-	$period = strftime("%Y-%m-%dT%H:%M:%S", gmtime($time));
-    }
     if (exists($query->{file_size}))
     {
 	if ($query->{file_size_units} == SIZE_B)
@@ -554,7 +380,7 @@ sub search_files_button_clicked_cb($$)
 		}
 		elsif (exists($query->{period}))
 		{
-		    next if ($last_update lt $period);
+		    next if ($last_update lt $query->{period});
 		}
 		next if ($query->{modified_by} ne ""
 			 && $query->{modified_by} ne $author);
@@ -898,31 +724,6 @@ sub get_find_files_window()
 
 	# Setup widget sensitivity groups.
 
-	$instance->{date_sensitive_group} = [];
-	foreach my $widget ("between_range_radiobutton",
-			    "older_date_dateedit",
-			    "and_label",
-			    "younger_date_dateedit",
-			    "during_range_radiobutton",
-			    "time_spinbutton",
-			    "time_units_combobox")
-	{
-	    push(@{$instance->{date_sensitive_group}}, $instance->{$widget});
-	}
-	$instance->{between_dates_sensitive_group} = [];
-	foreach my $widget ("older_date_dateedit",
-			    "and_label",
-			    "younger_date_dateedit")
-	{
-	    push(@{$instance->{between_dates_sensitive_group}},
-		 $instance->{$widget});
-	}
-	$instance->{during_dates_sensitive_group} = [];
-	foreach my $widget ("time_spinbutton", "time_units_combobox")
-	{
-	    push(@{$instance->{during_dates_sensitive_group}},
-		 $instance->{$widget});
-	}
 	$instance->{size_sensitive_group} = [];
 	foreach my $widget ("size_spinbutton", "size_units_combobox")
 	{
@@ -960,7 +761,6 @@ sub get_find_files_window()
 	$instance->{modified_by_comboboxentry}->set_text_column(0);
 	$instance->{size_comparitor_combobox}->set_active(CMP_ANY_SIZE);
 	$instance->{size_units_combobox}->set_active(SIZE_KB);
-	$instance->{time_units_combobox}->set_active(DURATION_DAYS);
 
 	# Setup the results list browser.
 
@@ -984,10 +784,13 @@ sub get_find_files_window()
 			   \&results_treeselection_changed_cb,
 			   $instance);
 
+	# Setup the date range widgets.
+
+	setup_date_range_widgets($instance);
+
 	# Disable the appropriate widgets by default.
 
-	for my $widget (@{$instance->{date_sensitive_group}},
-			@{$instance->{size_sensitive_group}})
+	for my $widget (@{$instance->{size_sensitive_group}})
 	{
 	    $widget->set_sensitive(FALSE);
 	}
@@ -1052,148 +855,30 @@ sub get_find_files_window()
 #
 ##############################################################################
 #
-#   Routine      - validate_query
-#
-#   Description  - Check the specified query record, making sure it is valid.
-#
-#   Data         - $instance    : The associated window instance.
-#                  $query       : The query record that is to be validated.
-#                  Return Value : True on success, otherwise false on failure.
-#
-##############################################################################
-
-
-
-sub validate_query($$)
-{
-
-    my ($instance, $query) = @_;
-
-    my $re_text;
-    my $wm = WindowManager->instance();
-
-    # Check that the file name glob is valid.
-
-    $re_text = file_glob_to_regexp($query->{file_glob});
-    eval
-    {
-	qr/$re_text/;
-    };
-    if ($@)
-    {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("`{pattern}' is an invalid\nfile name pattern.",
-		 pattern => $query->{file_glob}));
-	$wm->allow_input(sub { $dialog->run(); });
-	$dialog->destroy();
-	return;
-    }
-
-    # Check that the search pattern is valid.
-
-    if ($query->{contents_pattern_is_regexp})
-    {
-	$re_text = file_glob_to_regexp($query->{contents_pattern});
-	eval
-	{
-	    qr/$re_text/;
-	};
-	if ($@)
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("`{pattern}' is an invalid\ncontent search pattern.",
-		     pattern => $query->{contents_pattern}));
-	    $wm->allow_input(sub { $dialog->run(); });
-	    $dialog->destroy();
-	    return;
-	}
-    }
-
-    # Check that any date range is the right way around.
-
-    if (exists($query->{older_date})
-	&& $query->{older_date} ge $query->{younger_date})
-    {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __("The `between' dates are either\n"
-		. "the same or the wrong way round."));
-	$wm->allow_input(sub { $dialog->run(); });
-	$dialog->destroy();
-	return;
-    }
-
-    # Check that the duration period is not too large.
-
-    if (exists($query->{period}))
-    {
-	my ($month, $year) = (localtime())[4, 5];
-	if ($query->{period_units} == DURATION_MONTHS
-	    && $query->{period} > ((($year - 70) * 12) + $month))
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("A duration of {months} months is too long.",
-		     months => $query->{period}));
-	    $wm->allow_input(sub { $dialog->run(); });
-	    $dialog->destroy();
-	    return;
-	}
-	elsif ($query->{period_units} == DURATION_YEARS
-	       && $query->{period} > ($year - 70))
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("A duration of {years} years is too long.",
-		     years => $query->{period}));
-	    $wm->allow_input(sub { $dialog->run(); });
-	    $dialog->destroy();
-	    return;
-	}
-    }
-
-    return 1;
-
-}
-#
-##############################################################################
-#
-#   Routine      - save_query_from_gui
+#   Routine      - save_query_from_gui_and_validate
 #
 #   Description  - Saves the query information from the find files window into
-#                  a record.
+#                  a record and then validates it.
 #
 #   Data         - $instance    : The associated window instance.
 #                  Return Value : A reference to the newly created query
-#                                 record.
+#                                 record on success, otherwise undef on
+#                                 failure.
 #
 ##############################################################################
 
 
 
-sub save_query_from_gui($)
+sub save_query_from_gui_and_validate($)
 {
 
     my $instance = $_[0];
 
-    my %query;
+    my ($from_date,
+	%query,
+	$re_text,
+	$to_date);
+    my $wm = WindowManager->instance();
 
     # Do the name page.
 
@@ -1217,36 +902,15 @@ sub save_query_from_gui($)
 
     # Do the properties page.
 
-    if ($instance->{date_range_checkbutton}->get_active())
+    return unless (get_date_range($instance, \$from_date, \$to_date));
+    if (defined($to_date))
     {
-	if ($instance->{between_range_radiobutton}->get_active())
-	{
-	    $query{older_date} =
-		strftime("%Y-%m-%dT%H:%M:%S",
-			 localtime($instance->{older_date_dateedit}->
-				   get_time()));
-	    $query{younger_date} =
-		strftime("%Y-%m-%dT%H:%M:%S",
-			 localtime($instance->{younger_date_dateedit}->
-				   get_time()));
-	}
-	else
-	{
-
-	    # Please note that the update method needs to be called on the
-	    # spinbutton so as to make sure that it's internal state is
-	    # completely up to date (the user might have entered a value
-	    # directly into the entry field). Updates are usually done when it
-	    # looses the focus, however this window does not make use of any
-	    # focus stealing buttons.
-
-	    $instance->{time_spinbutton}->update();
-	    $query{period} =
-		$instance->{time_spinbutton}->get_value_as_int();
-	    $query{period_units} =
-		$instance->{time_units_combobox}->get_active();
-
-	}
+	$query{older_date} = $from_date;
+	$query{younger_date} = $to_date;
+    }
+    elsif (defined($from_date))
+    {
+	$query{period} = $from_date;
     }
     if ($instance->{size_comparitor_combobox}->get_active() != CMP_ANY_SIZE)
     {
@@ -1258,6 +922,51 @@ sub save_query_from_gui($)
     }
     $query{modified_by} =
 	$instance->{modified_by_comboboxentry}->child()->get_text();
+
+    # Check that the file name glob is valid.
+
+    $re_text = file_glob_to_regexp($query{file_glob});
+    eval
+    {
+	qr/$re_text/;
+    };
+    if ($@)
+    {
+	my $dialog = Gtk2::MessageDialog->new
+	    ($instance->{window},
+	     ["modal"],
+	     "warning",
+	     "close",
+	     __x("`{pattern}' is an invalid\nfile name pattern.",
+		 pattern => $query{file_glob}));
+	$wm->allow_input(sub { $dialog->run(); });
+	$dialog->destroy();
+	return;
+    }
+
+    # Check that the search pattern is valid.
+
+    if ($query{contents_pattern_is_regexp})
+    {
+	$re_text = file_glob_to_regexp($query{contents_pattern});
+	eval
+	{
+	    qr/$re_text/;
+	};
+	if ($@)
+	{
+	    my $dialog = Gtk2::MessageDialog->new
+		($instance->{window},
+		 ["modal"],
+		 "warning",
+		 "close",
+		 __x("`{pattern}' is an invalid\ncontent search pattern.",
+		     pattern => $query{contents_pattern}));
+	    $wm->allow_input(sub { $dialog->run(); });
+	    $dialog->destroy();
+	    return;
+	}
+    }
 
     return \%query;
 

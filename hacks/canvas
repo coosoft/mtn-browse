@@ -1,0 +1,204 @@
+#!/usr/bin/perl
+
+# The size style arguments are in inches, the number of pixels/points per inch
+# is given by the -s argument and is currently set to 72.
+
+# This code works but really needs to tighten up on the parsing and getting the
+# revision ids etc. Also remember that revision ids aren't always quoted in dot
+# output files!
+
+use strict;
+use warnings;
+
+use Gtk2 -init;
+use Gnome2::Canvas;
+use IO::File;
+
+use Data::Dumper;
+
+my (@boxes,
+    @circles,
+    $fh,
+    $line,
+    @lines,
+    $max_x,
+    $max_y,
+    $prev_lines);
+
+$prev_lines = "";
+die("IO::File->new() failed with $!")
+    unless (defined($fh = IO::File->new("graph.xdot", "r")));
+while (defined($line = $fh->getline()))
+{
+
+    chomp($line);
+
+    # Deal with statements that span multiple lines.
+
+    if ($line =~ m/^(.*)\\$/)
+    {
+	$prev_lines .= $1;
+    }
+    elsif ($prev_lines ne "")
+    {
+	$line = $prev_lines . $line;
+	$prev_lines = "";
+    }
+
+    # Parse statements.
+
+    # Boxes.
+
+    if ($line =~ m/p 4(( \d+){8}) *\"/)
+    {
+	my ($br_x,
+	    $br_y,
+	    @coords,
+	    $tl_x,
+	    $tl_y);
+	@coords = split(/ /, $1);
+	shift(@coords);
+	$tl_x = $max_x + 100;
+	$br_x = 0;
+	foreach my $i (0, 2, 4, 6)
+	{
+	    $tl_x = ($tl_x < $coords[$i]) ? $tl_x : $coords[$i];
+	    $br_x = ($br_x > $coords[$i]) ? $br_x : $coords[$i];
+	}
+	$tl_y = $max_y + 100;
+	$br_y = 0;
+	foreach my $i (1, 3, 5, 7)
+	{
+	    $tl_y = ($tl_y < $coords[$i]) ? $tl_y : $coords[$i];
+	    $br_y = ($br_y > $coords[$i]) ? $br_y : $coords[$i];
+	}
+	push(@boxes, [$tl_x, $tl_y, $br_x, $br_y]);
+    }
+
+    # Lines with arrow heads.
+
+    elsif ($line =~ m/B \d+(( \d+ \d+)+) *\".* P 3(( \d+){6}) *\"/)
+    {
+	my (@arrow_points,
+	    @line_points);
+	@line_points = split(/ /, $1);
+	shift(@line_points);
+	@arrow_points = split(/ /, $3);
+	shift(@arrow_points);
+	push(@lines, {line => \@line_points,
+		      arrow => \@arrow_points});
+    }
+
+    # Circles.
+
+    elsif ($line =~ m/e(( \d+){4}) *\"/)
+    {
+	my @list;
+	@list = split(/ /, $1);
+	shift(@list);
+	push(@circles, \@list);
+    }
+
+    # Bounding box (i.e. the total size of the graph).
+
+    elsif ($line =~ m/bb=\"\d+,\d+,(\d+),(\d+)\"/)
+    {
+	$max_x = $1;
+	$max_y = $2;
+    }
+
+}
+$fh->close();
+
+my $window = Gtk2::Window->new;
+my $scroller = Gtk2::ScrolledWindow->new;
+my $canvas = Gnome2::Canvas->new_aa;
+$scroller->add ($canvas);
+$window->add ($scroller);
+$window->set_default_size(700, 900);
+$canvas->set_scroll_region(0, 0, $max_x, $max_y);
+$window->show_all;
+
+my $root = $canvas->root;
+
+foreach my $box (@boxes)
+{
+    Gnome2::Canvas::Item->new($root,
+			      "Gnome2::Canvas::Rect",
+			      x1 => $$box[0], y1 => $$box[1],
+			      x2 => $$box[2], y2 => $$box[3],
+			      fill_color => "yellow",
+			      outline_color => "black",
+			      width_pixels => 2);
+}
+foreach my $line_rec (@lines)
+{
+    my ($arrow,
+	$bpath,
+	$i,
+	$line,
+	$pathdef);
+    $arrow = $line_rec->{arrow};
+    $line = $line_rec->{line};
+    $pathdef = Gnome2::Canvas::PathDef->new();
+    $pathdef->moveto($$line[0], $$line[1]);
+    $i = 2;
+    for ($i = 2; $i < scalar(@$line); $i += 6)
+    {
+	$pathdef->curveto($$line[$i],
+			  $$line[$i + 1],
+			  $$line[$i + 2],
+			  $$line[$i + 3],
+			  $$line[$i + 4],
+			  $$line[$i + 5]);
+    }
+    $pathdef->moveto($$arrow[0], $$arrow[1]);
+    $pathdef->lineto($$arrow[2], $$arrow[3]);
+    $pathdef->lineto($$arrow[4], $$arrow[5]);
+    $pathdef->closepath();
+    $bpath = Gnome2::Canvas::Item->new($root,
+				       "Gnome2::Canvas::Bpath",
+				       fill_color => "black",
+				       outline_color => "black",
+				       width_pixels => 2);
+    $bpath->set_path_def($pathdef);
+    $bpath->lower_to_bottom();
+}
+foreach my $circle (@circles)
+{
+    my ($height,
+	$width,
+	$x,
+	$y);
+    $x = $$circle[0];
+    $y = $$circle[1];
+    $width = $$circle[2];
+    $height = $$circle[3];
+    Gnome2::Canvas::Item->new($root,
+			      "Gnome2::Canvas::Ellipse",
+			      x1 => $x - $width, y1 => $y - $height,
+			      x2 => $x + $width, y2 => $y + $height,
+			      fill_color => "pink",
+			      outline_color => "black",
+			      width_pixels => 2);
+}
+
+Gnome2::Canvas::Item->new ($root, 'Gnome2::Canvas::Text',
+			   x => 20,
+			   y => 15,
+			   fill_color => 'black',
+			   font => 'Sans 14',
+			   anchor => 'GTK_ANCHOR_NW',
+			   text => 'Hello, World!');
+my $box = Gnome2::Canvas::Item->new ($root, 'Gnome2::Canvas::Rect',
+				     x1 => 10, y1 => 5,
+				     x2 => 150, y2 => 135,
+				     fill_color => 'red',
+				     outline_color => 'black');
+$box->lower_to_bottom;
+$box->signal_connect (event => sub {
+                          my ($item, $event) = @_;
+			  warn "event ".$event->type."\n";
+		      });
+
+Gtk2->main;
