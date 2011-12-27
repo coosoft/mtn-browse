@@ -1,13 +1,13 @@
 #
-# old_revision [aeab1f644fe1069eea3569864265335d5858f58b]
+# old_revision [c626a1eb884cdeba7e7fb7d5d54b7772a1c12a4c]
 #
 # patch "lib/perl/HistoryGraph.pm"
-#  from [56beaf3bb7f1ce5dd47400d1c65ae5fd460f3fdb]
-#    to [921d46450515a05e1ab12a477a0b9fd43804ea31]
+#  from [4448f8ac2a1ca0db91f6850b337e800b45b12875]
+#    to [37808e379b45ad205ac7a3363bae6da19ef80a91]
 #
 ============================================================
---- lib/perl/HistoryGraph.pm	56beaf3bb7f1ce5dd47400d1c65ae5fd460f3fdb
-+++ lib/perl/HistoryGraph.pm	921d46450515a05e1ab12a477a0b9fd43804ea31
+--- lib/perl/HistoryGraph.pm	4448f8ac2a1ca0db91f6850b337e800b45b12875
++++ lib/perl/HistoryGraph.pm	37808e379b45ad205ac7a3363bae6da19ef80a91
 @@ -53,7 +53,7 @@ use constant DPI              => 72;
  
  use constant CANVAS_BORDER    => 5;
@@ -25,14 +25,14 @@
  use constant NOT_SELECTED_BORDER_COLOUR => "Gray";
  use constant SELECTED_BORDER_COLOUR     => "Black";
  use constant SELECTION_COLOUR           => "Tomato";
-@@ -1866,20 +1865,16 @@ sub dot_input_handler_cb($$)
+@@ -1870,20 +1869,16 @@ sub dot_input_handler_cb($$)
      my ($child_db,
- 	$hex_id_height,
- 	$hex_id_width,
--	@revision_ids,
--	$text_item);
-+	$layout,
-+	@revision_ids);
+         $hex_id_height,
+         $hex_id_width,
+-        @revision_ids,
+-        $text_item);
++        $layout,
++        @revision_ids);
  
 -    # Create a canvas text item and then use it to get the pixel size of a hex
 -    # id when displayed on the screen. This text item is also used later on for
@@ -42,10 +42,10 @@
 +    # is also used later on for any tags that need to be displayed.
  
 -    $text_item = Gnome2::Canvas::Item->new
--	($instance->{graph_canvas}->root(),
--	 "Gnome2::Canvas::Text",
--	 font_desc  => $instance->{fontdescription},
--	 text       => "A" x HEX_ID_LENGTH);
+-        ($instance->{graph_canvas}->root(),
+-         "Gnome2::Canvas::Text",
+-         font_desc  => $instance->{fontdescription},
+-         text       => "A" x HEX_ID_LENGTH);
 -    $hex_id_width = $text_item->get("text-width");
 -    $hex_id_height = $text_item->get("text-height");
 +    $layout = $instance->{window}->create_pango_layout("A" x HEX_ID_LENGTH);
@@ -54,19 +54,19 @@
      $hex_id_height = max(HEIGHT, $hex_id_height + (TEXT_BORDER * 2));
      $hex_id_width = max(WIDTH, $hex_id_width + (TEXT_BORDER * 2));
  
-@@ -1919,9 +1914,9 @@ sub dot_input_handler_cb($$)
- 	    $fh_in->print("  \"" . $revision_id . "\"");
- 	    if (defined($tag = get_node_tag($instance, $revision_id)))
- 	    {
--		$text_item->set(text => $tag);
-+		$layout->set_text($tag);
- 		$width = max(WIDTH,
--			     $text_item->get("text-width")
-+			     ($layout->get_pixel_size())[0]
- 			         + (TEXT_BORDER * 6));
- 	    }
- 	    if ($width != WIDTH)
-@@ -1994,10 +1989,6 @@ sub dot_input_handler_cb($$)
+@@ -1923,9 +1918,9 @@ sub dot_input_handler_cb($$)
+             $fh_in->print("  \"" . $revision_id . "\"");
+             if (defined($tag = get_node_tag($instance, $revision_id)))
+             {
+-                $text_item->set(text => $tag);
++                $layout->set_text($tag);
+                 $width = max(WIDTH,
+-                             $text_item->get("text-width")
++                             ($layout->get_pixel_size())[0]
+                                  + (TEXT_BORDER * 6));
+             }
+             if ($width != WIDTH)
+@@ -1998,10 +1993,6 @@ sub dot_input_handler_cb($$)
      $fh_in->print("}\n");
      $fh_in->close();
  
@@ -77,68 +77,68 @@
  }
  #
  ##############################################################################
-@@ -2035,7 +2026,7 @@ sub draw_graph($)
- 				  x => CANVAS_BORDER,
- 				  y => CANVAS_BORDER);
+@@ -2039,7 +2030,7 @@ sub draw_graph($)
+                                   x => CANVAS_BORDER,
+                                   y => CANVAS_BORDER);
  
 -    $instance->{graph}->{node_text_items} = [];
 +    $instance->{graph}->{node_labels} = [];
      $instance->{graph}->{selection_box} = Gnome2::Canvas::Item->new
- 	($instance->{graph}->{group},
- 	 "Gnome2::Canvas::Rect",
-@@ -2071,7 +2062,8 @@ sub draw_graph($)
+         ($instance->{graph}->{group},
+          "Gnome2::Canvas::Rect",
+@@ -2075,7 +2066,8 @@ sub draw_graph($)
      foreach my $rectangle (@{$instance->{graph_data}->{rectangles}})
      {
  
--	my ($tag,
-+	my ($label,
-+	    $tag,
- 	    $text,
- 	    $widget);
- 	my $node = $child_db->{$rectangle->{revision_id}};
-@@ -2112,7 +2104,8 @@ sub draw_graph($)
- 	     width_pixels   => LINE_WIDTH);
+-        my ($tag,
++        my ($label,
++            $tag,
+             $text,
+             $widget);
+         my $node = $child_db->{$rectangle->{revision_id}};
+@@ -2116,7 +2108,8 @@ sub draw_graph($)
+              width_pixels   => LINE_WIDTH);
  
- 	# Now the text, use a revision's tag and failing that use the first
--	# eight characters of its hex id.
-+	# eight characters of its hex id. Also use a Gtk2::Label as the
-+	# Gnome2::Canvas::Text widget just takes too long to render.
+         # Now the text, use a revision's tag and failing that use the first
+-        # eight characters of its hex id.
++        # eight characters of its hex id. Also use a Gtk2::Label as the
++        # Gnome2::Canvas::Text widget just takes too long to render.
  
- 	if (defined($tag = get_node_tag($instance, $rectangle->{revision_id})))
- 	{
-@@ -2122,21 +2115,20 @@ sub draw_graph($)
- 	{
- 	    $text = substr($rectangle->{revision_id}, 0, HEX_ID_LENGTH);
- 	}
-+	$label = Gtk2::Label->new($text);
-+	$label->modify_font($instance->{fontdescription});
-+	$label->show();
-+	push(@{$instance->{graph}->{node_labels}}, $label);
- 	$widget = Gnome2::Canvas::Item->new
- 	    ($node_group,
--	     "Gnome2::Canvas::Text",
--	     x          => $rectangle->{tl_x}
--	                   + floor(($rectangle->{br_x} - $rectangle->{tl_x}
--				    + 1) / 2),
--	     y          => $rectangle->{tl_y}
--	                   + floor(($rectangle->{br_y} - $rectangle->{tl_y}
--				    + 1) / 2),
--	     font_desc  => $instance->{fontdescription},
--	     text       => $text,
--	     fill_color => FONT_COLOUR);
-+	     "Gnome2::Canvas::Widget",
-+	     widget => $label,
-+	     height => $rectangle->{br_y} - $rectangle->{tl_y} + 1,
-+	     width  => $rectangle->{br_x} - $rectangle->{tl_x} + 1,
-+	     x      => $rectangle->{tl_x},
-+	     y      => $rectangle->{tl_y});
- 	$widget->raise_to_top();
- 	$widget->show();
--	push(@{$instance->{graph}->{node_text_items}}, $widget);
+         if (defined($tag = get_node_tag($instance, $rectangle->{revision_id})))
+         {
+@@ -2126,21 +2119,20 @@ sub draw_graph($)
+         {
+             $text = substr($rectangle->{revision_id}, 0, HEX_ID_LENGTH);
+         }
++        $label = Gtk2::Label->new($text);
++        $label->modify_font($instance->{fontdescription});
++        $label->show();
++        push(@{$instance->{graph}->{node_labels}}, $label);
+         $widget = Gnome2::Canvas::Item->new
+             ($node_group,
+-             "Gnome2::Canvas::Text",
+-             x          => $rectangle->{tl_x}
+-                           + floor(($rectangle->{br_x} - $rectangle->{tl_x}
+-                                    + 1) / 2),
+-             y          => $rectangle->{tl_y}
+-                           + floor(($rectangle->{br_y} - $rectangle->{tl_y}
+-                                    + 1) / 2),
+-             font_desc  => $instance->{fontdescription},
+-             text       => $text,
+-             fill_color => FONT_COLOUR);
++             "Gnome2::Canvas::Widget",
++             widget => $label,
++             height => $rectangle->{br_y} - $rectangle->{tl_y} + 1,
++             width  => $rectangle->{br_x} - $rectangle->{tl_x} + 1,
++             x      => $rectangle->{tl_x},
++             y      => $rectangle->{tl_y});
+         $widget->raise_to_top();
+         $widget->show();
+-        push(@{$instance->{graph}->{node_text_items}}, $widget);
  
- 	$node_group->signal_connect
- 	    ("event",
-@@ -2462,7 +2454,8 @@ sub scroll_to_node($$)
+         $node_group->signal_connect
+             ("event",
+@@ -2466,7 +2458,8 @@ sub scroll_to_node($$)
  #
  #   Routine      - scale_canvas
  #
@@ -148,7 +148,7 @@
  #
  #   Data         - $instance : The history graph window instance.
  #
-@@ -2484,24 +2477,24 @@ sub scale_canvas($)
+@@ -2488,24 +2481,24 @@ sub scale_canvas($)
      $wm->update_gui();
  
      # Adjust the canvas zoom factor, also resize the fonts on all the text
@@ -158,37 +158,37 @@
      $instance->{graph_canvas}->set_pixels_per_unit($instance->{scale});
      if ((FONT_SIZE * $instance->{scale}) < 3)
      {
--	foreach my $text_item (@{$instance->{graph}->{node_text_items}})
-+	foreach my $label (@{$instance->{graph}->{node_labels}})
- 	{
--	    $text_item->hide();
-+	    $label->hide();
- 	}
+-        foreach my $text_item (@{$instance->{graph}->{node_text_items}})
++        foreach my $label (@{$instance->{graph}->{node_labels}})
+         {
+-            $text_item->hide();
++            $label->hide();
+         }
      }
      else
      {
- 	$instance->{fontdescription}->set_size
- 	    (floor(FONT_SIZE * $instance->{scale}) * PANGO_SCALE);
--	foreach my $text_item (@{$instance->{graph}->{node_text_items}})
-+	foreach my $label (@{$instance->{graph}->{node_labels}})
- 	{
--	    $text_item->set(font_desc => $instance->{fontdescription});
--	    $text_item->show();
-+	    $label->modify_font($instance->{fontdescription});
-+	    $label->show();
- 	}
+         $instance->{fontdescription}->set_size
+             (floor(FONT_SIZE * $instance->{scale}) * PANGO_SCALE);
+-        foreach my $text_item (@{$instance->{graph}->{node_text_items}})
++        foreach my $label (@{$instance->{graph}->{node_labels}})
+         {
+-            $text_item->set(font_desc => $instance->{fontdescription});
+-            $text_item->show();
++            $label->modify_font($instance->{fontdescription});
++            $label->show();
+         }
      }
  
-@@ -3120,9 +3113,9 @@ sub reset_history_graph_window($)
+@@ -3124,9 +3117,9 @@ sub reset_history_graph_window($)
  
      my $group = $instance->{graph}->{group};
  
 -    $instance->{graph} = {group           => undef,
--			  node_text_items => [],
--			  selection_box   => undef};
+-                          node_text_items => [],
+-                          selection_box   => undef};
 +    $instance->{graph} = {group         => undef,
-+			  node_labels   => [],
-+			  selection_box => undef};
++                          node_labels   => [],
++                          selection_box => undef};
      $group->destroy() if defined($group);
      $instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
      foreach my $item ($instance->{graph_advanced_find_button},

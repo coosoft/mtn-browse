@@ -1,14 +1,14 @@
 #
-# old_revision [08ccfec7e22e46558f11cc18da83ddafe36a7254]
+# old_revision [c626a1eb884cdeba7e7fb7d5d54b7772a1c12a4c]
 #
 # patch "mtn-browse"
-#  from [ad520a0c70e5eda8a8da5d5c84981481c16c66b3]
-#    to [13769d20e03b46e7b87e5d0ad16dfe2db7649f08]
+#  from [0bd563ce37121e63f46d4547b485f36b8939f600]
+#    to [7f3f69dadb73fa9b49dc2faaf4e851f615a52810]
 #
 ============================================================
---- mtn-browse	ad520a0c70e5eda8a8da5d5c84981481c16c66b3
-+++ mtn-browse	13769d20e03b46e7b87e5d0ad16dfe2db7649f08
-@@ -74,7 +74,7 @@ use Gtk2::Pango;
+--- mtn-browse	0bd563ce37121e63f46d4547b485f36b8939f600
++++ mtn-browse	7f3f69dadb73fa9b49dc2faaf4e851f615a52810
+@@ -76,7 +76,7 @@ use Gtk2::Pango;
  use Gtk2::GladeXML;
  use Gtk2::Helper;
  use Gtk2::Pango;
@@ -17,54 +17,54 @@
  use IO::Dir;
  use IO::File;
  use IPC::Open3;
-@@ -2175,13 +2175,13 @@ sub get_browser_window(;$$$$$)
+@@ -2235,13 +2235,13 @@ sub get_browser_window(;$$$$$)
  
- 	# Setup the file file viewer (with syntax highlighting).
+         # Setup the file file viewer (with syntax highlighting).
  
--	$browser->{file_view_svbuffer} = Gtk2::SourceView::Buffer->new(undef);
--	$browser->{file_view_svbuffer}->set_check_brackets(FALSE);
-+	$browser->{file_view_svbuffer} = Gtk2::SourceView2::Buffer->new(undef);
-+	$browser->{file_view_svbuffer}->set_highlight_matching_brackets(FALSE);
- 	$browser->{file_view_svbuffer}->set_max_undo_levels(0);
- 	$browser->{file_view_svbuffer}->begin_not_undoable_action();
- 	$browser->{file_view_svlangmgr} =
--	    Gtk2::SourceView::LanguagesManager->new();
--	$browser->{file_view_sv} = Gtk2::SourceView::View->
-+	    Gtk2::SourceView2::LanguageManager->new();
-+	$browser->{file_view_sv} = Gtk2::SourceView2::View->
- 	    new_with_buffer($browser->{file_view_svbuffer});
- 	$browser->{file_view_sv}->modify_font($mono_font);
- 	$browser->{file_view_sv}->set_cursor_visible(FALSE);
-@@ -3263,7 +3263,7 @@ sub update_browser_state($$)
- 	    $browser->{file_view_svbuffer}->
- 		place_cursor($browser->{file_view_svbuffer}->get_start_iter());
- 	    $browser->{file_view_svbuffer}->set_text("");
--	    $browser->{file_view_svbuffer}->set("highlight", FALSE);
-+	    $browser->{file_view_svbuffer}->set_highlight_syntax(FALSE);
- 	    set_label_value($browser->{file_name_value_label}, "");
- 	    set_label_value($browser->{file_author_value_label}, "");
- 	    set_label_value($browser->{last_update_value_label}, "");
-@@ -3388,7 +3388,7 @@ sub display_file($$)
+-        $browser->{file_view_svbuffer} = Gtk2::SourceView::Buffer->new(undef);
+-        $browser->{file_view_svbuffer}->set_check_brackets(FALSE);
++        $browser->{file_view_svbuffer} = Gtk2::SourceView2::Buffer->new(undef);
++        $browser->{file_view_svbuffer}->set_highlight_matching_brackets(FALSE);
+         $browser->{file_view_svbuffer}->set_max_undo_levels(0);
+         $browser->{file_view_svbuffer}->begin_not_undoable_action();
+         $browser->{file_view_svlangmgr} =
+-            Gtk2::SourceView::LanguagesManager->new();
+-        $browser->{file_view_sv} = Gtk2::SourceView::View->
++            Gtk2::SourceView2::LanguageManager->new();
++        $browser->{file_view_sv} = Gtk2::SourceView2::View->
+             new_with_buffer($browser->{file_view_svbuffer});
+         $browser->{file_view_sv}->modify_font($mono_font);
+         $browser->{file_view_sv}->set_cursor_visible(FALSE);
+@@ -3325,7 +3325,7 @@ sub update_browser_state($$)
+             $browser->{file_view_svbuffer}->
+                 place_cursor($browser->{file_view_svbuffer}->get_start_iter());
+             $browser->{file_view_svbuffer}->set_text("");
+-            $browser->{file_view_svbuffer}->set("highlight", FALSE);
++            $browser->{file_view_svbuffer}->set_highlight_syntax(FALSE);
+             set_label_value($browser->{file_name_value_label}, "");
+             set_label_value($browser->{file_author_value_label}, "");
+             set_label_value($browser->{last_update_value_label}, "");
+@@ -3450,7 +3450,7 @@ sub display_file($$)
      $browser->{file_view_svbuffer}->
- 	place_cursor($browser->{file_view_svbuffer}->get_start_iter());
+         place_cursor($browser->{file_view_svbuffer}->get_start_iter());
      $browser->{file_view_svbuffer}->set_text("");
 -    $browser->{file_view_svbuffer}->set("highlight", FALSE);
 +    $browser->{file_view_svbuffer}->set_highlight_syntax(FALSE);
  
      # Get contents.
  
-@@ -3492,9 +3492,12 @@ sub display_file($$)
- 			 && $mime_details->{syntax_highlight}))
- 		    && defined($lang =
- 			       $browser->{file_view_svlangmgr}->
--				   get_language_from_mime_type($mime_type)))
-+				   guess_language($browser->
-+						      {file_being_viewed}->
-+						      {short_name},
-+						  $mime_type)))
- 		{
--		    $browser->{file_view_svbuffer}->set("highlight", TRUE);
-+		    $browser->{file_view_svbuffer}->set_highlight_syntax(TRUE);
- 		    $browser->{file_view_svbuffer}->set_language($lang);
- 		}
+@@ -3554,9 +3554,12 @@ sub display_file($$)
+                          && $mime_details->{syntax_highlight}))
+                     && defined($lang =
+                                $browser->{file_view_svlangmgr}->
+-                                   get_language_from_mime_type($mime_type)))
++                                   guess_language($browser->
++                                                      {file_being_viewed}->
++                                                      {short_name},
++                                                  $mime_type)))
+                 {
+-                    $browser->{file_view_svbuffer}->set("highlight", TRUE);
++                    $browser->{file_view_svbuffer}->set_highlight_syntax(TRUE);
+                     $browser->{file_view_svbuffer}->set_language($lang);
+                 }
  
