@@ -92,6 +92,8 @@ sub generate_ancestry_graph($$;$$$);
 sub get_history_graph_window();
 sub get_node_colour($$);
 sub graph_reconnect_helper($$);
+sub graph_revision_change_history_button_clicked_cb($$);
+sub graph_revision_change_log_button_clicked_cb($$);
 sub hsv_to_rgb($$$$$$);
 sub layout_graph($);
 sub populate_revision_details($$);
@@ -148,10 +150,6 @@ sub display_history_graph($;$$$)
     $instance->{appbar}->push($instance->{appbar}->get_status()->get_text());
     $wm->update_gui();
 
-    foreach my $item (@{$instance->{revision_sensitive_group}})
-    {
-	$item->set_sensitive(FALSE);
-    }
     $instance->{stop_button}->set_sensitive(TRUE);
     $wm->update_gui();
 
@@ -306,6 +304,81 @@ sub default_zoom_button_clicked_cb($$)
 #
 ##############################################################################
 #
+#   Routine      - graph_revision_change_history_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the
+#                  revision change history button in the history graph window.
+#
+#   Data         - $widget  : The widget object that received the signal.
+#                  $browser : The window instance that is associated with
+#                             this widget.
+#
+##############################################################################
+
+
+
+sub graph_revision_change_history_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    my $tag;
+    my $node = $instance->{graph_data}->{child_graph}->
+        {$instance->{selected_revision_id}};
+
+    if (scalar(@{$node->{tags}}) > 0)
+    {
+	$tag = $node->{tags}->[0];
+    }
+    display_revision_change_history($instance->{mtn},
+				    $tag,
+				    $instance->{selected_revision_id});
+
+}
+#
+##############################################################################
+#
+#   Routine      - graph_revision_change_log_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the
+#                  revision change log button in the history graph window.
+#
+#   Data         - $widget  : The widget object that received the signal.
+#                  $browser : The window instance that is associated with
+#                             this widget.
+#
+##############################################################################
+
+
+
+sub graph_revision_change_log_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    my $tag;
+    my $node = $instance->{graph_data}->{child_graph}->
+        {$instance->{selected_revision_id}};
+
+    if (scalar(@{$node->{tags}}) > 0)
+    {
+	$tag = $node->{tags}->[0];
+    }
+    display_change_log($instance->{mtn},
+		       $instance->{selected_revision_id},
+		       "",
+		       $tag);
+
+}
+#
+##############################################################################
+#
 #   Routine      - canvas_item_event_cb
 #
 #   Description  - Callback routine called when an event it delivered to a
@@ -348,6 +421,7 @@ sub canvas_item_event_cb($$$)
 	if ($button == 1)
 	{
 	    select_node($instance, $revision_id);
+	    $instance->{selected_revision_id} = $revision_id;
 	}
 
 	return TRUE;
@@ -1352,6 +1426,15 @@ sub draw_graph($)
 	+ scalar(@{$instance->{graph_data}->{arrows}});
     $update_interval = calculate_update_interval($total);
 
+    # Cancel any selections that are currently active as we have just blanked
+    # the canvas.
+
+    foreach my $item ($instance->{graph_advanced_find_button},
+		      @{$instance->{revision_sensitive_group}})
+    {
+	$item->set_sensitive(FALSE);
+    }
+
     # Draw the rectangular nodes with text inside them.
 
     $instance->{appbar}->set_progress_percentage(0);
@@ -1570,6 +1653,7 @@ sub draw_graph($)
     }
     else
     {
+	$instance->{graph_advanced_find_button}->set_sensitive(TRUE);
 	scroll_to_node($instance,
 		       $instance->{graph_data}->{head_revisions}->[0]);
     }
@@ -2107,8 +2191,7 @@ sub get_history_graph_window()
 	foreach my $widget ("appbar",
 			    "graph_scrolledwindow",
 			    "graph_button_vbox",
-			    "revision_change_history_button",
-			    "revision_change_log_button",
+			    "graph_advanced_find_button",
 			    "stop_button",
 			    "author_value_label",
 			    "date_value_label",
@@ -2168,7 +2251,8 @@ sub get_history_graph_window()
 	# Setup button sensitivity groups.
 
 	$instance->{revision_sensitivity_group} = [];
-	foreach my $item ("revision_change_history", "revision_change_log")
+	foreach my $item ("graph_revision_change_history",
+			  "graph_revision_change_log")
 	{
 	    push(@{$instance->{revision_sensitive_group}},
 		 $instance->{glade}->get_widget($item . "_button"));
@@ -2199,7 +2283,8 @@ sub get_history_graph_window()
 	$instance->{graph}->{group}->destroy()
 	    if (defined($instance->{graph})
 		&& defined($instance->{graph}->{group}));
-	foreach my $item (@{$instance->{revision_sensitive_group}})
+	foreach my $item ($instance->{graph_advanced_find_button},
+			  @{$instance->{revision_sensitive_group}})
 	{
 	    $item->set_sensitive(FALSE);
 	}
@@ -2219,6 +2304,8 @@ sub get_history_graph_window()
 			  selection_box => undef};
     $instance->{scale} = 1;
     $instance->{stop} = 0;
+    $instance->{selected_revision_id} = undef;
+    $instance->{under_mouse_revision_id} = undef;
 
     return $instance;
 
