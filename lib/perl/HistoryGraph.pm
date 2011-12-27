@@ -1856,6 +1856,11 @@ sub dot_input_handler_cb($$)
         @revision_ids,
         $text_item);
 
+    # Temporarily switch our locale to the standard default C one. We don't
+    # want floats to be written with commas in them for instance.
+
+    setlocale(LC_ALL, "C");
+
     # Create a canvas text item and then use it to get the pixel size of a hex
     # id when displayed on the screen. This text item is also used later on for
     # any tags that need to be displayed.
@@ -1990,6 +1995,10 @@ sub dot_input_handler_cb($$)
     # Destroy the canvas text item that was used in the font size calculations.
 
     $text_item->destroy();
+
+    # Reset our locale back to local one again.
+
+    setlocale(LC_ALL, "");
 
 }
 #
