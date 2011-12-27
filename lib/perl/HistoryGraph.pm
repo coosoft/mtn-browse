@@ -3203,7 +3203,9 @@ sub change_history_graph_parameters($$)
 
         # Also load in any dates specified by the caller (but don't do this
         # after the first time the user changes the parameters - otherwise his
-        # settings will keep getting reset which he will find annoying).
+        # settings will keep getting reset which he will find annoying). Also
+        # remember to round up the to-date value as the date time widgets round
+        # down to the nearest minute.
 
         if ($parameters->{new} && $parameters->{from_date} ne "")
         {
@@ -3212,6 +3214,7 @@ sub change_history_graph_parameters($$)
             $from_date = mtn_time_string_to_time($parameters->{from_date});
             $to_date = ($parameters->{to_date} ne "")
                 ? mtn_time_string_to_time($parameters->{to_date}) : time();
+            $to_date = floor(($to_date + 59) / 60) * 60;
             set_date_range($instance, $from_date, $to_date)
                 if (defined($from_date) && defined($to_date));
             $parameters->{new} = 0;
@@ -3437,13 +3440,31 @@ sub tick_untick_branches_button_clicked_cb($$)
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my $set = ($instance->{tick_branches_button} == $widget) ? TRUE: FALSE;
+    my ($sort_column,
+        $sort_order);
+    my $set = ($instance->{tick_branches_button} == $widget) ? TRUE : FALSE;
 
-    $instance->{branches_treeview}->get_selection()->selected_foreach
-        (sub {
-             my ($model, $path, $iter) = @_;
-             $model->set($iter, BLS_SELECTED_COLUMN, $set);
-         });
+    # If the sort column is the selected one then temporarily make it the
+    # branch name column otherwise we get constant resorting and it will muck
+    # up the selection.
+
+    if (($instance->{branches_liststore}->get_sort_column_id())[0]
+        == BLS_SELECTED_COLUMN)
+    {
+        ($sort_column, $sort_order) =
+            $instance->{branches_liststore}->get_sort_column_id();
+        $instance->{branches_liststore}->set_sort_column_id(BLS_BRANCH_COLUMN,
+                                                            "ascending");
+    }
+    foreach my $path ($instance->{branches_treeview}->get_selection()->
+                      get_selected_rows())
+    {
+        my $iter = $instance->{branches_liststore}->get_iter($path);
+        $instance->{branches_liststore}->set($iter, BLS_SELECTED_COLUMN, $set);
+    }
+    $instance->{branches_liststore}->set_sort_column_id($sort_column,
+                                                        $sort_order)
+        if (defined($sort_column));
 
 }
 #
