@@ -135,8 +135,11 @@ sub reset_history_graph_window($);
 sub scale_canvas($);
 sub scroll_to_node($$);
 sub select_node($$);
+sub show_key_textview($$);
+sub show_key_togglebutton_toggled_cb($$);
 sub tag_weightings_button_clicked_cb($$);
 sub tick_untick_branches_button_clicked_cb($$);
+sub update_key_textview($);
 sub zoom_in_button_clicked_cb($$);
 sub zoom_out_button_clicked_cb($$);
 #
@@ -425,6 +428,33 @@ sub default_zoom_button_clicked_cb($$)
 
     $instance->{scale} = 1;
     scale_canvas($instance);
+
+}
+#
+##############################################################################
+#
+#   Routine      - show_key_togglebutton_toggled_cb
+#
+#   Description  - Callback routine called when the user toggles the show
+#                  colour key button in the history graph window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub show_key_togglebutton_toggled_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    show_key_textview($instance, $widget->get_active());
 
 }
 #
@@ -972,6 +1002,10 @@ sub generate_history_graph($)
     # Now draw it in our canvas.
 
     draw_graph($instance) unless ($instance->{stop});
+
+    # Update the key textview.
+
+    update_key_textview($instance) unless ($instance->{stop});
 
     # Clean up the graph and any associated data if the user stopped the
     # drawing process but without loosing any settings (the graph will be a
@@ -2803,6 +2837,139 @@ sub populate_revision_details($$)
 #
 ##############################################################################
 #
+#   Routine      - show_key_textview
+#
+#   Description  - Shows or hides the key textview window.
+#
+#   Data         - $instance : The history graph window instance.
+#                  $show     : True if the key textview window is to be shown,
+#                              otherwise false if it is to be hidden.
+#
+##############################################################################
+
+
+
+sub show_key_textview($$)
+{
+
+    my ($instance, $show) = @_;
+
+    my $current_child = ($instance->{graph_container_hbox}->get_children())[0];
+
+    if ($show && $current_child == $instance->{graph_scrolledwindow})
+    {
+
+        # We need to show the key textview and update it.
+
+        $instance->{graph_container_hbox}->
+            remove($instance->{graph_scrolledwindow});
+        $instance->{graph_hpaned}->add1($instance->{graph_scrolledwindow});
+        $instance->{graph_hpaned}->child1_resize(TRUE);
+        $instance->{graph_hpaned}->child1_shrink(FALSE);
+        $instance->{graph_container_hbox}->
+            pack_start($instance->{graph_hpaned}, TRUE, TRUE, 0);
+        $instance->{graph_container_hbox}->show_all();
+
+        update_key_textview($instance);
+
+    }
+    elsif (! $show && $current_child == $instance->{graph_hpaned})
+    {
+
+        # We need to hide the key textview.
+
+        $instance->{graph_container_hbox}->remove($instance->{graph_hpaned});
+        $instance->{graph_hpaned}->remove($instance->{graph_scrolledwindow});
+        $instance->{graph_hpaned}->hide();
+        $instance->{graph_container_hbox}->
+            pack_start($instance->{graph_scrolledwindow}, TRUE, TRUE, 0);
+        $instance->{graph_container_hbox}->show_all();
+        $instance->{key_buffer}->set_text("");
+
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - update_key_textview
+#
+#   Description  - Update the key textview with the current contents of the
+#                  colour database (the cache used to remember colours when
+#                  drawing a graph).
+#
+#   Data         - $instance    : The history graph window instance.
+#
+##############################################################################
+
+
+
+sub update_key_textview($)
+{
+
+    my $instance = $_[0];
+
+    # Don't bother if we aren't displaying the key textview.
+
+    return unless (($instance->{graph_container_hbox}->get_children())[0]
+                   == $instance->{graph_hpaned});
+
+    my (@names,
+        $padding,
+        $tag_table,
+        @tags);
+    my $max_len = 0;
+
+    # Empty out the key textview along with any tags.
+
+    $instance->{key_buffer}->set_text("");
+    $tag_table = $instance->{key_buffer}->get_tag_table();
+    $tag_table->foreach(sub { push(@tags, $_[0]); });
+    foreach my $tag (@tags)
+    {
+        $tag_table->remove($tag);
+    }
+
+    @names = sort(keys(%{$instance->{colour_db}}));
+
+    # Find out the longest name so that we can pad the rest.
+
+    foreach my $name (@names)
+    {
+        my $len;
+        $max_len = $len if (($len = length($name)) > $max_len);
+    }
+    $padding = " " x $max_len;
+
+    # Now populate the key textview with the colour coded keys.
+
+    foreach my $name (@names)
+    {
+        my $tag;
+        $tag = $instance->{key_buffer}->create_tag
+            ($tag,
+             "background" => colour_to_string($instance->{colour_db}->
+                                              {$name}));
+        $instance->{key_buffer}->insert_with_tags
+            ($instance->{key_buffer}->get_end_iter(),
+             substr($name . $padding, 0, $max_len) . "\n",
+             $tag);
+    }
+
+    # Make sure we are at the top.
+
+    $instance->{key_buffer}->
+        place_cursor($instance->{key_buffer}->get_start_iter());
+    if ($instance->{key_scrolledwindow}->realized())
+    {
+        $instance->{key_scrolledwindow}->get_vadjustment()->set_value(0);
+        $instance->{key_scrolledwindow}->get_hadjustment()->set_value(0);
+    }
+
+}
+#
+##############################################################################
+#
 #   Routine      - get_node_tag
 #
 #   Description  - Return a tag associated with the specified node in the
@@ -2949,8 +3116,13 @@ sub get_history_graph_window()
 
         $instance->{window} = $glade->get_widget($window_type);
         foreach my $widget ("appbar",
+                            "graph_container_hbox",
+                            "graph_hpaned",
                             "graph_scrolledwindow",
+                            "key_scrolledwindow",
+                            "key_textview",
                             "graph_button_vbox",
+                            "show_key_togglebutton",
                             "graph_advanced_find_button",
                             "stop_button",
                             "author_value_label",
@@ -3021,6 +3193,11 @@ sub get_history_graph_window()
                  $glade->get_widget($item . "_button"));
         }
 
+        # Setup the key viewer.
+
+        $instance->{key_buffer} = $instance->{key_textview}->get_buffer();
+        $instance->{key_textview}->modify_font($mono_font);
+
         # Register the window for management and set up the help callbacks.
 
         $wm->manage($instance,
@@ -3047,6 +3224,8 @@ sub get_history_graph_window()
         local $instance->{in_cb} = 1;
         ($width, $height) = $instance->{window}->get_default_size();
         $instance->{window}->resize($width, $height);
+        $instance->{graph_hpaned}->set_position(600);
+        $instance->{show_key_togglebutton}->set_active(FALSE);
         $instance->{stop_button}->set_sensitive(FALSE);
         $instance->{graph_canvas}->set_pixels_per_unit(1);
         $instance->{appbar}->set_progress_percentage(0);
@@ -3063,6 +3242,7 @@ sub get_history_graph_window()
     $instance->{compiled_tag_weightings} =[];
     compile_tag_weighting_patterns($instance->{compiled_tag_weightings});
     reset_history_graph_instance($instance);
+    show_key_textview($instance, undef);
 
     return $instance;
 
@@ -3133,6 +3313,7 @@ sub reset_history_graph_window($)
                           selection_box   => undef};
     $group->destroy() if defined($group);
     $instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
+    $instance->{key_buffer}->set_text("");
     foreach my $item ($instance->{graph_advanced_find_button},
                       @{$instance->{revision_sensitive_group}})
     {

@@ -979,10 +979,12 @@ sub find_gdk_windows($$)
 
     if ($widget->isa("Gtk2::Window"))
     {
+        $widget->realize() unless ($widget->realized());
         push(@$list, $widget->window());
     }
     elsif ($widget->isa("Gtk2::TextView"))
     {
+        $widget->realize() unless ($widget->realized());
         push(@$list, $widget->get_window("text"));
     }
     if ($widget->isa("Gtk2::Container"))
