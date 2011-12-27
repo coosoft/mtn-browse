@@ -53,7 +53,7 @@ no warnings qw(recursion);
 
 use constant CANVAS_BORDER    => 5;
 use constant DPI              => 72;
-use constant FONT_SIZE        => 8;
+use constant FONT_SIZE        => 10;
 use constant HEIGHT           => 28;
 use constant LINE_WIDTH       => 2;
 use constant SELECTION_BORDER => 5;
@@ -73,6 +73,7 @@ use constant SUSPENDED_NODE => 0x08;
 
 # Constants representing certain colours.
 
+use constant FONT_COLOUR                => "Black";
 use constant NOT_SELECTED_BORDER_COLOUR => "Gray";
 use constant SELECTED_BORDER_COLOUR     => "Black";
 use constant SELECTION_COLOUR           => "Tomato";
@@ -1862,16 +1863,20 @@ sub dot_input_handler_cb($$)
     my ($child_db,
 	$hex_id_height,
 	$hex_id_width,
-	$layout,
-	@revision_ids);
+	@revision_ids,
+	$text_item);
 
-    # Create a layout object based on the main graph window and then use it to
-    # get the pixel size of a hex id when displayed on the screen. This layout
-    # is also used later on for any tags that need to be displayed.
+    # Create a canvas text item and then use it to get the pixel size of a hex
+    # id when displayed on the screen. This text item is also used later on for
+    # any tags that need to be displayed.
 
-    $layout = $instance->{window}->create_pango_layout("A" x HEX_ID_LENGTH);
-    $layout->set_font_description($instance->{fontdescription});
-    ($hex_id_width, $hex_id_height) = $layout->get_pixel_size();
+    $text_item = Gnome2::Canvas::Item->new
+	($instance->{graph_canvas}->root(),
+	 "Gnome2::Canvas::Text",
+	 font_desc  => $instance->{fontdescription},
+	 text       => "A" x HEX_ID_LENGTH);
+    $hex_id_width = $text_item->get("text-width");
+    $hex_id_height = $text_item->get("text-height");
     $hex_id_height = max(HEIGHT, $hex_id_height + (TEXT_BORDER * 2));
     $hex_id_width = max(WIDTH, $hex_id_width + (TEXT_BORDER * 2));
 
@@ -1911,9 +1916,9 @@ sub dot_input_handler_cb($$)
 	    $fh_in->print("  \"" . $revision_id . "\"");
 	    if (defined($tag = get_node_tag($instance, $revision_id)))
 	    {
-		$layout->set_text($tag);
+		$text_item->set(text => $tag);
 		$width = max(WIDTH,
-			     ($layout->get_pixel_size())[0]
+			     $text_item->get("text-width")
 			         + (TEXT_BORDER * 6));
 	    }
 	    if ($width != WIDTH)
@@ -1986,6 +1991,10 @@ sub dot_input_handler_cb($$)
     $fh_in->print("}\n");
     $fh_in->close();
 
+    # Destroy the canvas text item that was used in the font size calculations.
+
+    $text_item->destroy();
+
 }
 #
 ##############################################################################
@@ -2023,7 +2032,7 @@ sub draw_graph($)
 				  x => CANVAS_BORDER,
 				  y => CANVAS_BORDER);
 
-    $instance->{graph}->{node_labels} = [];
+    $instance->{graph}->{node_text_items} = [];
     $instance->{graph}->{selection_box} = Gnome2::Canvas::Item->new
 	($instance->{graph}->{group},
 	 "Gnome2::Canvas::Rect",
@@ -2059,8 +2068,7 @@ sub draw_graph($)
     foreach my $rectangle (@{$instance->{graph_data}->{rectangles}})
     {
 
-	my ($label,
-	    $tag,
+	my ($tag,
 	    $text,
 	    $widget);
 	my $node = $child_db->{$rectangle->{revision_id}};
@@ -2096,13 +2104,12 @@ sub draw_graph($)
 	     y1             => $rectangle->{tl_y},
 	     x2             => $rectangle->{br_x},
 	     y2             => $rectangle->{br_y},
-	     fill_color_gdk => get_node_colour ($instance, $node),
+	     fill_color_gdk => get_node_colour($instance, $node),
 	     outline_color  => $outline_colour,
 	     width_pixels   => LINE_WIDTH);
 
 	# Now the text, use a revision's tag and failing that use the first
-	# eight characters of its hex id. Also use a Gtk2::Label as the
-	# Gnome2::Canvas::Text widget just takes too long to render.
+	# eight characters of its hex id.
 
 	if (defined($tag = get_node_tag($instance, $rectangle->{revision_id})))
 	{
@@ -2112,20 +2119,21 @@ sub draw_graph($)
 	{
 	    $text = substr($rectangle->{revision_id}, 0, HEX_ID_LENGTH);
 	}
-	$label = Gtk2::Label->new($text);
-	$label->modify_font($instance->{fontdescription});
-	$label->show();
-	push(@{$instance->{graph}->{node_labels}}, $label);
 	$widget = Gnome2::Canvas::Item->new
 	    ($node_group,
-	     "Gnome2::Canvas::Widget",
-	     widget => $label,
-	     height => $rectangle->{br_y} - $rectangle->{tl_y} + 1,
-	     width  => $rectangle->{br_x} - $rectangle->{tl_x} + 1,
-	     x      => $rectangle->{tl_x},
-	     y      => $rectangle->{tl_y});
+	     "Gnome2::Canvas::Text",
+	     x          => $rectangle->{tl_x}
+	                   + floor(($rectangle->{br_x} - $rectangle->{tl_x}
+				    + 1) / 2),
+	     y          => $rectangle->{tl_y}
+	                   + floor(($rectangle->{br_y} - $rectangle->{tl_y}
+				    + 1) / 2),
+	     font_desc  => $instance->{fontdescription},
+	     text       => $text,
+	     fill_color => FONT_COLOUR);
 	$widget->raise_to_top();
 	$widget->show();
+	push(@{$instance->{graph}->{node_text_items}}, $widget);
 
 	$node_group->signal_connect
 	    ("event",
@@ -2451,8 +2459,7 @@ sub scroll_to_node($$)
 #
 #   Routine      - scale_canvas
 #
-#   Description  - Adjust the scale of the canvas widgets and associated
-#                  labels.
+#   Description  - Adjust the scale of the canvas widgets.
 #
 #   Data         - $instance : The history graph window instance.
 #
@@ -2474,24 +2481,24 @@ sub scale_canvas($)
     $wm->update_gui();
 
     # Adjust the canvas zoom factor, also resize the fonts on all the text
-    # labels (hiding them when the text gets too small to be of any use).
+    # items (hiding them when the text gets too small to be of any use).
 
     $instance->{graph_canvas}->set_pixels_per_unit($instance->{scale});
     if ((FONT_SIZE * $instance->{scale}) < 3)
     {
-	foreach my $label (@{$instance->{graph}->{node_labels}})
+	foreach my $text_item (@{$instance->{graph}->{node_text_items}})
 	{
-	    $label->hide();
+	    $text_item->hide();
 	}
     }
     else
     {
 	$instance->{fontdescription}->set_size
 	    (floor(FONT_SIZE * $instance->{scale}) * PANGO_SCALE);
-	foreach my $label (@{$instance->{graph}->{node_labels}})
+	foreach my $text_item (@{$instance->{graph}->{node_text_items}})
 	{
-	    $label->modify_font($instance->{fontdescription});
-	    $label->show();
+	    $text_item->set(font_desc => $instance->{fontdescription});
+	    $text_item->show();
 	}
     }
 
@@ -3105,7 +3112,7 @@ sub reset_history_graph_instance($)
 #
 #   Routine      - destroy_history_graph
 #
-#   Description  - Destroys all of the history graph canvas widget items.
+#   Description  - Destroys all of the history graph canvas item widgets.
 #
 #   Data         - $instance : The history graph window instance.
 #
@@ -3120,9 +3127,9 @@ sub destroy_history_graph($)
 
     my $group = $instance->{graph}->{group};
 
-    $instance->{graph} = {group         => undef,
-			  node_labels   => [],
-			  selection_box => undef};
+    $instance->{graph} = {group           => undef,
+			  node_text_items => [],
+			  selection_box   => undef};
     $group->destroy() if defined($group);
     $instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
 
