@@ -405,6 +405,7 @@ sub view_button_clicked_cb($$);
                         undef,
                         undef,
                         undef,
+                        undef,
                         "mtn",
                         "automate",
                         "keys"))
