@@ -1379,8 +1379,15 @@ sub handle_comboxentry_history($$;$)
 
     my ($widget, $history_name, $value) = @_;
 
+    my $history_ref;
     my $update_history = 1;
-    my $history_ref = $user_preferences->{histories}->{$history_name};
+
+    # Automatically create the history entry if there isn't one already.
+
+    $user_preferences->{histories}->{$history_name} = []
+        unless (defined($user_preferences->{histories}->{$history_name}));
+
+    $history_ref = $user_preferences->{histories}->{$history_name};
 
     # Update the comboxentry history list and save it to disk.
 

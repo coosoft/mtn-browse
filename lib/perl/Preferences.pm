@@ -1737,11 +1737,7 @@ sub upgrade_preferences($)
     }
     if ($preferences->{version} == 2)
     {
-        $preferences->{histories} = {advanced_find          => [],
-                                     find_files_named       => [],
-                                     find_files_containing  => [],
-                                     find_files_modified_by => [],
-                                     find_text              => []};
+        $preferences->{histories} = {};
         $preferences->{version} = 3;
     }
     if ($preferences->{version} == 3)
@@ -1866,11 +1862,7 @@ sub initialise_preferences()
                                                        bg => "DarkSeaGreen1",
                                                        hl => "SpringGreen1"}},
          mime_table          => $mime_table,
-         histories           => {advanced_find          => [],
-                                 find_files_named       => [],
-                                 find_files_containing  => [],
-                                 find_files_modified_by => [],
-                                 find_text              => []},
+         histories           => {},
          remote_connections  => 0,
          server_bookmarks    => [],
          tag_weightings      => []);
