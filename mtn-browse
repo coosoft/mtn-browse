@@ -46,12 +46,18 @@ BEGIN
 {
     use constant APPLICATION_NAME        => "mtn-browse";
     use constant APPLICATION_VERSION     => "1.00-Beta-RC1";
-    use constant FILE_COMPARE_CMD        => "@INST:FILE_COMPARE_CMD@";
-    use constant GRAPHVIZ_LAYOUT_PROGRAM => "@INST:GRAPHVIZ_LAYOUT_PROGRAM@";
-    use constant HTML_VIEWER_CMD         => "@INST:HTML_VIEWER_CMD@";
-    use constant LIB_DIR                 => "@INST:LIB_DIR@";
-    use constant MIME_GLOB_FILE          => "@INST:GLOBS_FILE@";
-    use constant PREFIX_DIR              => "@INST:PREFIX_DIR@";
+#    use constant FILE_COMPARE_CMD        => "@INST:FILE_COMPARE_CMD@";
+    use constant FILE_COMPARE_CMD        => "kompare";
+#    use constant HTML_VIEWER_CMD         => "@INST:HTML_VIEWER_CMD@";
+    use constant HTML_VIEWER_CMD         => "";
+#    use constant GRAPHVIZ_LAYOUT_PROGRAM => "@INST:GRAPHVIZ_LAYOUT_PROGRAM@";
+    use constant GRAPHVIZ_LAYOUT_PROGRAM => "dot";
+#    use constant LIB_DIR                 => "@INST:LIB_DIR@";
+    use constant LIB_DIR                 => "/home/aecoope/code/monotone.ca/mtn-browse/lib";
+#    use constant MIME_GLOB_FILE          => "@INST:GLOBS_FILE@";
+    use constant MIME_GLOB_FILE          => "/usr/share/mime/globs";
+#    use constant PREFIX_DIR              => "@INST:PREFIX_DIR@";
+    use constant PREFIX_DIR              => "/home/aecoope/code/monotone.ca/mtn-browse";
 }
 use locale;
 use strict;
@@ -232,17 +238,18 @@ sub view_button_clicked_cb($$);
     $line_image = Gtk2::Gdk::Pixbuf->
         new_from_file(File::Spec->catfile(UI_DIR, "line.png"));
     $icon_factory = Gtk2::IconFactory->new();
-    Gtk2::Stock->add({stock_id => "mtnb-weighting",
-                      label    => __("Weighting")});
-    $icon_set = Gtk2::IconSet->new_from_pixbuf
-        (Gtk2::Gdk::Pixbuf->new_from_file(File::Spec->catfile
-                                          (UI_DIR, "weightings.png")));
     Gtk2::Stock->add({stock_id => "mtnb-tick",
                       label    => __("Tick")});
     $icon_set = Gtk2::IconSet->new_from_pixbuf
         (Gtk2::Gdk::Pixbuf->new_from_file(File::Spec->catfile
                                           (UI_DIR, "tick.png")));
     $icon_factory->add("mtnb-tick", $icon_set);
+    Gtk2::Stock->add({stock_id => "mtnb-weighting",
+                      label    => __("Weighting")});
+    $icon_set = Gtk2::IconSet->new_from_pixbuf
+        (Gtk2::Gdk::Pixbuf->new_from_file(File::Spec->catfile
+                                          (UI_DIR, "weighting.png")));
+    $icon_factory->add("mtnb-weighting", $icon_set);
     $icon_factory->add_default();
     $icon_factory = $icon_set = undef;
 
