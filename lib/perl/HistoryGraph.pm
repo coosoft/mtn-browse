@@ -1527,10 +1527,8 @@ sub graph_reconnect_helper($$)
         {
             foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
             {
-                if (! exists($context->{processed_set}->{$parent_id}))
-                {
-                    graph_reconnect_helper($context, $parent_id);
-                }
+                graph_reconnect_helper($context, $parent_id)
+                    unless (exists($context->{processed_set}->{$parent_id}));
             }
         }
 
@@ -1538,17 +1536,20 @@ sub graph_reconnect_helper($$)
     else
     {
 
-        my ($aggressive_search,
-            $found_new_ancestors);
-
         # No we weren't off selection.
 
-        # If the current node is selected then check to see if there are any
-        # selected parents. If not then we need to go into an aggressive search
-        # mode where we do our best to find a graphed ancestor for it.
+        # If the current node is selected then decide whether we need to go
+        # into aggressive search mode and then process each parent.
 
         if (exists($context->{selected_set}->{$revision_id}))
         {
+
+            my $aggressive_search;
+
+            # Determine whether we need to go into aggressive search mode. This
+            # is where we have no selected parents so we have tp do our best to
+            # find a graphed ancestor.
+
             $aggressive_search = 1;
             foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
             {
@@ -1558,6 +1559,18 @@ sub graph_reconnect_helper($$)
                     last;
                 }
             }
+            local $context->{aggressive_search} = $aggressive_search
+                unless ($context->{aggressive_search} == $aggressive_search);
+
+            # Now process any unprocessed graphed parents.
+
+            foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
+            {
+                graph_reconnect_helper($context, $parent_id)
+                    if (! exists($context->{processed_set}->{$parent_id})
+                        && exists($context->{graph_db}->{$parent_id}));
+            }
+
         }
 
         # Otherwise if the current node is a propagate node (i.e. in the graph
@@ -1571,8 +1584,6 @@ sub graph_reconnect_helper($$)
             my (@graphed_parents,
                 @selected_parents);
 
-            $aggressive_search = $context->{aggressive_search};
-
             # First scan the immediate parents for any that are graphed. If we
             # find selected parents then join those up, if not then try joining
             # up any graphed parents and if that fails and we are in aggressive
@@ -1585,12 +1596,10 @@ sub graph_reconnect_helper($$)
                 if (exists($context->{selected_set}->{$parent_id}))
                 {
                     push(@selected_parents, $parent_id);
-                    $found_new_ancestors = 1;
                 }
                 elsif (exists($context->{graph_db}->{$parent_id}))
                 {
                     push(@graphed_parents, $parent_id);
-                    $found_new_ancestors = 1;
                 }
             }
 
@@ -1623,69 +1632,43 @@ sub graph_reconnect_helper($$)
 
                 local $context->{processed_set} = {};
 
-                # Search up each parent node.
+                # Search up each parent node, we are going off selecion.
 
-                local $context->{outside_selection};
+                local $context->{outside_selection} = 1;
                 foreach my $parent_id
                     (@{$context->{parent_db}->{$revision_id}})
                 {
-                    if (! exists($context->{processed_set}->{$parent_id}))
-                    {
-                        $found_new_ancestors =
-                            $context->{outside_selection} = 1
-                            unless ($context->{outside_selection});
-                        graph_reconnect_helper($context, $parent_id);
-                    }
+                    graph_reconnect_helper($context, $parent_id)
+                        unless (exists($context->{processed_set}->
+                                       {$parent_id}));
                 }
 
             }
 
-            # If we have found some parents then file this revision as a child
+            # For any parents that we have found file this revision as a child
             # of those parents in the graph database. By definition all found
             # parent nodes already exist in the graph database so no need to
             # worry about creating new nodes. Also avoid adding duplicate child
             # revision entries.
 
-            if ($found_new_ancestors)
+            foreach my $parent_id (@{$context->{parents}})
             {
-                foreach my $parent_id (@{$context->{parents}})
+                my $found;
+                foreach my $child_id
+                    (@{$context->{graph_db}->{$parent_id}->{children}})
                 {
-                    my $found;
-                    foreach my $child_id
-                        (@{$context->{graph_db}->{$parent_id}->{children}})
+                    if ($child_id eq $revision_id)
                     {
-                        if ($child_id eq $revision_id)
-                        {
-                            $found = 1;
-                            last;
-                        }
-                    }
-                    if (! $found)
-                    {
-                        push(@{$context->{graph_db}->{$parent_id}->{children}},
-                             $revision_id);
+                        $found = 1;
+                        last;
                     }
                 }
-                $context->{parents} = [];
+                push(@{$context->{graph_db}->{$parent_id}->{children}},
+                     $revision_id)
+                    unless ($found);
             }
+            $context->{parents} = [];
 
-        }
-
-        # If necessary update the aggressive search mode state, saving the old
-        # value on the stack.
-
-        local $context->{aggressive_search} = $aggressive_search
-            unless ($context->{aggressive_search} == $aggressive_search);
-
-        # Now process the graphed parents.
-
-        foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
-        {
-            if (! exists($context->{processed_set}->{$parent_id})
-                && exists($context->{graph_db}->{$parent_id}))
-            {
-                graph_reconnect_helper($context, $parent_id);
-            }
         }
 
     }
@@ -3248,8 +3231,7 @@ sub change_history_graph_parameters($$)
     {
 
         my ($branch_list,
-            @certs_list,
-            $found);
+            @certs_list);
 
         # Get the selected branches.
 
