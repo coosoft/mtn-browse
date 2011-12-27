@@ -49,11 +49,12 @@ no warnings qw(recursion);
 
 # ***** GLOBAL DATA DECLARATIONS *****
 
-# Constants for the scale of items in a graph.
+# Constants for the border and scale of items in a graph.
 
-use constant DPI    => 72;
-use constant HEIGHT => 28;
-use constant WIDTH  => 72;
+use constant CANVAS_BORDER => 5;
+use constant DPI           => 72;
+use constant HEIGHT        => 28;
+use constant WIDTH         => 72;
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
@@ -121,7 +122,7 @@ sub display_history_graph($;$$$)
 
     $instance->{appbar}->set_status(__("Building ancestry graph"));
     $wm->update_gui();
-    build_ancestry_graph($instance, 0, $branches, $from_date, $to_date);
+    build_ancestry_graph($instance, 1, $branches, $from_date, $to_date);
 
     # get_revision_history_helper($instance, $revision_id);
 
@@ -1096,13 +1097,13 @@ sub draw_graph($)
     $instance->{graph_canvas}->set_scroll_region
 	(0,
 	 0,
-	 $instance->{graph_data}->{max_x},
-	 $instance->{graph_data}->{max_y});
+	 $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
+	 $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
 
     $group = Gnome2::Canvas::Item->new($instance->{graph_canvas}->root(),
 				       "Gnome2::Canvas::Group",
-				       x => 0,
-				       x => 0);
+				       x => CANVAS_BORDER,
+				       y => CANVAS_BORDER);
     $instance->{graph_group} = $group;
 
     foreach my $rectangle (@{$instance->{graph_data}->{rectangles}})
@@ -1283,6 +1284,9 @@ sub get_history_graph_window()
 	local $instance->{in_cb} = 1;
 	($width, $height) = $instance->{window}->get_default_size();
 	$instance->{window}->resize($width, $height);
+	$instance->{graph_canvas}->set_scroll_region(0, 0, 10, 10);
+	$instance->{graph_group}->destroy()
+	    if (defined($instance->{graph_group}));
 	foreach my $item (@{$instance->{revision_sensitive_group}})
 	{
 	    $item->set_sensitive(FALSE);
@@ -1298,10 +1302,6 @@ sub get_history_graph_window()
     $instance->{graph_group} = undef;
     $instance->{graph_data} = undef;
     $instance->{stop} = 0;
-
-    # Empty out the contents.
-
-    # $instance->{history_buffer}->set_text("");
 
     return $instance;
 
