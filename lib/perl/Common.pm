@@ -92,7 +92,7 @@ sub mtn_time_string_to_time($);
 sub open_database($$$);
 sub program_valid($;$);
 sub register_help_callbacks($$@);
-sub run_command($$$$@);
+sub run_command($$$$$@);
 sub save_as_file($$$);
 sub set_label_value($$);
 sub treeview_column_searcher($$$$);
@@ -157,6 +157,9 @@ sub generate_tmp_path($)
 #
 #   Data         - $buffer      : A reference to the buffer that is to contain
 #                                 the output from the command.
+#                  $c_locale    : True if the command is to be run in the C
+#                                 locale, otherwise false if the command is to
+#                                 be run in the current locale.
 #                  $input_cb    : Either a reference to a callback routine
 #                                 that is to be called in order to provide
 #                                 data on STDIN or undef if no such callback
@@ -176,10 +179,10 @@ sub generate_tmp_path($)
 
 
 
-sub run_command($$$$@)
+sub run_command($$$$$@)
 {
 
-    my ($buffer, $input_cb, $details, $abort, @args) = @_;
+    my ($buffer, $c_locale, $input_cb, $details, $abort, @args) = @_;
 
     my ($dummy_flag,
         @err,
@@ -200,6 +203,8 @@ sub run_command($$$$@)
     $my_pid = $$;
     eval
     {
+        local $ENV{LC_ALL} = "C" if ($c_locale);
+        local $ENV{LANG} = "C" if ($c_locale);
         $pid = open3($fd_in, $fd_out, $fd_err, @args);
     };
 
@@ -2254,7 +2259,7 @@ sub busy_dialog_run($)
     my $choice;
     my $wm = WindowManager->instance();
 
-    if (isa($item, "Gtk2::Dialog"))
+    if (blessed($item) && $item->isa("Gtk2::Dialog"))
     {
         $wm->make_busy(undef, 1);
         $choice = $wm->allow_input(sub { return $item->run(); });

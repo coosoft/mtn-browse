@@ -1717,6 +1717,7 @@ sub layout_graph($)
     # Run the dot subprocess.
 
     return unless (run_command(\$buffer,
+                               1,
                                \&dot_input_handler_cb,
                                $instance,
                                \$instance->{stop},

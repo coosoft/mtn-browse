@@ -11664,10 +11664,10 @@ two specified dates</property>
 		      <child>
 			<widget class="GtkCheckButton" id="date_range_checkbutton">
 			  <property name="visible">True</property>
-			  <property name="tooltip" translatable="yes">Select revisions for graphing based upon
-their last modification date and time</property>
+			  <property name="tooltip" translatable="yes">Select revisions for graphing based
+upon their creation date and time</property>
 			  <property name="can_focus">True</property>
-			  <property name="label" translatable="yes">Graph revisions created or modified:</property>
+			  <property name="label" translatable="yes">Graph revisions created:</property>
 			  <property name="use_underline">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
 			  <property name="focus_on_click">True</property>

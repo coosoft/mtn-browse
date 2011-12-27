@@ -2592,7 +2592,7 @@ sub mtn_diff($$$$$;$)
     eval
     {
         die("chdir failed: " . $!) unless (chdir(File::Spec->rootdir()));
-        $ret_val = run_command(\$buffer, undef, undef, $abort, @cmd);
+        $ret_val = run_command(\$buffer, undef, undef, undef, $abort, @cmd);
     };
     $exception = $@;
     chdir($cwd);

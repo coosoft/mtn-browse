@@ -84,10 +84,10 @@ use List::Util qw(max);
 use Locale::TextDomain (APPLICATION_NAME,
                         File::Spec->catfile(PREFIX_DIR, "share", "locale"));
 use POSIX qw(:errno_h :locale_h :sys_wait_h floor strftime);
+use Scalar::Util qw(blessed);
 use Symbol qw(gensym);
 use Text::Tabs;
 use Time::Local;
-use UNIVERSAL qw(isa);
 
 # Add custom module directories to the module load search path.
 
