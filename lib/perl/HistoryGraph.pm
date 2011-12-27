@@ -144,12 +144,11 @@ sub display_history_graph($;$$$)
     $wm->update_gui();
 
     $instance->{stop_button}->set_sensitive(TRUE);
+    $wm->update_gui();
 
     # Get the list of file change revisions. Remember to include the current
     # revision in the history.
 
-    $instance->{appbar}->set_status(__("Building ancestry graph"));
-    $wm->update_gui();
     generate_ancestry_graph($instance, 1, $branches, $from_date, $to_date);
 
     # Populate all of the graphed nodes with essential revision information.
@@ -338,17 +337,22 @@ sub generate_ancestry_graph($$;$$$)
     my ($instance, $show_all_propagate_nodes, $branches, $from_date, $to_date)
 	= @_;
 
-    my(%branches_set,
-       $branch_selector,
-       %date_set,
-       $date_range_selector,
-       $date_selector,
-       @graph,
-       %graph_db,
-       @head_revisions,
-       %nr_of_parents,
-       $selected_set);
+    my (%branches_set,
+	$branch_selector,
+	$counter,
+	%date_set,
+	$date_range_selector,
+	$date_selector,
+	@graph,
+	%graph_db,
+	@head_revisions,
+	%nr_of_parents,
+	$selected_set,
+	$update_interval);
     my $wm = WindowManager->instance();
+
+    $instance->{appbar}->set_status(__("Building ancestry graph"));
+    $wm->update_gui();
 
     $instance->{graph_data}->{child_graph} = {};
     $instance->{graph_data}->{head_revisions} = [];
@@ -417,6 +421,7 @@ sub generate_ancestry_graph($$;$$$)
 		}
 	    }
 	}
+	$wm->update_gui();
 
 	# Now do the date hit list.
 
@@ -429,6 +434,7 @@ sub generate_ancestry_graph($$;$$$)
 		$date_set{$revision_id} = undef;
 	    }
 	}
+	$wm->update_gui();
 
     };
     CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
@@ -463,6 +469,10 @@ sub generate_ancestry_graph($$;$$$)
     # Build up a revision child graph indexed on revision id with only the
     # revisions that we are interested in within.
 
+    $instance->{appbar}->set_progress_percentage(0);
+    $wm->update_gui();
+    $update_interval = calculate_update_interval(\@graph);
+    $counter = 1;
     foreach my $entry (@graph)
     {
 
@@ -548,18 +558,32 @@ sub generate_ancestry_graph($$;$$$)
 
 	}
 
-    }
+	if (($counter % $update_interval) == 0)
+	{
+	    $instance->{appbar}->set_progress_percentage
+		($counter / scalar(@graph));
+	    $wm->update_gui();
+	}
+	++ $counter;
 
+	# Stop if the user wants to.
+
+	last if ($instance->{stop});
+
+    }
+    $instance->{appbar}->set_progress_percentage(1);
     $wm->update_gui();
-    return if ($instance->{stop});
 
     # Now find out how many head revisions we have.
 
-    foreach my $revision_id (keys(%graph_db))
+    if (! $instance->{stop})
     {
-	if (scalar(@{$graph_db{$revision_id}->{children}}) == 0)
+	foreach my $revision_id (keys(%graph_db))
 	{
-	    push(@head_revisions, $revision_id);
+	    if (scalar(@{$graph_db{$revision_id}->{children}}) == 0)
+	    {
+		push(@head_revisions, $revision_id);
+	    }
 	}
     }
 
@@ -569,7 +593,7 @@ sub generate_ancestry_graph($$;$$$)
     # being excluded because of branch selectors). For this we need a parent
     # database but limited by date if possible.
 
-    if ($branch_selector && scalar(@head_revisions) > 1)
+    if (! $instance->{stop} && $branch_selector && scalar(@head_revisions) > 1)
     {
 	my ($context,
 	    %parent_db);
@@ -603,71 +627,101 @@ sub generate_ancestry_graph($$;$$$)
 		    parents           => [],
 		    processed_set     => {},
 		    aggressive_search => undef};
+	$instance->{appbar}->set_progress_percentage(0);
+	$wm->update_gui();
+	$update_interval = calculate_update_interval(\@head_revisions);
+	$counter = 1;
 	foreach my $head_id (@head_revisions)
 	{
+
+	    # Try and join up gaps starting from this head revision.
+
 	    $context->{outside_selection} = undef;
 	    $context->{parents} = [];
 	    graph_reconnect_helper($context, $head_id);
-	    $wm->update_gui();
-	    return if ($instance->{stop});
-	}
-    }
 
-    # Create a hash indexed by revision id that gives the number of parents for
-    # that revision.
-
-    foreach my $revision_id (keys(%graph_db))
-    {
-	foreach my $child_id (@{$graph_db{$revision_id}->{children}})
-	{
-	    if (exists($nr_of_parents{$child_id}))
+	    if (($counter % $update_interval) == 0)
 	    {
-		++ $nr_of_parents{$child_id};
+		$instance->{appbar}->set_progress_percentage
+		    ($counter / scalar(@head_revisions));
+		$wm->update_gui();
 	    }
-	    else
+	    ++ $counter;
+
+	    # Stop if the user wants to.
+
+	    last if ($instance->{stop});
+
+	}
+	$instance->{appbar}->set_progress_percentage(1);
+	$wm->update_gui();
+    }
+
+    if (! $instance->{stop})
+    {
+
+	# Create a hash indexed by revision id that gives the number of parents
+	# for that revision.
+
+	foreach my $revision_id (keys(%graph_db))
+	{
+	    foreach my $child_id (@{$graph_db{$revision_id}->{children}})
 	    {
-		$nr_of_parents{$child_id} = 1;
+		if (exists($nr_of_parents{$child_id}))
+		{
+		    ++ $nr_of_parents{$child_id};
+		}
+		else
+		{
+		    $nr_of_parents{$child_id} = 1;
+		}
 	    }
 	}
+
+	# Now use this hash to mark up nodes that either have no parents or
+	# multiple ones (i.e. what will be rendered as circular merge nodes).
+
+	foreach my $revision_id (keys(%graph_db))
+	{
+	    my $nr_parents = 0;
+	    if (exists($nr_of_parents{$revision_id}))
+	    {
+		$nr_parents = $nr_of_parents{$revision_id};
+	    }
+	    if ($nr_parents == 0)
+	    {
+		$graph_db{$revision_id}->{flags} |= NO_PARENTS;
+	    }
+	    elsif ($nr_parents > 1)
+	    {
+		$graph_db{$revision_id}->{flags} |= CIRCULAR_NODE;
+	    }
+	}
+	%nr_of_parents = ();
+
+	# Update the list of head revisions.
+
+	@head_revisions = ();
+	foreach my $revision_id (keys(%graph_db))
+	{
+	    if ((! defined($selected_set)
+		 || exists($selected_set->{$revision_id}))
+		&& scalar(@{$graph_db{$revision_id}->{children}}) == 0)
+	    {
+		push(@head_revisions, $revision_id);
+	    }
+	}
+
+	# Store the graph database and the list of head revisions.
+
+	$instance->{graph_data}->{child_graph} = \%graph_db;
+	$instance->{graph_data}->{head_revisions} = \@head_revisions;
+
     }
 
-    # Now use this hash to mark up nodes that either have no parents or
-    # multiple ones (i.e. what will be rendered as circular merge nodes).
-
-    foreach my $revision_id (keys(%graph_db))
-    {
-	my $nr_parents = 0;
-	if (exists($nr_of_parents{$revision_id}))
-	{
-	    $nr_parents = $nr_of_parents{$revision_id};
-	}
-	if ($nr_parents == 0)
-	{
-	    $graph_db{$revision_id}->{flags} |= NO_PARENTS;
-	}
-	elsif ($nr_parents > 1)
-	{
-	    $graph_db{$revision_id}->{flags} |= CIRCULAR_NODE;
-	}
-    }
-    %nr_of_parents = ();
-
-    # Update the list of head revisions.
-
-    @head_revisions = ();
-    foreach my $revision_id (keys(%graph_db))
-    {
-	if ((! defined($selected_set) || exists($selected_set->{$revision_id}))
-	    && scalar(@{$graph_db{$revision_id}->{children}}) == 0)
-	{
-	    push(@head_revisions, $revision_id);
-	}
-    }
-
-    # Store the graph database and the list of head revisions.
-
-    $instance->{graph_data}->{child_graph} = \%graph_db;
-    $instance->{graph_data}->{head_revisions} = \@head_revisions;
+    $instance->{appbar}->set_progress_percentage(0);
+    $instance->{appbar}->set_status("");
+    $wm->update_gui();
 
 }
 #
@@ -1215,7 +1269,8 @@ sub draw_graph($)
     $instance->{node_labels} = [];
 
     $total = scalar(@{$instance->{graph_data}->{rectangles}})
-	+ scalar(@{$instance->{graph_data}->{circles}});
+	+ scalar(@{$instance->{graph_data}->{circles}})
+	+ scalar(@{$instance->{graph_data}->{arrows}});
     $update_interval = calculate_update_interval($total);
 
     # Draw the rectangular nodes with text inside them.
@@ -1306,8 +1361,10 @@ sub draw_graph($)
 
     foreach my $circle (@{$instance->{graph_data}->{circles}})
     {
+
 	my $widget;
 	my $node = $child_db->{$circle->{revision_id}};
+
 	$widget = Gnome2::Canvas::Item->new
 	    ($instance->{graph_group},
 	     "Gnome2::Canvas::Ellipse",
@@ -1331,6 +1388,7 @@ sub draw_graph($)
 		 return TRUE;
 	     },
 	     $circle->{revision_id});
+
 	if (($counter % $update_interval) == 0)
 	{
 	    $instance->{appbar}->set_progress_percentage($counter / $total);
@@ -1342,19 +1400,19 @@ sub draw_graph($)
 
 	last if ($instance->{stop});
     }
-    $instance->{appbar}->set_progress_percentage(1);
-    $wm->update_gui();
 
     # Draw the lines.
 
     foreach my $arrow (@{$instance->{graph_data}->{arrows}})
     {
+
 	my ($bpath,
 	    $colour,
 	    $i,
 	    $pathdef);
 	my $head = $arrow->{arrow};
 	my $line = $arrow->{line};
+
 	if (! ($child_db->{$arrow->{from_revision_id}}->{flags}
 	       & SELECTED_NODE)
 	    || ! ($child_db->{$arrow->{to_revision_id}}->{flags}
@@ -1390,7 +1448,21 @@ sub draw_graph($)
 					   width_pixels  => LINE_WIDTH);
 	$bpath->set_path_def($pathdef);
 	$bpath->lower_to_bottom();
+
+	if (($counter % $update_interval) == 0)
+	{
+	    $instance->{appbar}->set_progress_percentage($counter / $total);
+	    $wm->update_gui();
+	}
+	++ $counter;
+
+	# Stop if the user wants to.
+
+	last if ($instance->{stop});
+
     }
+    $instance->{appbar}->set_progress_percentage(1);
+    $wm->update_gui();
 
     # Work around a bug where the scroll bar arrows don't work with canvases,
     # basically we need to set the step increment to something so take an
