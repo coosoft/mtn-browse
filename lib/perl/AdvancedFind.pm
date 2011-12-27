@@ -329,6 +329,7 @@ sub populate_button_clicked_cb($$)
     local $advanced_find->{in_cb} = 1;
 
     my ($arg,
+	$dont_escape,
 	$pos,
 	$selector,
 	$time_val,
@@ -383,10 +384,12 @@ sub populate_button_clicked_cb($$)
     elsif ($selector eq __("Logical And"))
     {
 	$to_insert = "/";
+	$dont_escape = 1;
     }
     elsif ($selector eq __("Logical Or"))
     {
 	$to_insert = "|";
+	$dont_escape = 1;
     }
     elsif ($selector eq __("Message"))
     {
@@ -438,7 +441,7 @@ sub populate_button_clicked_cb($$)
     {
 	$to_insert = "pick(" . (($arg eq "") ? __("<Selector>") : $arg) . ")";
     }
-    $to_insert =~ s/$select_escape_re/\\$1/g;
+    $to_insert =~ s/$select_escape_re/\\$1/g unless ($dont_escape);
 
     $pos =
 	$advanced_find->{search_term_comboboxentry}->child()->get_position();

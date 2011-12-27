@@ -111,7 +111,6 @@ sub change_history_graph_button_clicked_cb($$);
 sub change_history_graph_parameters($$);
 sub compile_tag_weighting_patterns($);
 sub default_zoom_button_clicked_cb($$);
-sub destroy_history_graph($);
 sub dot_input_handler_cb($$);
 sub draw_graph($);
 sub generate_ancestry_graph($);
@@ -130,6 +129,7 @@ sub hsv_to_rgb($$$$$$);
 sub layout_graph($);
 sub populate_revision_details($$);
 sub reset_history_graph_instance($);
+sub reset_history_graph_window($);
 sub scale_canvas($);
 sub scroll_to_node($$);
 sub select_node($$);
@@ -905,7 +905,7 @@ sub generate_history_graph($)
     $instance->{appbar}->push($instance->{appbar}->get_status()->get_text());
     $wm->update_gui();
 
-    destroy_history_graph($instance);
+    reset_history_graph_window($instance);
     $instance->{stop_button}->set_sensitive(TRUE);
     $wm->update_gui();
 
@@ -961,7 +961,9 @@ sub generate_history_graph($)
     if (! $instance->{stop})
     {
 	$instance->{appbar}->set_progress_percentage(0);
-	$instance->{appbar}->set_status(__("Laying out graph with dot"));
+	$instance->{appbar}->
+	    set_status(__x("Laying out graph with {program}",
+			   program => GRAPHVIZ_LAYOUT_PROGRAM));
 	$wm->update_gui();
 	layout_graph($instance);
     }
@@ -1727,7 +1729,8 @@ sub layout_graph($)
 			       \&dot_input_handler_cb,
 			       $instance,
 			       \$instance->{stop},
-			       "dot", "-q", "-y", "-s" . DPI, "-Txdot"));
+			       GRAPHVIZ_LAYOUT_PROGRAM, "-q", "-y", "-s" . DPI,
+			           "-Txdot"));
 
     # Parse the dot output, line by line.
 
@@ -3038,18 +3041,6 @@ sub get_history_graph_window()
 	$instance->{window}->resize($width, $height);
 	$instance->{stop_button}->set_sensitive(FALSE);
 	$instance->{graph_canvas}->set_pixels_per_unit(1);
-	$instance->{graph}->{group}->destroy()
-	    if (defined($instance->{graph})
-		&& defined($instance->{graph}->{group}));
-	foreach my $item ($instance->{graph_advanced_find_button},
-			  @{$instance->{revision_sensitive_group}})
-	{
-	    $item->set_sensitive(FALSE);
-	}
-	set_label_value($instance->{author_value_label}, "");
-	set_label_value($instance->{date_value_label}, "");
-	set_label_value($instance->{branch_value_label}, "");
-	set_label_value($instance->{change_log_value_label}, "");
 	$instance->{appbar}->set_progress_percentage(0);
 	$instance->{appbar}->clear_stack();
 
@@ -3086,7 +3077,7 @@ sub reset_history_graph_instance($)
 
     my $instance = $_[0];
 
-    destroy_history_graph($instance);
+    reset_history_graph_window($instance);
     $instance->{colour_db} = {};
     $instance->{graph_data} =
 	{parameters     =>
@@ -3110,9 +3101,11 @@ sub reset_history_graph_instance($)
 #
 ##############################################################################
 #
-#   Routine      - destroy_history_graph
+#   Routine      - reset_history_graph_window
 #
-#   Description  - Destroys all of the history graph canvas item widgets.
+#   Description  - Destroys all of the history graph canvas item widgets and
+#                  then resets the history graph window to its known empty
+#                  state.
 #
 #   Data         - $instance : The history graph window instance.
 #
@@ -3120,7 +3113,7 @@ sub reset_history_graph_instance($)
 
 
 
-sub destroy_history_graph($)
+sub reset_history_graph_window($)
 {
 
     my $instance = $_[0];
@@ -3132,6 +3125,15 @@ sub destroy_history_graph($)
 			  selection_box   => undef};
     $group->destroy() if defined($group);
     $instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
+    foreach my $item ($instance->{graph_advanced_find_button},
+		      @{$instance->{revision_sensitive_group}})
+    {
+	$item->set_sensitive(FALSE);
+    }
+    set_label_value($instance->{author_value_label}, "");
+    set_label_value($instance->{date_value_label}, "");
+    set_label_value($instance->{branch_value_label}, "");
+    set_label_value($instance->{change_log_value_label}, "");
 
 }
 #

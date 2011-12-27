@@ -91,6 +91,11 @@ use constant SELECTED_REVISION_CHANGED => (REVISION_DETAILS);
 
 use constant MTN_TIME_STRING => "%Y-%m-%dT%H:%M:%S";
 
+# Constant for the Graphviz graphing layout program that is used when drawing
+# history graphs.
+
+use constant GRAPHVIZ_LAYOUT_PROGRAM => "dot";
+
 # Location of the Glade UI XML file for mtn-browse.
 
 our $glade_file;
@@ -158,6 +163,7 @@ our %EXPORT_TAGS = (constants => [qw(ALL_CHANGED
 				     DURATION_MONTHS
 				     DURATION_YEARS
 				     FILE_CHANGED
+				     GRAPHVIZ_LAYOUT_PROGRAM
 				     MTN_TIME_STRING
 				     NEW_FIND
 				     REVISION
