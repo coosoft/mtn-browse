@@ -117,9 +117,7 @@ sub display_history_graph($;$$$)
 
     $instance->{appbar}->set_status(__("Building ancestry graph"));
     $wm->update_gui();
-    build_ancestry_graph($instance, 0, $branches, $from_date, $to_date);
-
-    CHECK THIS IN.....
+    build_ancestry_graph($instance, 1, $branches, $from_date, $to_date);
 
     print(scalar(keys(%{$instance->{graph_data}->{child_graph}})) . "\n");
     print(scalar(@{$instance->{graph_data}->{head_revisions}}) . "\n");
@@ -182,15 +180,15 @@ sub build_ancestry_graph($$;$$$)
     my ($instance, $show_all_propagate_nodes, $branches, $from_date, $to_date)
 	= @_;
 
-    my(%branches_hit_list,
+    my(%branches_set,
        $branches_selector,
-       %date_hit_list,
+       %date_set,
        $date_range_selector,
        $date_selector,
        @graph,
        %graph_db,
        @head_revisions,
-       %selected_hit_list);
+       $selected_set);
 
     # First build up revision hit lists based upon the selection criteria. This
     # will be then used when scanning the graph to weed out unwanted revisions.
@@ -252,7 +250,7 @@ sub build_ancestry_graph($$;$$$)
 					 "b:" . $branch . $date_range);
 		foreach my $revision_id (@revision_ids)
 		{
-		    $branches_hit_list{$revision_id} = 1;
+		    $branches_set{$revision_id} = undef;
 		}
 	    }
 	}
@@ -265,13 +263,33 @@ sub build_ancestry_graph($$;$$$)
 	    $instance->{mtn}->select(\@revision_ids, $date_range_selector);
 	    foreach my $revision_id (@revision_ids)
 	    {
-		$date_hit_list{$revision_id} = 1;
+		$date_set{$revision_id} = undef;
 	    }
 	}
 
     };
     CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
 						 \&mtn_error_handler);
+    $branches_selector = 1 if (scalar(keys(%branches_set)) > 0);
+    $date_selector = 1 if (scalar(keys(%date_set)) > 0);
+
+    # Set the selected_set variable to point to which ever selector set should
+    # be used to determine whether a revision exactly matches the caller's
+    # search criteria. If there are no selectors then this variable will be
+    # left undefined. If we have both a branch and date range selector then
+    # although the branch selector is date limited, we still need the date
+    # range selector for propagation revisions (which should be included if
+    # they are in the date range but not necessarily in the selected set of
+    # branches).
+
+    if ($branches_selector)
+    {
+	$selected_set = \%branches_set;
+    }
+    elsif ($date_selector)
+    {
+	$selected_set = \%date_set;
+    }
 
     # Get the revision graph from Monotone.
 
@@ -280,8 +298,6 @@ sub build_ancestry_graph($$;$$$)
     # Build up a revision parent/child graph indexed on revision id with only
     # the revisions that we are interested in within.
 
-    $branches_selector = 1 if (scalar(keys(%branches_hit_list)) > 0);
-    $date_selector = 1 if (scalar(keys(%date_hit_list)) > 0);
     foreach my $entry (@graph)
     {
 
@@ -299,35 +315,24 @@ sub build_ancestry_graph($$;$$$)
 	#     4) There is no branch selector and the revision is within the
 	#        specified date range.
 
-	if (! ($branches_selector || $date_selector))
-	{
-	    $current_selected = $selected = 1;
-	}
-	elsif (! $show_all_propagate_nodes && $branches_selector
-	       && exists($branches_hit_list{$entry->{revision_id}}))
+	if (! defined($selected_set)
+	    || exists($selected_set->{$entry->{revision_id}}))
 	{
 	    $current_selected = $selected = 1;
 	}
 	elsif ($show_all_propagate_nodes && $branches_selector
 	       && (! $date_selector
-		   || exists($date_hit_list{$entry->{revision_id}})))
+		   || exists($date_set{$entry->{revision_id}})))
 	{
 	    foreach my $revision_id ($entry->{revision_id},
 				     @{$entry->{parent_ids}})
 	    {
-		if (exists($branches_hit_list{$revision_id}))
+		if (exists($selected_set->{$revision_id}))
 		{
 		    $selected = 1;
-		    $current_selected = 1
-			if ($revision_id eq $entry->{revision_id});
 		    last;
 		}
 	    }
-	}
-	elsif (! $branches_selector && $date_selector
-	       && exists($date_hit_list{$entry->{revision_id}}))
-	{
-	    $current_selected = $selected = 1;
 	}
 
 	# If the revision has been selected then process it.
@@ -345,11 +350,6 @@ sub build_ancestry_graph($$;$$$)
 		$graph_db{$entry->{revision_id}} = {children   => [],
 						    merge_node => undef};
 	    }
-	    if ($current_selected
-		&& ! exists($selected_hit_list{$entry->{revision_id}}))
-	    {
-		$selected_hit_list{$entry->{revision_id}} = 1;
-	    }
 
 	    # If the current revision is selected itself then all parents
 	    # should be included if they are in the date range (need to show
@@ -360,10 +360,10 @@ sub build_ancestry_graph($$;$$$)
 	    foreach my $parent_id (@{$entry->{parent_ids}})
 	    {
 		if (($current_selected
-		     && (! $date_selector
-			 || exists($date_hit_list{$parent_id})))
+		     && (! $date_selector || exists($date_set{$parent_id})))
 		    || (! $current_selected
-			&& exists($selected_hit_list{$parent_id})))
+			&& (! defined($selected_set)
+			    || exists($selected_set->{$parent_id}))))
 		{
 		    if (exists($graph_db{$parent_id}))
 		    {
@@ -399,29 +399,47 @@ sub build_ancestry_graph($$;$$$)
 	    push(@head_revisions, $revision_id);
 	}
     }
+    print(scalar(@head_revisions) . "\n");
 
     # If we have more than one head revision and we have restricted the graph
     # to a number of branches then we better make sure that as many head and
     # tail revisions are joined up (may happen due to intermediate revisions
     # being excluded because of branch selectors). For this we need a parent
-    # database.
+    # database but limited by date if necessary.
 
     if ($branches_selector && scalar(@head_revisions) > 1)
     {
 	my ($context,
 	    %parent_db);
-	foreach my $entry (@graph)
+	if ($date_selector)
 	{
-	    $parent_db{$entry->{revision_id}} = $entry->{parent_ids};
+	    foreach my $entry (@graph)
+	    {
+		if (exists($date_set{$entry->{revision_id}}))
+		{
+		    my @parent_ids;
+		    foreach my $parent_id (@{$entry->{parent_ids}})
+		    {
+			push(@parent_ids, $parent_id)
+			    if (exists($date_set{$parent_id}));
+		    }
+		    $parent_db{$entry->{revision_id}} = \@parent_ids;
+		}
+	    }
 	}
-	$context = {date_hit_list     => \%date_hit_list,
-		    date_selector     => $date_selector,
-		    selected_hit_list => \%selected_hit_list,
+	else
+	{
+	    foreach my $entry (@graph)
+	    {
+		$parent_db{$entry->{revision_id}} = $entry->{parent_ids};
+	    }
+	}
+	$context = {selected_set      => $selected_set,
 		    graph_db          => \%graph_db,
 		    outside_selection => undef,
 		    parent_db         => \%parent_db,
 		    parents           => [],
-		    revision_hit_list => {}};
+		    processed_set      => {}};
 	foreach my $head_id (@head_revisions)
 	{
 	    $context->{outside_selection} = undef;
@@ -433,22 +451,27 @@ sub build_ancestry_graph($$;$$$)
 	print("\n");
     }
 
-    %date_hit_list = ();
-    @graph = ();
-
     # Update the list of head revisions.
 
     @head_revisions = ();
     foreach my $revision_id (keys(%graph_db))
     {
-	if (exists($selected_hit_list{$revision_id})
+	if (scalar(@{$graph_db{$revision_id}->{children}}) == 0)
+	{
+	    push(@head_revisions, $revision_id);
+	}
+    }
+    print(scalar(@head_revisions) . "\n");
+
+    @head_revisions = ();
+    foreach my $revision_id (keys(%graph_db))
+    {
+	if ((! defined($selected_set) || exists($selected_set->{$revision_id}))
 	    && scalar(@{$graph_db{$revision_id}->{children}}) == 0)
 	{
 	    push(@head_revisions, $revision_id);
 	}
     }
-
-    %branches_hit_list = ();
 
     # Store the graph database and the list of head revisions.
 
@@ -479,10 +502,14 @@ sub graph_reconnect_helper($$)
 
     my ($context, $revision_id) = @_;
 
-    my ($hit_list,
+    my ($process_all_parents,
+	$processed_set,
 	$processing_this_node);
     my $nr_parents = 0;
-    my $outside_selection = $context->{outside_selection};
+
+    # Please note that by definition the selected_set field must contain a
+    # valid set as this recursive routine would never have been called
+    # otherwise.
 
     # Were we outside our selected set of revisions?
 
@@ -494,7 +521,7 @@ sub graph_reconnect_helper($$)
 	# parents list and then terminate this branch of the search by
 	# returning.
 
-	if (exists($context->{selected_hit_list}->{$revision_id}))
+	if (exists($context->{graph_db}->{$revision_id}))
 	{
 	    push(@{$context->{parents}}, $revision_id);
 	    return;
@@ -504,24 +531,45 @@ sub graph_reconnect_helper($$)
     else
     {
 
-	# No we aren't so stash the current hit list away just in case we go
-	# outside our selected set of revisions (we don't want to prevent
-	# subsequent walks outside our selected set on different nodes from
-	# finding a possible route to a selected parent).
+	# No we aren't so stash the current hit list away and use a blank one
+	# just in case we go outside our selected set of revisions (we don't
+	# want to prevent subsequent walks outside our selected set on
+	# different nodes from finding a possible route to a selected parent).
 
-	$hit_list = $context->{revision_hit_list};
+	$processed_set = $context->{processed_set};
+	$context->{processed_set} = {};
 
     }
 
-    # Process the parents outside our selected set first, before moving onto
-    # sort out other nodes. So at this point only process the parent if we
-    # haven't done so already, it's not selected and it doesn't fall foul of
-    # any date selector.
+    # Process the parents with a mind to joining up gaps in the history.
+    # A parent for a given node will not be processed if it:
+    #     1) Has already been processed in this specific joining scan (remember
+    #        that processed_set has been stashed and wiped at the start of each
+    #        potential joining scan).
+    #     2) Is outside of any date range. Actually we don't really need to
+    #        check this here as the parent database has already been restricted
+    #        to only cover revisions that are in date range. No I hadn't forgot
+    #        to put the test in below!
+    # Otherwise a parent will be processed if:
+    #     1) It is a propagate node (ones which are in the graph database but
+    #        aren't selected). These nodes wouldn't have had any parents
+    #        recorded in the first place if they were a parent of a selected
+    #        node.
+    #     2) We are currently off selection doing a joining scan.
+    #     3) It has not been included at all (i.e. not in the graph database).
+    #     Please note that the result of the first two conditions are stored in
+    #     $process_all_parents as that relates to the current node and not its
+    #     parents.
 
+    $process_all_parents = 1
+	if ((exists($context->{graph_db}->{$revision_id})
+	     && ! exists($context->{selected_set}->{$revision_id}))
+	    || $context->{outside_selection});
     foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
     {
-	if (! exists($context->{revision_hit_list}->{$parent_id})
-	    && ! exists($context->{selected_hit_list}->{$parent_id}))
+	if (($process_all_parents
+	     || ! exists($context->{graph_db}->{$parent_id}))
+	    && ! exists($context->{processed_set}->{$parent_id}))
 	{
 	    $processing_this_node = $context->{outside_selection} = 1
 		unless ($context->{outside_selection});
@@ -531,20 +579,35 @@ sub graph_reconnect_helper($$)
 
     # Restore any stashed hit list.
 
-    $context->{revision_hit_list} = $hit_list if (defined($hit_list));
+    $context->{processed_set} = $processed_set if (defined($processed_set));
 
     # If we have found some parents then file this revision as a child of those
     # parents in the graph database. We don't have to worry about the parent
     # entries not existing in the graph database as they could only be unlinked
-    # parents by being selected in the first place.
+    # parents by being selected in the first place. Avoid adding duplicated
+    # parent nodes (can happen especially on propagation nodes that originally
+    # had selected parents).
 
     if ($processing_this_node)
     {
 	foreach my $parent_id (@{$context->{parents}})
 	{
-	    push(@{$context->{graph_db}->{$parent_id}->{children}},
-		 $revision_id);
-	    ++ $nr_parents;
+	    my $found;
+	    foreach my $child_id
+		(@{$context->{graph_db}->{$parent_id}->{children}})
+	    {
+		if ($child_id eq $revision_id)
+		{
+		    $found = 1;
+		    last;
+		}
+	    }
+	    if (! $found)
+	    {
+		push(@{$context->{graph_db}->{$parent_id}->{children}},
+		     $revision_id);
+		++ $nr_parents;
+	    }
 	}
 	$context->{parents} = [];
 	$context->{outside_selection} = undef;
@@ -554,9 +617,8 @@ sub graph_reconnect_helper($$)
 
     foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
     {
-	if (($outside_selection
-	     || ! exists($context->{revision_hit_list}->{$parent_id}))
-	    && exists($context->{selected_hit_list}->{$parent_id}))
+	if (! exists($context->{processed_set}->{$parent_id})
+	    && exists($context->{graph_db}->{$parent_id}))
 	{
 	    graph_reconnect_helper($context, $parent_id);
 	    ++ $nr_parents;
@@ -571,7 +633,7 @@ sub graph_reconnect_helper($$)
 
     # Mark this node as having been processed.
 
-    $context->{revision_hit_list}->{$revision_id} = 1;
+    $context->{processed_set}->{$revision_id} = undef;
 
 }
 #
