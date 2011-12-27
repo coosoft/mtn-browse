@@ -478,8 +478,8 @@ sub get_tooltip_window($$$$)
 
     my ($parent, $message, $x, $y) = @_;
 
-    my ($instance,
-	$new);
+    my ($glade,
+	$instance);
     my $wm = WindowManager->instance();
 
     # Create a new tooltip window if an existing one wasn't found, otherwise
@@ -488,11 +488,10 @@ sub get_tooltip_window($$$$)
     if (! defined($instance = $wm->cond_find($window_type, sub { return 1; })))
     {
 
-	$new = 1;
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -501,14 +500,14 @@ sub get_tooltip_window($$$$)
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("eventbox", "message_label")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup the colours used for the tooltip window.
@@ -551,7 +550,8 @@ sub get_tooltip_window($$$$)
 
     # If necessary, register the window for management.
 
-    $wm->manage($instance, $window_type, $instance->{window}) if ($new);
+    $wm->manage($instance, $window_type, $instance->{window})
+	if (defined($glade));
 
     return $instance;
 

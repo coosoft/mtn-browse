@@ -665,13 +665,14 @@ sub get_find_files_window()
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my ($renderer,
+	my ($glade,
+	    $renderer,
 	    $tv_column);
 
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -680,11 +681,11 @@ sub get_find_files_window()
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("appbar",
 			    "search_files_button",
 			    "stop_button",
@@ -719,7 +720,7 @@ sub get_find_files_window()
 			    "last_update_value_label",
 			    "file_revision_id_value_label")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup widget sensitivity groups.
@@ -803,6 +804,7 @@ sub get_find_files_window()
 		    $instance->{stop_button});
 	register_help_callbacks
 	    ($instance,
+	     $glade,
 	     {widget   => "name_vbox",
 	      help_ref => __("mtnb-ffwarc-query-fields")},
 	     {widget   => "contents_vbox",

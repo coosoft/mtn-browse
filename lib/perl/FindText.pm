@@ -660,8 +660,8 @@ sub get_find_text_window($$)
 
     my ($parent, $text_view) = @_;
 
-    my ($instance,
-	$new);
+    my ($glade,
+	$instance);
     my $wm = WindowManager->instance();
 
     # Create a new find text window if an unused one wasn't found, otherwise
@@ -669,11 +669,10 @@ sub get_find_text_window($$)
 
     if (! defined($instance = $wm->find_unused($window_type)))
     {
-	$new = 1;
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -682,11 +681,11 @@ sub get_find_text_window($$)
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("main_vbox",
 			    "find_comboboxentry",
 			    "case_sensitive_checkbutton",
@@ -694,7 +693,7 @@ sub get_find_text_window($$)
 			    "regular_expression_checkbutton",
 			    "find_text_button")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup the find text window deletion handlers.
@@ -709,7 +708,7 @@ sub get_find_text_window($$)
 		 return TRUE;
 	     },
 	     $instance);
-	$instance->{glade}->get_widget("close_button")->signal_connect
+	$glade->get_widget("close_button")->signal_connect
 	    ("clicked",
 	     sub {
 		 my ($widget, $instance) = @_;
@@ -777,11 +776,12 @@ sub get_find_text_window($$)
     # If necessary, register the window for management and set up the help
     # callbacks.
 
-    if ($new)
+    if (defined($glade))
     {
 	$wm->manage($instance, $window_type, $instance->{window});
 	register_help_callbacks
 	    ($instance,
+	     $glade,
 	     {widget   => undef,
 	      help_ref => __("mtnb-gsc-browser-buttons")});
     }

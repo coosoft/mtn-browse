@@ -401,9 +401,7 @@ sub generate_revision_report($$$$;$)
 sub get_change_log_window()
 {
 
-    my ($height,
-	$instance,
-	$width);
+    my $instance;
     my $window_type = "changelog_window";
     my $wm = WindowManager->instance();
 
@@ -412,10 +410,13 @@ sub get_change_log_window()
 
     if (! defined($instance = $wm->find_unused($window_type)))
     {
+
+	my $glade;
+
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -424,15 +425,15 @@ sub get_change_log_window()
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("changelog_textview",
 			    "changelog_scrolledwindow")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup the changelog window deletion handler.
@@ -462,16 +463,26 @@ sub get_change_log_window()
 	$wm->manage($instance, $window_type, $instance->{window});
 	register_help_callbacks
 	    ($instance,
+	     $glade,
 	     {widget   => undef,
 	      help_ref => __("mtnb-lachc-the-change-log-window")});
+
     }
     else
     {
+
+	my ($height,
+	    $width);
+
 	$instance->{in_cb} = 0;
 	local $instance->{in_cb} = 1;
+
 	($width, $height) = $instance->{window}->get_default_size();
 	$instance->{window}->resize($width, $height);
+
     }
+
+    local $instance->{in_cb} = 1;
 
     # Empty out the contents.
 

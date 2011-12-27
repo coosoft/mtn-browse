@@ -2912,10 +2912,13 @@ sub get_history_graph_window()
 
     if (! defined($instance = $wm->find_unused($window_type)))
     {
+
+	my $glade;
+
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -2924,11 +2927,11 @@ sub get_history_graph_window()
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("appbar",
 			    "graph_scrolledwindow",
 			    "graph_button_vbox",
@@ -2939,7 +2942,7 @@ sub get_history_graph_window()
 			    "branch_value_label",
 			    "change_log_value_label")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Create the graph canvas widget. We can't do this in Glade as
@@ -2999,7 +3002,7 @@ sub get_history_graph_window()
 			  "browse_revision")
 	{
 	    push(@{$instance->{revision_sensitive_group}},
-		 $instance->{glade}->get_widget($item . "_button"));
+		 $glade->get_widget($item . "_button"));
 	}
 
 	# Register the window for management and set up the help callbacks.
@@ -3010,11 +3013,13 @@ sub get_history_graph_window()
 		    $instance->{stop_button});
 	register_help_callbacks
 	    ($instance,
+	     $glade,
 	     {widget   => "graph_button_vbox",
 	      help_ref => __("mtnb-lachc-history-buttons")},
 	     {widget   => undef,
 	      help_ref => __("mtnb-lachc-the-revision-and-file-history-"
 			     . "windows")});
+
     }
     else
     {
@@ -3465,14 +3470,15 @@ sub get_change_history_graph_window($)
     if (! defined($instance = $wm->find_unused($change_window_type)))
     {
 
-	my ($image,
+	my ($glade,
+	    $image,
 	    $renderer,
 	    $tv_column);
 
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $change_window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $change_window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -3481,12 +3487,11 @@ sub get_change_history_graph_window($)
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} =
-	    $instance->{glade}->get_widget($change_window_type);
+	$instance->{window} = $glade->get_widget($change_window_type);
 	foreach my $widget ("branch_pattern_comboboxentry",
 			    "tick_branches_button",
 			    "case_sensitive_checkbutton",
@@ -3505,7 +3510,7 @@ sub get_change_history_graph_window($)
 			    "colour_by_branch_radiobutton",
 			    "colour_by_author_radiobutton")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup the change history graph callbacks.
@@ -3514,11 +3519,11 @@ sub get_change_history_graph_window($)
 	    ("delete_event",
 	     sub { $_[2]->{done} = 1 unless ($_[2]->{in_cb}); return TRUE; },
 	     $instance);
-	$instance->{glade}->get_widget("cancel_button")->signal_connect
+	$glade->get_widget("cancel_button")->signal_connect
 	    ("clicked",
 	     sub { $_[1]->{done} = 1 unless ($_[1]->{in_cb}); },
 	     $instance);
-	$instance->{glade}->get_widget("ok_button")->signal_connect
+	$glade->get_widget("ok_button")->signal_connect
 	    ("clicked",
 	     sub { $_[1]->{done} = $_[1]->{changed} = 1
 		       unless ($_[1]->{in_cb}); },
@@ -3594,6 +3599,7 @@ sub get_change_history_graph_window($)
 	$wm->manage($instance, $change_window_type, $instance->{window});
 	register_help_callbacks
 	    ($instance,
+	     $glade,
 	     {widget   => "graph_button_vbox",
 	      help_ref => __("mtnb-lachc-history-buttons")},
 	     {widget   => undef,

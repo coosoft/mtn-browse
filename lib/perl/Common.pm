@@ -90,7 +90,7 @@ sub hex_dump($);
 sub mtn_time_string_to_time($);
 sub open_database($$$);
 sub program_valid($;$);
-sub register_help_callbacks($@);
+sub register_help_callbacks($$@);
 sub run_command($$$$@);
 sub save_as_file($$$);
 sub set_label_value($$);
@@ -1565,6 +1565,8 @@ sub display_html($)
 #                  the specified window instance.
 #
 #   Data         - $instance : The window instance.
+#                  $glade    : The glade object associated with the window
+#                              instance.
 #                  $details  : A list of records containing the widget and the
 #                              help reference for that widget. If a widget is
 #                              set to undef then that entry represents the
@@ -1574,10 +1576,10 @@ sub display_html($)
 
 
 
-sub register_help_callbacks($@)
+sub register_help_callbacks($$@)
 {
 
-    my ($instance, @details) = @_;
+    my ($instance, $glade, @details) = @_;
 
     my $wm = WindowManager->instance();
 
@@ -1588,7 +1590,7 @@ sub register_help_callbacks($@)
     {
 	my $help_ref = $entry->{help_ref};
 	my $widget = defined($entry->{widget})
-	    ? $instance->{glade}->get_widget($entry->{widget}) : undef;
+	    ? $glade->get_widget($entry->{widget}) : undef;
 	$wm->help_connect($instance,
 			  $widget,
 			  sub {

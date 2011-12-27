@@ -993,13 +993,14 @@ sub get_preferences_window($$)
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my ($renderer,
+	my ($glade,
+	    $renderer,
 	    $tv_column);
 
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -1008,11 +1009,11 @@ sub get_preferences_window($$)
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("notebook",
 			    "ok_button",
 			    "cancel_button",
@@ -1077,12 +1078,12 @@ sub get_preferences_window($$)
 			    "syntax_highlight_checkbutton",
 			    "helper_application_entry")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 	$instance->{mime_type_sensitivity_list} =
-	    [$instance->{glade}->get_widget("file_name_patterns_label"),
-	     $instance->{glade}->get_widget("file_name_pattern_entry"),
-	     $instance->{glade}->get_widget("file_actions_frame")];
+	    [$glade->get_widget("file_name_patterns_label"),
+	     $glade->get_widget("file_name_pattern_entry"),
+	     $glade->get_widget("file_actions_frame")];
 
 	# Setup the preferences window deletion handlers.
 
@@ -1090,11 +1091,11 @@ sub get_preferences_window($$)
 	    ("delete_event",
 	     sub { $_[2]->{done} = 1 unless ($_[2]->{in_cb}); return TRUE; },
 	     $instance);
-	$instance->{glade}->get_widget("cancel_button")->signal_connect
+	$glade->get_widget("cancel_button")->signal_connect
 	    ("clicked",
 	     sub { $_[1]->{done} = 1 unless ($_[1]->{in_cb}); },
 	     $instance);
-	$instance->{glade}->get_widget("ok_button")->signal_connect
+	$glade->get_widget("ok_button")->signal_connect
 	    ("clicked",
 	     sub { $_[1]->{done} = $_[1]->{preferences_to_be_saved} = 1
 		       unless ($_[1]->{in_cb}); },
@@ -1233,6 +1234,7 @@ sub get_preferences_window($$)
 	$wm->manage($instance, $window_type, $instance->{window});
 	register_help_callbacks
 	    ($instance,
+	     $glade,
 	     {widget   => undef,
 	      help_ref => __("mtnb-upc-the-preferences-dialog-window")});
 

@@ -340,8 +340,8 @@ sub get_manage_tag_weightings_window($$)
 
     my ($parent, $weightings) = @_;
 
-    my ($instance,
-	$new);
+    my ($glade,
+	$instance);
     my $window_type = "manage_tag_weightings_window";
     my $wm = WindowManager->instance();
 
@@ -355,11 +355,10 @@ sub get_manage_tag_weightings_window($$)
 	    $renderer,
 	    $tv_column);
 
-	$new = 1;
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -368,18 +367,18 @@ sub get_manage_tag_weightings_window($$)
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("tags_treeview",
 			    "tag_pattern_entry",
 			    "weighting_spinbutton",
 			    "add_tag_weighting_button",
 			    "remove_tag_weighting_button")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup the tag weightings list.
@@ -464,11 +463,12 @@ sub get_manage_tag_weightings_window($$)
     # If necessary, register the window for management and set up the help
     # callbacks.
 
-    if ($new)
+    if (defined($glade))
     {
 	$wm->manage($instance, $window_type, $instance->{window});
 	register_help_callbacks
 	    ($instance,
+	     $glade,
 	     {widget   => undef,
 	      help_ref => __("TDB-mtnb-upc-the-manage-server-bookmarks-dialog-"
 			     . "window")});

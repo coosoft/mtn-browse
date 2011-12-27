@@ -638,14 +638,15 @@ sub get_advanced_find_window($)
     {
 
 	my (@delete_list,
+	    $glade,
 	    $index,
 	    $renderer,
 	    $tv_column);
 
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 	$instance->{mtn} = $parent_instance->{mtn};
 
 	# Flag to stop recursive calling of callbacks.
@@ -655,7 +656,7 @@ sub get_advanced_find_window($)
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Link in the update handler for the advanced find window.
 
@@ -663,7 +664,7 @@ sub get_advanced_find_window($)
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("appbar",
 			    "simple_query_radiobutton",
 			    "simple_frame",
@@ -682,7 +683,7 @@ sub get_advanced_find_window($)
 			    "details_scrolledwindow",
 			    "ok_button")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup the advanced find callbacks.
@@ -691,11 +692,11 @@ sub get_advanced_find_window($)
 	    ("delete_event",
 	     sub { $_[2]->{done} = 1 unless ($_[2]->{in_cb}); return TRUE; },
 	     $instance);
-	$instance->{glade}->get_widget("cancel_button")->signal_connect
+	$glade->get_widget("cancel_button")->signal_connect
 	    ("clicked",
 	     sub { $_[1]->{done} = 1 unless ($_[1]->{in_cb}); },
 	     $instance);
-	$instance->{glade}->get_widget("ok_button")->signal_connect
+	$glade->get_widget("ok_button")->signal_connect
 	    ("clicked",
 	     sub { $_[1]->{done} = $_[1]->{selected} = 1
 		       unless ($_[1]->{in_cb}); },
@@ -831,6 +832,7 @@ sub get_advanced_find_window($)
 		    $instance->{stop_button});
 	register_help_callbacks
 	    ($instance,
+	     $glade,
 	     {widget   => "simple_frame",
 	      help_ref => __("mtnb-mcqc-simple-queries")},
 	     {widget   => "advanced_frame",
@@ -885,6 +887,8 @@ sub get_advanced_find_window($)
 	$instance->{window}->present();
 
     }
+
+    local $instance->{in_cb} = 1;
 
     $instance->{done} = 0;
     $instance->{selected} = 0;

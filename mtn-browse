@@ -46,16 +46,11 @@ BEGIN
 {
     use constant APPLICATION_NAME    => "mtn-browse";
     use constant APPLICATION_VERSION => 0.72;
-#    use constant FILE_COMPARE_CMD    => "@INST:FILE_COMPARE_CMD@";
-    use constant FILE_COMPARE_CMD    => "kompare";
-#    use constant HTML_VIEWER_CMD     => "@INST:HTML_VIEWER_CMD@";
-    use constant HTML_VIEWER_CMD     => "";
-#    use constant LIB_DIR             => "@INST:LIB_DIR@";
-    use constant LIB_DIR             => "/home/aecoope/code/monotone.ca/mtn-browse/lib";
-#    use constant MIME_GLOB_FILE      => "@INST:GLOBS_FILE@";
-    use constant MIME_GLOB_FILE      => "/usr/share/mime/globs";
-#    use constant PREFIX_DIR          => "@INST:PREFIX_DIR@";
-    use constant PREFIX_DIR          => "/home/aecoope/code/monotone.ca/mtn-browse";
+    use constant FILE_COMPARE_CMD    => "@INST:FILE_COMPARE_CMD@";
+    use constant HTML_VIEWER_CMD     => "@INST:HTML_VIEWER_CMD@";
+    use constant LIB_DIR             => "@INST:LIB_DIR@";
+    use constant MIME_GLOB_FILE      => "@INST:GLOBS_FILE@";
+    use constant PREFIX_DIR          => "@INST:PREFIX_DIR@";
 }
 use locale;
 use strict;
@@ -1952,6 +1947,7 @@ sub get_browser_window(;$$$$$)
     {
 
 	my ($cb,
+	    $glade,
 	    $image,
 	    $menu_item,
 	    $renderer,
@@ -1961,7 +1957,7 @@ sub get_browser_window(;$$$$$)
 
 	$browser = {};
 	$browser->{mtn} = $mtn;
-	$browser->{glade} = create_browser_widgets();
+	$glade = create_browser_widgets();
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -1970,7 +1966,7 @@ sub get_browser_window(;$$$$$)
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($browser->{glade}, $browser);
+	glade_signal_autoconnect($glade, $browser);
 
 	# Link in the update handler for the browser.
 
@@ -1978,7 +1974,7 @@ sub get_browser_window(;$$$$$)
 
 	# Get the widgets that we are interested in.
 
-	$browser->{window} = $browser->{glade}->get_widget($window_type);
+	$browser->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("appbar",
 			    "connect_to_server_menutiem",
 			    "close_menuitem",
@@ -2010,7 +2006,7 @@ sub get_browser_window(;$$$$$)
 			    "author_value_label",
 			    "change_log_value_label")
 	{
-	    $browser->{$widget} = $browser->{glade}->get_widget($widget);
+	    $browser->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup button sensitivity groups.
@@ -2019,13 +2015,13 @@ sub get_browser_window(;$$$$$)
 	foreach my $item ("search_text", "annotate")
 	{
 	    push(@{$browser->{text_file_sensitive_group}},
-		 $browser->{glade}->get_widget($item . "_button"));
+		 $glade->get_widget($item . "_button"));
 	}
 	$browser->{revision_sensitive_group} = [];
 	foreach my $item ("revision_change_history", "revision_change_log")
 	{
 	    push(@{$browser->{revision_sensitive_group}},
-		 $browser->{glade}->get_widget($item . "_button"));
+		 $glade->get_widget($item . "_button"));
 	}
 
 	# Setup the connect to server submenu.
@@ -2132,13 +2128,13 @@ sub get_browser_window(;$$$$$)
 	foreach my $item ("search_text", "annotate")
 	{
 	    push(@{$browser->{text_file_sensitive_group}},
-		 $browser->{glade}->get_widget($item . "_button"));
+		 $glade->get_widget($item . "_button"));
 	}
 	$browser->{revision_sensitive_group} = [];
 	foreach my $item ("revision_change_history", "revision_change_log")
 	{
 	    push(@{$browser->{revision_sensitive_group}},
-		 $browser->{glade}->get_widget($item . "_button"));
+		 $glade->get_widget($item . "_button"));
 	}
 
 	# Setup the comboboxes.
@@ -2269,6 +2265,7 @@ sub get_browser_window(;$$$$$)
 	$wm->manage($browser, $window_type, $browser->{window});
 	register_help_callbacks
 	    ($browser,
+	     $glade,
 	     {widget   => "menubar_bonobodockitem",
 	      help_ref => __("mtnb-gsc-menus")},
 	     {widget   => "toolbar_bonobodockitem",
@@ -2364,11 +2361,12 @@ sub get_browser_window(;$$$$$)
 
     }
 
+    local $browser->{in_cb} = 1;
+
     # Now deal with any presetting that is required.
 
     if (defined($branch))
     {
-	local $browser->{in_cb} = 1;
 	$browser->{branch_combo_details}->{preset} = 1;
 	$browser->{branch_combo_details}->{value} = $branch;
 	if (defined($revision_id))

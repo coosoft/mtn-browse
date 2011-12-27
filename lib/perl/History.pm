@@ -1813,7 +1813,6 @@ sub get_history_window()
 
     my ($height,
 	$instance,
-	$renderer,
 	$width);
     my $window_type = "history_window";
     my $wm = WindowManager->instance();
@@ -1823,10 +1822,14 @@ sub get_history_window()
 
     if (! defined($instance = $wm->find_unused($window_type)))
     {
+
+	my ($glade,
+	    $renderer);
+
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -1835,11 +1838,11 @@ sub get_history_window()
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("appbar",
 			    "history_label",
 			    "history_textview",
@@ -1851,7 +1854,7 @@ sub get_history_window()
 			    "revision_id_2_value_label",
 			    "compare_button")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup the history callbacks.
@@ -1918,6 +1921,7 @@ sub get_history_window()
 		    $instance->{stop_button});
 	register_help_callbacks
 	    ($instance,
+	     $glade,
 	     {widget   => "restrict_to_combobox",
 	      help_ref => __("mtnb-lachc-history-buttons")},
 	     {widget   => "stop_button",
@@ -1930,8 +1934,10 @@ sub get_history_window()
     }
     else
     {
+
 	$instance->{in_cb} = 0;
 	local $instance->{in_cb} = 1;
+
 	($width, $height) = $instance->{window}->get_default_size();
 	$instance->{window}->resize($width, $height);
 	$instance->{restrict_to_combobox}->get_model()->clear();
@@ -1946,7 +1952,10 @@ sub get_history_window()
 	set_label_value($instance->{revision_id_2_value_label}, "");
 	$instance->{appbar}->set_progress_percentage(0);
 	$instance->{appbar}->clear_stack();
+
     }
+
+    local $instance->{in_cb} = 1;
 
     $instance->{stop} = 0;
 
@@ -2103,10 +2112,13 @@ sub get_compare_arbitrary_revisions_window()
 
     if (! defined($instance = $wm->find_unused($window_type)))
     {
+
+	my $glade;
+
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -2115,18 +2127,18 @@ sub get_compare_arbitrary_revisions_window()
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("arbitrary_revision_id_1_value_label",
 			    "arbitrary_revision_id_2_value_label",
 			    "arbitrary_revision_1_advanced_find_button",
 			    "arbitrary_revision_2_advanced_find_button",
 			    "arbitrary_compare_button")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup the arbitrary compare callbacks.
@@ -2165,6 +2177,7 @@ sub get_compare_arbitrary_revisions_window()
 		    $instance->{window});
 	register_help_callbacks
 	    ($instance,
+	     $glade,
 	     {widget   => "arbitrary_revision_1_advanced_find_button",
 	      help_ref => __("mtnb-lachc-compare-arbitrary-revisions-"
 			     . "buttons")},
@@ -2177,6 +2190,7 @@ sub get_compare_arbitrary_revisions_window()
 	     {widget   => undef,
 	      help_ref => __("mtnb-lachc-the-compare-arbitrary-revisions-"
 			     . "window")});
+
     }
     else
     {
@@ -2214,10 +2228,7 @@ sub get_revision_comparison_window($)
 
     my $mtn = $_[0];
 
-    my ($height,
-	$instance,
-	$renderer,
-	$width);
+    my $instance;
     my $window_type = "revision_comparison_window";
     my $wm = WindowManager->instance();
 
@@ -2226,10 +2237,14 @@ sub get_revision_comparison_window($)
 
     if (! defined($instance = $wm->find_unused($window_type)))
     {
+
+	my ($glade,
+	    $renderer);
+
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -2238,11 +2253,11 @@ sub get_revision_comparison_window($)
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("appbar",
 			    "comparison_label",
 			    "file_comparison_combobox",
@@ -2254,7 +2269,7 @@ sub get_revision_comparison_window($)
 			    "revision_change_log_1_button_label",
 			    "revision_change_log_2_button_label")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup the file history callbacks.
@@ -2353,17 +2368,24 @@ sub get_revision_comparison_window($)
 		    $instance->{stop_button});
 	register_help_callbacks
 	    ($instance,
+	     $glade,
 	     {widget   => "file_comparison_hbox",
 	      help_ref => __("mtnb-lachc-differences-buttons")},
 	     {widget   => "comparison_hbuttonbox",
 	      help_ref => __("mtnb-lachc-differences-buttons")},
 	     {widget   => undef,
 	      help_ref => __("mtnb-lachc-the-differences-window")});
+
     }
     else
     {
+
+	my ($height,
+	    $width);
+
 	$instance->{in_cb} = 0;
 	local $instance->{in_cb} = 1;
+
 	($width, $height) = $instance->{window}->get_default_size();
 	$instance->{window}->resize($width, $height);
 	$instance->{external_diffs_button}->set_sensitive(FALSE);
@@ -2371,7 +2393,10 @@ sub get_revision_comparison_window($)
 	$instance->{file_comparison_combobox}->get_model()->clear();
 	$instance->{appbar}->set_progress_percentage(0);
 	$instance->{appbar}->clear_stack();
+
     }
+
+    local $instance->{in_cb} = 1;
 
     $instance->{stop} = 0;
 

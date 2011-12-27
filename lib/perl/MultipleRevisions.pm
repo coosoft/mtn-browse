@@ -149,8 +149,8 @@ sub get_multiple_revisions_window($)
 
     my $parent = $_[0];
 
-    my ($instance,
-	$new);
+    my ($glade,
+	$instance);
     my $window_type = "multiple_revisions_window";
     my $wm = WindowManager->instance();
 
@@ -162,11 +162,10 @@ sub get_multiple_revisions_window($)
 
 	my $renderer;
 
-	$new = 1;
 	$instance = {};
-	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
-						 APPLICATION_NAME);
+	$glade = Gtk2::GladeXML->new($glade_file,
+				     $window_type,
+				     APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -175,14 +174,14 @@ sub get_multiple_revisions_window($)
 
 	# Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($instance->{glade}, $instance);
+	glade_signal_autoconnect($glade, $instance);
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} = $glade->get_widget($window_type);
 	foreach my $widget ("message_label", "revisions_combobox")
 	{
-	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	    $instance->{$widget} = $glade->get_widget($widget);
 	}
 
 	# Setup the revisions combobox.
@@ -209,7 +208,8 @@ sub get_multiple_revisions_window($)
 
     # If necessary, register the window for management.
 
-    $wm->manage($instance, $window_type, $instance->{window}) if ($new);
+    $wm->manage($instance, $window_type, $instance->{window})
+	if (defined($glade));
 
     return $instance;
 
