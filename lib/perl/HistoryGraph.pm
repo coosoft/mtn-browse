@@ -3450,13 +3450,18 @@ sub tick_untick_branches_button_clicked_cb($$)
     # branch name column otherwise we get constant resorting and it will muck
     # up the selection.
 
-    if (($instance->{branches_liststore}->get_sort_column_id())[0]
-        == BLS_SELECTED_COLUMN)
+    ($sort_column, $sort_order) =
+        $instance->{branches_liststore}->get_sort_column_id();
+    if (defined($sort_column) && $sort_column == BLS_SELECTED_COLUMN)
     {
         ($sort_column, $sort_order) =
             $instance->{branches_liststore}->get_sort_column_id();
         $instance->{branches_liststore}->set_sort_column_id(BLS_BRANCH_COLUMN,
                                                             "ascending");
+    }
+    else
+    {
+        $sort_column = $sort_order = undef;
     }
     foreach my $path ($instance->{branches_treeview}->get_selection()->
                       get_selected_rows())
