@@ -58,6 +58,12 @@ use Pod::Usage;
 
 use DependencyChecker;
 use Installer;
+
+# ***** FUNCTIONAL PROTOTYPES *****
+
+# Private routines.
+
+sub program_is_valid($);
 #
 ##############################################################################
 #
@@ -81,6 +87,7 @@ use Installer;
         $file,
         $file_comparison,
         $globs_file,
+        $graphviz_dot,
         $help,
         $html_viewer,
         $infile,
@@ -99,6 +106,7 @@ use Installer;
         $prefix_dest_dir,
         $quiet,
         $use_dists_mas_lib,
+        $use_labels_in_graph,
         $use_source_view_2);
 
     # Assign defaults.
@@ -107,6 +115,7 @@ use Installer;
     $dest_dir = "";
     $file_comparison = "meld";
     $globs_file = "/usr/share/mime/globs";
+    $graphviz_dot = "dot";
     $html_viewer = "";
     $prefix_dir = "/usr";
     $lib_dir = "/lib/mtn-browse";
@@ -121,12 +130,14 @@ use Installer;
                               "destdir|d=s"         => \$dest_dir,
                               "file-comparison|f=s" => \$file_comparison,
                               "globs-file|g=s"      => \$globs_file,
+                              "graphviz-dot=s"      => \$graphviz_dot,
                               "html-viewer=s"       => \$html_viewer,
                               "interactive|i"       => \$interactive,
                               "libdir|l=s"          => \$lib_dir,
                               "prefix|p=s"          => \$prefix_dir,
                               "quiet|q"             => \$quiet,
                               "use-dists-mas!"      => \$use_dists_mas_lib,
+                              "use-labels!"         => \$use_labels_in_graph,
                               "help|?"              => \$help,
                               "man|m"               => \$man))
     {
@@ -154,7 +165,7 @@ use Installer;
                  "Gtk2::GladeXML"     => 1.006,
                  "Gtk2::SourceView2"  => 0.10,
                  "Locale::TextDomain" => 1.16);
-        $deps{"Monotone::AutomateStdio"} = 0.05 if (! $use_dists_mas_lib);
+        $deps{"Monotone::AutomateStdio"} = 1.00 if (! $use_dists_mas_lib);
 
         # Do the check.
 
@@ -271,36 +282,17 @@ use Installer;
             ($input) = ($input =~ m/^\s*(.*)\s*$/);
             $file_comparison = $input if ($input ne "");
         }
-        if ($file_comparison ne "")
+        program_is_valid($file_comparison) if ($file_comparison ne "");
+
+        if ($interactive)
         {
-            my $found;
-
-            # Check full paths or scan $PATH for it.
-
-            if ($file_comparison =~ m/^\//)
-            {
-                $found = 1 if (-x $file_comparison);
-            }
-            else
-            {
-                my $cmd;
-                $cmd = (split(/[[:blank:]]/, $file_comparison))[0];
-                foreach my $dir (split(/:/, $ENV{PATH}))
-                {
-                    if (-x "${dir}/$cmd")
-                    {
-                        $found = 1;
-                        last;
-                    }
-                }
-            }
-
-            if (! $found)
-            {
-                print("Warning: Program `" . $file_comparison
-                      . "' cannot be found or is not executable.\n");
-            }
+            print("Path to Graphviz dot program (GRAPHVIZ_LAYOUT_PROGRAM)? ["
+                  . $graphviz_dot . "]: ");
+            chomp($input = <STDIN>);
+            ($input) = ($input =~ m/^\s*(.*)\s*$/);
+            $graphviz_dot = $input if ($input ne "");
         }
+        program_is_valid($graphviz_dot) if ($graphviz_dot ne "");
 
         if ($interactive)
         {
@@ -311,37 +303,10 @@ use Installer;
             ($input) = ($input =~ m/^\s*(.*)\s*$/);
             $html_viewer = $input if ($input ne "");
         }
-        if ($html_viewer ne "")
+        if ($html_viewer ne "" && ! program_is_valid($html_viewer))
         {
-            my $found;
-
-            # Check full paths or scan $PATH for it.
-
-            if ($html_viewer =~ m/^\//)
-            {
-                $found = 1 if (-x $html_viewer);
-            }
-            else
-            {
-                my $cmd;
-                $cmd = (split(/[[:blank:]]/, $html_viewer))[0];
-                foreach my $dir (split(/:/, $ENV{PATH}))
-                {
-                    if (-x "${dir}/$cmd")
-                    {
-                        $found = 1;
-                        last;
-                    }
-                }
-            }
-
-            if (! $found)
-            {
-                print("Error: Program `" . $html_viewer
-                      . "' cannot be found or is not executable.\n");
-                exit(1) if (! $interactive);
-                next;
-            }
+            exit(1) if (! $interactive);
+            next;
         }
 
         if ($interactive)
@@ -359,18 +324,36 @@ use Installer;
             }
         }
 
+        if ($interactive)
+        {
+            print("Use Gtk2::Labels in history graph? [N]: ");
+            chomp($input = <STDIN>);
+            if ($input =~ m/^\s*[yY]\s*$/)
+            {
+                $use_labels_in_graph = 1;
+            }
+            else
+            {
+                $use_labels_in_graph = 0;
+            }
+        }
+
         if ($confirm || $interactive || ! $quiet)
         {
             print("\nInstallation options are:\n");
-            print("GLOBS_FILE       = " . $globs_file . "\n");
-            print("PREFIX_DIR       = " . $prefix_dir . "\n");
-            print("DEST_DIR         = " . $dest_dir . "\n");
-            print("LIB_DIR          = <PREFIX_DIR>/" . $lib_dir . "\n");
-            print("FILE_COMPARE_CMD = " . $file_comparison . "\n");
-            print("HTML_VIEWER_CMD  = "
-                  . (($html_viewer ne "") ? $html_viewer : "Use Yelp") . "\n");
-            print("Use my MAS       = " . ($use_dists_mas_lib ? "Yes" : "No")
+            print("GLOBS_FILE                 = " . $globs_file . "\n");
+            print("PREFIX_DIR                 = " . $prefix_dir . "\n");
+            print("DEST_DIR                   = " . $dest_dir . "\n");
+            print("LIB_DIR                    = <PREFIX_DIR>/" . $lib_dir
                   . "\n");
+            print("FILE_COMPARE_CMD           = " . $file_comparison . "\n");
+            print("GRAPHVIZ_LAYOUT_PROGRAM    = " . $graphviz_dot . "\n");
+            print("HTML_VIEWER_CMD            = "
+                  . (($html_viewer ne "") ? $html_viewer : "Use Yelp") . "\n");
+            print("Use my MAS                 = "
+                  . ($use_dists_mas_lib ? "Yes" : "No") . "\n");
+            print("Use Gtk2::Labels in graphs = "
+                  . ($use_labels_in_graph ? "Yes" : "No") . "\n");
         }
         if ($interactive)
         {
@@ -396,6 +379,14 @@ use Installer;
     print("Installing...\n") if (! $quiet);
     $installer = Installer->new(0, 0, 0755, 0755, 0644);
 
+    # Apply patches if necessary.
+
+    system("patch -p0 -o mtn-browse-sv2 < mtn-browse-Gtk2-SourceView2.patch")
+        if (! -f "mtn-browse-sv2" && $use_source_view_2);
+    system("patch -p0 -o lib/perl/HistoryGraph-with-labels.pm < "
+           . "HistoryGraph.pm-Use-Labels.patch")
+        if (! -f "lib/perl/HistoryGraph-with-labels.pm");
+
     # Install `executable'.
 
     if ($use_source_view_2)
@@ -413,9 +404,10 @@ use Installer;
     while (defined($input = $infile->getline()))
     {
         $input =~ s/\@INST:FILE_COMPARE_CMD\@/$file_comparison/g;
+        $input =~ s/\@INST:GLOBS_FILE\@/$globs_file/g;
+        $input =~ s/\@INST:GRAPHVIZ_LAYOUT_PROGRAM\@/$graphviz_dot/g;
         $input =~ s/\@INST:HTML_VIEWER_CMD\@/$html_viewer/g;
         $input =~ s/\@INST:LIB_DIR\@/$lib_prefix_dir/g;
-        $input =~ s/\@INST:GLOBS_FILE\@/$globs_file/g;
         $input =~ s/\@INST:PREFIX_DIR\@/$prefix_dir/g;
         $outfile->print($input);
     }
@@ -433,8 +425,13 @@ use Installer;
         if (! defined($dir = IO::Dir->new("lib/perl")));
     while (defined($file = $dir->read()))
     {
+        my $install = 1;
+        $install = 0 if ($file eq "HistoryGraph.pm" && $use_labels_in_graph);
+        $install = 0
+            if ($file eq "HistoryGraph-with-labels.pm"
+                && ! $use_labels_in_graph);
         $installer->install("lib/perl/$file",  "${lib_dest_dir}/perl/$file")
-            if ($file =~ m/.*\.pm$/);
+            if ($file =~ m/.*\.pm$/ && $install);
     }
     $dir->close();
     if ($use_dists_mas_lib)
@@ -567,6 +564,56 @@ use Installer;
 #
 ##############################################################################
 #
+#   Routine      - program_is_valid
+#
+#   Description  - Check that the specified program exists.
+#
+#   Data         - $command     : The command that is to be validated.
+#                  Return Value : True for valid, otherwise false for invalid.
+#
+##############################################################################
+
+
+
+sub program_is_valid($)
+{
+
+    my $command = $_[0];
+
+    my ($found,
+        $program);
+
+    # Check full paths or scan $PATH for it.
+
+    $program = (split(/[[:blank:]]/, $command))[0];
+    if ($program =~ m/^\//)
+    {
+        $found = 1 if (-x $program);
+    }
+    else
+    {
+        foreach my $dir (split(/:/, $ENV{PATH}))
+        {
+            if (-x "${dir}/$program")
+            {
+                $found = 1;
+                last;
+            }
+        }
+    }
+
+    if (! $found)
+    {
+        print("Warning: Program `" . $program
+              . "' cannot be found or is not executable.\n");
+    }
+
+    return $found;
+
+}
+#
+##############################################################################
+#
 #   Embedded Documentation For This Module
 #
 ##############################################################################
@@ -584,21 +631,27 @@ linux-installer - Linux installer for the mtn-browse application
 linux-installer [options]
 
   Options:
-    --confirm            -c           Print out what will happen first
-    --dep-level=             LEVEL    Specify type of dependency checking
-    --destdir=           -d  DIR      Specify temp installation location
-    --file-comparison    -f  PATH     File comparison command
-    --globs-file=        -g  FILE     Location of MIME globs file
-    --html-viewer            PATH     Viewer used to display help files
-    --interactive        -i           Ask questions interactively
-    --libdir=            -l  DIR      Library dir relative to PREFIX_DIR
-    --prefix=            -p  DIR      Installation location
-    --quiet              -q           Keep quiet
-    --(no)-use-dists-mas              Use/don't use MAS within distro
-    --help               -?           Print this help text
-    --man                -m           Print full help text
+    --confirm             -c           Print out what will happen first
+    --dep-level=              LEVEL    Specify dependency checking type
+    --destdir=            -d  DIR      Specify temp installation location
+    --file-comparison     -f  COMMAND  File comparison command
+    --globs-file=         -g  FILE     Location of MIME globs file
+    --graphviz-dot=           PROGRAM  Graphviz dot program
+    --html-viewer             COMMAND  Viewer used to display help files
+    --interactive         -i           Ask questions interactively
+    --libdir=             -l  DIR      Library dir relative to PREFIX_DIR
+    --prefix=             -p  DIR      Installation location
+    --quiet               -q           Keep quiet
+    --(no)-use-dists-mas               Use/don't use MAS within distro
+    --(no)-use-labels                  Use Gtk2::Labels in history graphs
+    --help                -?           Print this help text
+    --man                 -m           Print full help text
 
-=head1 OPTIONS
+=head1 DESCRIPTION
+
+This program is the installer for the mtn-browse application. It is assumed
+that this script will be run in the top level directory of the hierarchy made
+by unpacking the tar file that mtn-browse was shipped in.
 
 =over 8
 
@@ -625,26 +678,31 @@ directory paths in the application will still assume that it is installed in
 the PREFIX_DIR directory. This option is particularly useful for package
 maintainers.
 
-=item B<--file-comparison=PATH or -f PATH>
+=item B<--file-comparison=COMMAND or -f COMMAND>
 
-Specify the name of the command used for doing detailed, side by side, file
-comparisons. This defaults to kompare.
+Specify the command used for doing detailed, side by side, file comparisons.
+This defaults to meld.
 
 =item B<--globs-file=FILE or -g FILE>
 
 Specify the location of the system's MIME globs file. The default is
 /usr/share/mime/globs.
 
-=item B<--html-viewer>
+=item B<--graphviz-dot=PROGRAM>
 
-Specify the the program used to display the HTML help pages and URLs. Normally
-Yelp style help documentation is installed (in the form of XML files) and
-Gnome's default help and web browser are used. Whilst Yelp is the Gnome
-desktop's help system there are some installations where Yelp itself or parts
-of Gnome are not available. In these situations one can specify the name of a
-web browser that can be used to display the help documentation in the form of
-HTML files (i.e. there is no need for the web browser to understand Yelp XML
-files) and normal URLs.
+Specify the location of Grpahviz's dot program. Do not specify any switches.
+The default is dot.
+
+=item B<--html-viewer=COMMAND>
+
+Specify the the command used for displaying the HTML help pages and
+URLs. Normally Yelp style help documentation is installed (in the form of XML
+files) and Gnome's default help and web browser are used. Whilst Yelp is the
+Gnome desktop's help system there are some installations where Yelp itself or
+parts of Gnome are not available. In these situations one can specify the
+command to use to launch a web browser that can be used to display the help
+documentation in the form of HTML files (i.e. there is no need for the web
+browser to understand Yelp XML files) and normal URLs.
 
 Specifying this switch has two effects. Firstly mtn-browse is configured to run
 the specified web browser when it needs to display help documentation or URLs,
@@ -680,20 +738,31 @@ Select whether to use the Monotone::AutomateStdio library that shipped with
 mtn-browse or use one already installed on your system. The default is to use
 the one that comes with mtn-browse.
 
-=item B<-help>
+=item B<--(no)-use-labels>
 
-Print a brief help message and exit.
+Select whether to use Gtk2::Labels in history graphs instead of Gnome2::Canvas
+text items. Gnome2::Canvas text items can be much slower but will always work
+whereas Gtk2::Labels are much faster but may not work correctly depending upon
+the combintion of libraries installed on your system. The fault usually
+manifests itself as labels not being rendered in very tall graphs. This can be
+tested by using the test database at:
 
-=item B<-man or -m>
+    https://code.monotone.ca/p/mtn-browse/source/tree/
+        h:net.venge.monotone.contrib.mtn-browse.test.long-graph/
 
-Prints the manual page and exit.
+Graph the entire branch's history and scroll to the bottom and check that the
+text in the boxes is displayed.
+
+The default is to use Gnome2::Canvas text items.
+
+=item B<--help or -?>
+
+Print a brief help message and exits.
+
+=item B<--man or -m>
+
+Prints the manual page and exits.
 
 =back
-
-=head1 DESCRIPTION
-
-This program is the installer for the mtn-browse application. It is assumed
-that this script will be run in the top level directory of the hierarchy made
-by unpacking the tar file that mtn-browse was shipped in.
 
 =cut

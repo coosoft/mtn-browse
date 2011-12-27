@@ -44,13 +44,14 @@ require 5.008005;
 
 BEGIN
 {
-    use constant APPLICATION_NAME    => "mtn-browse";
-    use constant APPLICATION_VERSION => "1.00-Beta-RC1";
-    use constant FILE_COMPARE_CMD    => "@INST:FILE_COMPARE_CMD@";
-    use constant HTML_VIEWER_CMD     => "@INST:HTML_VIEWER_CMD@";
-    use constant LIB_DIR             => "@INST:LIB_DIR@";
-    use constant MIME_GLOB_FILE      => "@INST:GLOBS_FILE@";
-    use constant PREFIX_DIR          => "@INST:PREFIX_DIR@";
+    use constant APPLICATION_NAME        => "mtn-browse";
+    use constant APPLICATION_VERSION     => "1.00-Beta-RC1";
+    use constant FILE_COMPARE_CMD        => "@INST:FILE_COMPARE_CMD@";
+    use constant GRAPHVIZ_LAYOUT_PROGRAM => "@INST:GRAPHVIZ_LAYOUT_PROGRAM@";
+    use constant HTML_VIEWER_CMD         => "@INST:HTML_VIEWER_CMD@";
+    use constant LIB_DIR                 => "@INST:LIB_DIR@";
+    use constant MIME_GLOB_FILE          => "@INST:GLOBS_FILE@";
+    use constant PREFIX_DIR              => "@INST:PREFIX_DIR@";
 }
 use locale;
 use strict;

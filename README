@@ -37,7 +37,7 @@ This module requires these other modules and libraries:
           - Gtk2-GladeXML (1.006) *
           - Gtk2-SourceView (1.000) *
           - libintl-perl (1.16)
-          - Monotone::AutomateStdio (0.05 or later)
+          - Monotone::AutomateStdio (1.00 or later)
 
 Please note that the Gtk2 CPAN bundle will probably satisfy all of the
 dependencies marked with * at the end of the line.
@@ -94,16 +94,18 @@ through to it. The installer script supports some additional options that can
 also be specified via Makefile.PL, meaning that the full list of arguments are:
 
     perl Makefile.PL PREFIX=<PATH> DESTDIR=<PATH> LIBDIR=<PATH> \
-                     GLOBS_FILE=<PATH> FILE_COMPARISON=<PATH> \
-                     HTML_VIEWER=<PATH> NO_USE_DISTS_MAS=1
+                     GLOBS_FILE=<PATH> GRAPHVIZ_DOT=<PATH> \
+                     FILE_COMPARISON=<PATH> HTML_VIEWER=<PATH> \
+                     NO_USE_DISTS_MAS=1 USE_LABELS=1
 
 For further information on what these options mean please run:
 
     ./linux-installer -m
 
 PREFIX equates to --prefix, DESTDIR equates to --destdir, LIBDIR equates to
---libdir, GLOBS_FILE equates to --globs-file, HTML_VIEWER equates to
---help-viewer and NO_USE_DISTS_MAS equates to --no-use-dists-mas.
+--libdir, GLOBS_FILE equates to --globs-file, GRAPHVIZ_DOT equates to
+--graphviz-dot, HTML_VIEWER equates to --help-viewer, NO_USE_DISTS_MAS equates
+to --no-use-dists-mas and USE_LABELS equates to --use-labels.
 
 Alternatively one can run the installer directly. See the next subsection.
 
