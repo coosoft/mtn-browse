@@ -193,6 +193,7 @@ sub run_command($$$$$@)
         $my_pid,
         $pid,
         $stop,
+        $timer,
         $total_bytes,
         $watcher);
 
@@ -267,6 +268,16 @@ sub run_command($$$$$@)
              return TRUE;
          });
 
+    # Setup a half second interval timer to pulse progress bar widgets.
+
+    $timer = Glib::Timeout->add
+        (500,
+         sub {
+             $pulse_widget->pulse()
+                 if (defined($pulse_widget));
+             return TRUE;
+         });
+
     # Call the input callback routine if we have one. It is allowed to close
     # STDIN if it wishes to.
 
@@ -279,6 +290,10 @@ sub run_command($$$$$@)
     {
         Gtk2->main_iteration();
     }
+
+    # Remove the interval timer and the watch handler.
+
+    Glib::Source->remove($timer);
     Gtk2::Helper->remove_watch($watcher);
 
     # If we have been asked to abort then terminate the subprocess, otherwise

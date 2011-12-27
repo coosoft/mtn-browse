@@ -1006,6 +1006,7 @@ sub generate_history_graph($)
 
     if (! $instance->{stop})
     {
+        local $pulse_widget = $instance->{appbar}->get_progress();
         $instance->{appbar}->set_progress_percentage(0);
         $instance->{appbar}->
             set_status(__x("Laying out graph with {program}",

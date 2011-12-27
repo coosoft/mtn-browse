@@ -345,6 +345,7 @@ sub display_revision_comparison($$$;$)
         my $exception;
 
         local $instance->{kill_mtn_subprocess} = 1;
+        local $pulse_widget = $instance->{appbar}->get_progress();
 
         # The stop button callback will kill off the mtn subprocess so suppress
         # any resultant errors.
@@ -390,6 +391,7 @@ sub display_revision_comparison($$$;$)
     }
     else
     {
+        local $pulse_widget = $instance->{appbar}->get_progress();
         mtn_diff($instance->{diff_output},
                  \$instance->{stop},
                  $mtn->get_db_name(),

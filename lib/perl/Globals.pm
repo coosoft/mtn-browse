@@ -108,6 +108,11 @@ our $tooltips;
 
 our $mono_font;
 
+# The progress bar widget that is to be pulsed when issuing Monotone commands
+# or using run_command(). No pulsing is done if this is undefined.
+
+our $pulse_widget;
+
 # The full character encoding list and the current encoding used for file
 # contents.
 
@@ -179,6 +184,7 @@ our %EXPORT_TAGS = (constants => [qw(ALL_CHANGED
                                      $mime_match_table
                                      $mono_font
                                      $mtn_key
+                                     $pulse_widget
                                      $select_escape_re
                                      $suppress_mtn_warnings
                                      $tmp_dir

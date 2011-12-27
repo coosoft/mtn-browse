@@ -1125,6 +1125,7 @@ sub update_advanced_find_state($$)
                  });
             eval
             {
+                local $pulse_widget = $advanced_find->{appbar}->get_progress();
                 $advanced_find->{mtn}->select(\@revision_ids, $query);
                 $matches = scalar(@revision_ids);
             };

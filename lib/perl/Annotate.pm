@@ -115,10 +115,13 @@ sub display_annotation($$$)
 
     $instance->{appbar}->set_status(__("Annotating file"));
     $wm->update_gui();
-    mtn_annotate(\@lines,
-                 $mtn->get_db_name(),
-                 $revision_id,
-                 $instance->{file_name});
+    {
+        local $pulse_widget = $instance->{appbar}->get_progress();
+        mtn_annotate(\@lines,
+                     $mtn->get_db_name(),
+                     $revision_id,
+                     $instance->{file_name});
+    }
 
     # Find the longest line for future padding and also split each line into
     # their prefix and text parts. Please note that the use of unpack un-utf8s

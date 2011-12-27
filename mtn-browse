@@ -245,7 +245,11 @@ sub view_button_clicked_cb($$);
 
     CachingAutomateStdio->register_db_locked_handler(\&mtn_db_locked_handler);
     CachingAutomateStdio->register_io_wait_handler
-        (sub { WindowManager->instance()->update_gui(); }, 1);
+        (sub {
+             $pulse_widget->pulse() if (defined($pulse_widget));
+             WindowManager->instance()->update_gui();
+         },
+         0.5);
 
     # Load in user preferences.
 
