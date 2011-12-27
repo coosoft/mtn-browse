@@ -309,19 +309,11 @@ sub display_revision_comparison($$$;$)
     local $instance->{in_cb} = 1;
 
     $instance->{window}->
-        set_title(__x("Differences Between Revisions {rev_1} and {rev_2}",
+        set_title(__x("{type} Differences Between {rev_1} and {rev_2}",
+                      type  => defined($file_name)
+                                   ? __("File") : __("Revision"),
                       rev_1 => $revision_id_1,
                       rev_2 => $revision_id_2));
-    if (defined($file_name))
-    {
-        $instance->{comparison_label}->
-            set_markup(__("<b>File Comparison</b>"));
-    }
-    else
-    {
-        $instance->{comparison_label}->
-            set_markup(__("<b>Revision Comparison</b>"));
-    }
     $instance->{window}->show_all();
     $instance->{window}->present();
 
@@ -2260,7 +2252,6 @@ sub get_revision_comparison_window($)
 
         $instance->{window} = $glade->get_widget($window_type);
         foreach my $widget ("appbar",
-                            "comparison_label",
                             "file_comparison_combobox",
                             "external_diffs_button",
                             "stop_button",
