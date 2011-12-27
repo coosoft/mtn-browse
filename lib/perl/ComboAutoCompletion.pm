@@ -531,7 +531,8 @@ sub completions_treeselection_changed_cb($$)
     {
 
         my ($iter,
-            $model);
+            $model,
+            $timeout_source_id);
         my $change_state = $completions->{details}->{change_state};
         my $combo_details = $completions->{details}->{combo_details};
         my $entry = $completions->{details}->{entry};
@@ -552,7 +553,6 @@ sub completions_treeselection_changed_cb($$)
 
         $combo_details->{complete} = 1;
         $instance->{appbar}->clear_stack();
-        hide_completions_window();
         hide_tooltip_window();
         $entry->set_text($combo_details->{value});
         if ($move_to_end)
@@ -563,8 +563,25 @@ sub completions_treeselection_changed_cb($$)
         {
             $entry->set_position(0);
         }
+
+        # Dismiss the completions list window in half a second or so.
+
+        $timeout_source_id =
+            Glib::Timeout->add(500,
+                               sub {
+                                   hide_completions_window();
+                                   return FALSE;
+                               });
+
+        # Update the parent window if necessary.
+
         &{$instance->{update_handler}}($instance, $change_state)
             unless ($old_value eq $combo_details->{value});
+
+        # We are done so make sure that the completions list window is hidden.
+
+        Glib::Source->remove($timeout_source_id);
+        hide_completions_window();
 
     }
 
@@ -685,7 +702,7 @@ sub update_completions_list_window($$$$$)
             $appbar->push(__x("Populating {name} list", name => $name));
             $wm->update_gui();
             $counter = 1;
-            $update_interval = calculate_update_interval($list);
+            $update_interval = calculate_update_interval($list, 4);
             $instance->{completions_liststore}->clear();
             $instance->{completions_treeview}->hide();
             foreach my $item (@$list)
