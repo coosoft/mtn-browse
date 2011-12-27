@@ -76,11 +76,14 @@ sub display_history_graph($;$$$);
 
 # Private routines.
 
-sub build_ancestry_graph($$;$$$);
 sub draw_graph($);
+sub generate_ancestry_graph($$;$$$);
 sub get_history_graph_window();
+sub get_node_colour($$);
 sub graph_reconnect_helper($$);
+sub hsv_to_rgb($$$$$$);
 sub layout_graph($);
+sub populate_revision_details($$);
 #
 ##############################################################################
 #
@@ -134,19 +137,21 @@ sub display_history_graph($;$$$)
 
     $instance->{appbar}->set_status(__("Building ancestry graph"));
     $wm->update_gui();
-    build_ancestry_graph($instance, 1, $branches, $from_date, $to_date);
+    generate_ancestry_graph($instance, 1, $branches, $from_date, $to_date);
 
     # get_revision_history_helper($instance, $revision_id);
 
+    $instance->{appbar}->set_progress_percentage(0.5);
     $instance->{appbar}->set_status(__("Laying out graph with dot"));
     $wm->update_gui();
     layout_graph($instance);
-
-    $instance->{appbar}->set_status(__("Drawing graph"));
+    $instance->{appbar}->set_progress_percentage(1);
     $wm->update_gui();
+
     draw_graph($instance);
 
     $instance->{stop_button}->set_sensitive(FALSE);
+    $instance->{stop} = 0;
     $wm->update_gui();
 
     $instance->{appbar}->pop();
@@ -158,9 +163,9 @@ sub display_history_graph($;$$$)
 #
 ##############################################################################
 #
-#   Routine      - build_ancestry_graph
+#   Routine      - generate_ancestry_graph
 #
-#   Description  - Generate the ancestry graph information from the specified
+#   Description  - Generate the ancestry graph database from the specified
 #                  selection criteria.
 #
 #   Data         - $instance                 : The history graph window
@@ -192,7 +197,7 @@ sub display_history_graph($;$$$)
 
 
 
-sub build_ancestry_graph($$;$$$)
+sub generate_ancestry_graph($$;$$$)
 {
 
     my ($instance, $show_all_propagate_nodes, $branches, $from_date, $to_date)
@@ -1205,7 +1210,7 @@ sub layout_graph($)
 #   Description  - Given a child graph database and the geometric objects laid
 #                  out by dot, draw the history graph in the canvas widget.
 #
-#   Data         - $instance    : The history graph window instance.
+#   Data         - $instance : The history graph window instance.
 #
 ##############################################################################
 
@@ -1216,7 +1221,11 @@ sub draw_graph($)
 
     my $instance = $_[0];
 
+    my ($counter,
+	$total,
+	$update_interval);
     my $child_db = $instance->{graph_data}->{child_graph};
+    my $wm = WindowManager->instance();
 
     $instance->{graph_canvas}->set_scroll_region
 	(0,
@@ -1235,23 +1244,35 @@ sub draw_graph($)
 				  x => 0,
 				  y => 0);
 
+    $total = scalar(@{$instance->{graph_data}->{rectangles}})
+	+ scalar(@{$instance->{graph_data}->{circles}});
+    $update_interval = calculate_update_interval($total);
+
     # Draw the rectangular nodes.
 
+    $instance->{appbar}->set_progress_percentage(0);
+    $instance->{appbar}->set_status(__("Drawing graph"));
+    $wm->update_gui();
+    $counter = 1;
     foreach my $rectangle (@{$instance->{graph_data}->{rectangles}})
     {
-	my $widget = Gnome2::Canvas::Item->new
+	my $widget;
+	populate_revision_details($instance, $rectangle->{revision_id});
+	$widget = Gnome2::Canvas::Item->new
 	    ($instance->{graph_group},
 	     "Gnome2::Canvas::Rect",
-	     x1            => $rectangle->{tl_x},
-	     y1            => $rectangle->{tl_y},
-	     x2            => $rectangle->{br_x},
-	     y2            => $rectangle->{br_y},
-	     fill_color    => "yellow",
-	     outline_color => ($child_db->{$rectangle->{revision_id}}->{flags}
-			       & SELECTED_NODE) ?
-	                          SELECTED_BORDER_COLOUR :
-	                          NOT_SELECTED_BORDER_COLOUR,
-	     width_pixels  => LINE_WIDTH);
+	     x1             => $rectangle->{tl_x},
+	     y1             => $rectangle->{tl_y},
+	     x2             => $rectangle->{br_x},
+	     y2             => $rectangle->{br_y},
+	     fill_color_gdk => get_node_colour
+	                           ($instance,
+				    $child_db->{$rectangle->{revision_id}}),
+	     outline_color  => ($child_db->{$rectangle->{revision_id}}->{flags}
+				& SELECTED_NODE) ?
+				   SELECTED_BORDER_COLOUR :
+				   NOT_SELECTED_BORDER_COLOUR,
+	     width_pixels   => LINE_WIDTH);
 	$widget->signal_connect
 	    ("event",
 	     sub {
@@ -1263,25 +1284,39 @@ sub draw_graph($)
 		 return TRUE;
 	     },
 	     $rectangle->{revision_id});
+	if (($counter % $update_interval) == 0)
+	{
+	    $instance->{appbar}->set_progress_percentage($counter / $total);
+	    $wm->update_gui();
+	}
+	++ $counter;
+
+	# Stop if the user wants to.
+
+	last if ($instance->{stop});
     }
 
     # Draw the circular nodes.
 
     foreach my $circle (@{$instance->{graph_data}->{circles}})
     {
-	my $widget = Gnome2::Canvas::Item->new
+	my $widget;
+	populate_revision_details($instance, $circle->{revision_id});
+	$widget = Gnome2::Canvas::Item->new
 	    ($instance->{graph_group},
 	     "Gnome2::Canvas::Ellipse",
-	     x1            => $circle->{x} - $circle->{width},
-	     y1            => $circle->{y} - $circle->{height},
-	     x2            => $circle->{x} + $circle->{width},
-	     y2            => $circle->{y} + $circle->{height},
-	     fill_color    => "yellow",
-	     outline_color => ($child_db->{$circle->{revision_id}}->{flags}
-			       & SELECTED_NODE) ?
-	                          SELECTED_BORDER_COLOUR :
-	                          NOT_SELECTED_BORDER_COLOUR,
-	     width_pixels  => LINE_WIDTH);
+	     x1             => $circle->{x} - $circle->{width},
+	     y1             => $circle->{y} - $circle->{height},
+	     x2             => $circle->{x} + $circle->{width},
+	     y2             => $circle->{y} + $circle->{height},
+	     fill_color_gdk => get_node_colour
+	                           ($instance,
+				    $child_db->{$circle->{revision_id}}),
+	     outline_color  => ($child_db->{$circle->{revision_id}}->{flags}
+				& SELECTED_NODE) ?
+				   SELECTED_BORDER_COLOUR :
+				   NOT_SELECTED_BORDER_COLOUR,
+	     width_pixels   => LINE_WIDTH);
 	$widget->signal_connect
 	    ("event",
 	     sub {
@@ -1293,7 +1328,19 @@ sub draw_graph($)
 		 return TRUE;
 	     },
 	     $circle->{revision_id});
+	if (($counter % $update_interval) == 0)
+	{
+	    $instance->{appbar}->set_progress_percentage($counter / $total);
+	    $wm->update_gui();
+	}
+	++ $counter;
+
+	# Stop if the user wants to.
+
+	last if ($instance->{stop});
     }
+    $instance->{appbar}->set_progress_percentage(1);
+    $wm->update_gui();
 
     # Draw the lines.
 
@@ -1339,12 +1386,283 @@ sub draw_graph($)
 					   width_pixels  => LINE_WIDTH);
 	$bpath->set_path_def($pathdef);
 	$bpath->lower_to_bottom();
+
+	# Stop if the user wants to.
+
+	last if ($instance->{stop});
     }
+
+    # Clean up the graph if the user stopped the drawing process (it will be a
+    # mess).
+
+    if ($instance->{stop})
+    {
+	my $group = $instance->{graph_group};
+	$instance->{graph_group} = undef;
+	$instance->{text_group} = undef;
+	$group->destroy();
+    }
+
+    $instance->{appbar}->set_progress_percentage(0);
+    $instance->{appbar}->set_status("");
+    $wm->update_gui();
 
     printf("Boxes = %d\nCircles = %d\nLines = %d\n",
 	   scalar(@{$instance->{graph_data}->{rectangles}}),
 	   scalar(@{$instance->{graph_data}->{circles}}),
 	   scalar(@{$instance->{graph_data}->{arrows}}));
+
+}
+#
+##############################################################################
+#
+#   Routine      - get_node_colour
+#
+#   Description  - Given the specified node in the graph database, either find
+#                  a colour that has been used for that `type' of node before
+#                  or generate a new colour from scratch.
+#
+#   Data         - $instance    : The history graph window instance.
+#                  $node        : The node in the graph database that is to
+#                                 have a colour returned for it.
+#                  Return Value : The colour as a Gtk2::Gdk::Color object.
+#
+##############################################################################
+
+
+
+sub get_node_colour($$)
+{
+
+    my ($instance, $node) = @_;
+
+    my ($colour,
+	$hash_values);
+
+    $hash_values = $node->{branches};
+
+    # First look for an existing colour for any of the branches.
+
+    foreach my $value (@$hash_values)
+    {
+	if (exists($instance->{colour_db}->{$value}))
+	{
+	    $colour = $instance->{colour_db}->{$value};
+	    last;
+	}
+    }
+
+    # Do we need a new colour?
+
+    if (! defined($colour))
+    {
+
+	my ($blue,
+	    $green,
+	    $hash,
+	    $hash_value,
+	    $hue,
+	    $red,
+	    $saturation,
+	    $value);
+
+	# Yes we do.
+
+	# Generate a new colour by hashing the differentiating value and then
+	# using the first few bytes of that hash as HSV values (idea taken from
+	# monotone-viz).
+
+	if (scalar(@$hash_values) > 0)
+	{
+	    $hash_value = $$hash_values[0];
+	}
+	else
+	{
+	    $hash_value = "";
+	}
+	($hue, $saturation, $value) = unpack("CCC", md5($hash_value));
+
+	# Now scale values. Hue 0 to 359, saturation and value 0 to 1. In
+	# addition scale saturation to only go from 35% to 50% and value to
+	# only go from 70% to 100%. Then convert from HSV to RGB.
+
+	$hue = ($hue / 255) * 359;
+	$saturation = (($saturation / 255) * 0.15) + 0.35;
+	$value = (($value / 255) * 0.30) + 0.70;
+	hsv_to_rgb($hue, $saturation, $value, \$red, \$green, \$blue);
+
+	# Scale RGB values and create a new colour object.
+
+	$colour = Gtk2::Gdk::Color->new(floor(($red * 65535) + 0.5) & 0xffff,
+					floor(($green * 65535) + 0.5) & 0xffff,
+					floor(($blue * 65535) + 0.5) & 0xffff);
+
+	# Store colour under its hash value for possible reuse.
+
+	$instance->{colour_db}->{$hash_value} = $colour;
+
+    }
+
+    return $colour;
+
+}
+#
+##############################################################################
+#
+#   Routine      - populate_revision_details
+#
+#   Description  - Given the specified revision id, populate the relevant node
+#                  in the graph database with the revision's details such as
+#                  its author, its date and lists of its branches and tags.
+#
+#   Data         - $instance    : The history graph window instance.
+#                  $revision_id : The id of the revision that is to have its
+#                                 details populated in the graph database.
+#
+##############################################################################
+
+
+
+sub populate_revision_details($$)
+{
+
+    my ($instance, $revision_id) = @_;
+
+    my ($author,
+	@branches,
+	@certs,
+	$date,
+	$node,
+	@tags);
+
+    # Get the revision's list of branches, tags and date.
+
+    $instance->{mtn}->certs(\@certs, $revision_id);
+    foreach my $cert (@certs)
+    {
+	if ($cert->{name} eq "author")
+	{
+	    $author = $cert->{value} unless (defined($author));
+	}
+	elsif ($cert->{name} eq "branch")
+	{
+	    push(@branches, $cert->{value});
+	}
+	elsif ($cert->{name} eq "date")
+	{
+	    $date = $cert->{value} unless (defined($date));
+	}
+	elsif ($cert->{name} eq "tag")
+	{
+	    push(@tags, $cert->{value});
+	}
+    }
+    @branches = sort(@branches);
+    @tags = sort(@tags);
+
+    # Now store this data in the relevant node in the graph database.
+
+    $node = $instance->{graph_data}->{child_graph}->{$revision_id};
+    $node->{author} = $author;
+    $node->{branches} = \@branches;
+    $node->{date} = $date;
+    $node->{tags} = \@tags;
+
+}
+#
+##############################################################################
+#
+#   Routine      - hsv_to_rgb
+#
+#   Description  - Convert hue, saturation and value into RGB values. This
+#                  algorith was taken from:
+#                      http://www.cs.rit.edu/~ncs/color/t_convert.html
+#
+#   Data         - $hue        : Hue value.
+#                  $saturation : Saturation value.
+#                  $value      : Brightness value.
+#                  $red        : A reference to a variable that is to contain
+#                                the red component.
+#                  $green      : A reference to a variable that is to contain
+#                                the green component.
+#                  $blue       : A reference to a variable that is to contain
+#                                the blue component.
+#
+##############################################################################
+
+
+
+sub hsv_to_rgb($$$$$$)
+{
+
+    my ($hue, $saturation, $value, $red, $green, $blue) = @_;
+
+    # Deal with achromatic grey.
+
+    if ($saturation == 0)
+    {
+	$$red = $$green = $$blue = $value;
+    }
+
+    # Now non-grey colours.
+
+    else
+    {
+
+	my ($f,
+	    $i,
+	    $p,
+	    $q,
+	    $t);
+
+	# Hue is 0 to 360, scale it down into 0 to 5 and put the factorial part
+	# of that division into $f.
+
+	$hue /= 60;
+	$i = floor($hue);
+	$f = $hue - $i;
+	$p = $value * (1 - $saturation);
+	$q = $value * (1 - ($saturation * $f));
+	$t = $value * (1 - ($saturation * (1 - $f)));
+
+	if ($i == 0)
+	{
+	    $$red = $value;
+	    $$green = $t;
+	    $$blue = $p;
+	}
+	elsif ($i == 1)
+	{
+	    $$red = $q;
+	    $$green = $value;
+	    $$blue = $p;
+	}
+	elsif ($i == 2)
+	{
+	    $$red = $p;
+	    $$green = $value;
+	    $$blue = $t;
+	}
+	elsif ($i == 3)
+	{
+	    $$red = $p;
+	    $$green = $q;
+	    $$blue = $value;
+	}
+	elsif ($i == 4)
+	{
+	    $$red = $t;
+	    $$green = $p;
+	    $$blue = $value;
+	}
+	else
+	{
+	    $$red = $value;
+	    $$green = $p;
+	    $$blue = $q;
+	}
+
+    }
 
 }
 #
@@ -1424,7 +1742,6 @@ sub get_history_graph_window()
 		 return TRUE if ($instance->{in_cb});
 		 local $instance->{in_cb} = 1;
 		 $widget->hide();
-		 # $instance->{history_buffer}->set_text("");
 		 if (defined($instance->{graph_group}))
 		 {
 		     my $group = $instance->{graph_group};
@@ -1432,6 +1749,7 @@ sub get_history_graph_window()
 		     $instance->{text_group} = undef;
 		     $group->destroy();
 		 }
+		 $instance->{colour_db} = {};
 		 $instance->{graph_data} = undef;
 		 $instance->{mtn} = undef;
 		 return TRUE;
@@ -1497,6 +1815,7 @@ sub get_history_graph_window()
 	$instance->{appbar}->clear_stack();
     }
 
+    $instance->{colour_db} = {};
     $instance->{graph_group} = undef;
     $instance->{graph_data} = undef;
     $instance->{stop} = 0;

@@ -461,7 +461,7 @@ sub search_files_button_clicked_cb($$)
 	    ($month, $year) = (@time_val)[4, 5];
 	    if ($query_months > 12)
 	    {
-		$year -= int($query_months / 12);
+		$year -= floor($query_months / 12);
 		$query_months %= 12;
 	    }
 	    if ($query_months > $month)

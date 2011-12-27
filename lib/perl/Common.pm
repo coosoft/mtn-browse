@@ -2005,7 +2005,9 @@ sub build_help_ref_to_url_map()
 #                  update interval (in number of items processed) for updating
 #                  the display.
 #
-#   Data         - $list_ref    : A reference to the list containing the items
+#   Data         - $items       : Either a reference to a container containing
+#                                 the items that are to be processed or a
+#                                 scalar containing the number of items to
 #                                 that are to be processed.
 #                  $granularity : The number of times the display is to be
 #                                 updated whilst processing the list of items.
@@ -2019,12 +2021,25 @@ sub build_help_ref_to_url_map()
 sub calculate_update_interval($;$)
 {
 
-    my ($list_ref, $granularity) = @_;
+    my ($items, $granularity) = @_;
 
-    my $update_interval;
+    my ($nr_items,
+	$update_interval);
 
     $granularity = 20 unless (defined($granularity));
-    $update_interval = int(scalar(@{$list_ref}) / $granularity);
+    if (ref($items) eq "ARRAY")
+    {
+	$nr_items = scalar(@$items);
+    }
+    elsif (ref($items) eq "HASH")
+    {
+	$nr_items = scalar(keys(%$items));
+    }
+    else
+    {
+	$nr_items = $items;
+    }
+    $update_interval = floor($nr_items / $granularity);
     $update_interval = 1 if ($update_interval < 1);
 
     return $update_interval;
