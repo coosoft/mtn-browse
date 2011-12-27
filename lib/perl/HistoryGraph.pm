@@ -49,17 +49,23 @@ no warnings qw(recursion);
 
 # ***** GLOBAL DATA DECLARATIONS *****
 
-# Constants for the border and scale of items in a graph.
+# Constants for the border, scale and size of items in a graph.
 
 use constant CANVAS_BORDER => 5;
 use constant DPI           => 72;
+use constant FONT_SIZE     => 8;
 use constant HEIGHT        => 28;
 use constant LINE_WIDTH    => 2;
+use constant TEXT_BORDER   => 10;
 use constant WIDTH         => 72;
+
+# Constant for the number of characters displayed for a hexadecimal id.
+
+use constant HEX_ID_LENGTH => 8;
 
 # Constants representing the graph node flags that can be set.
 
-use constant MERGE_NODE    => 0x01;
+use constant CIRCULAR_NODE => 0x01;
 use constant NO_PARENTS    => 0x02;
 use constant SELECTED_NODE => 0x04;
 
@@ -138,6 +144,15 @@ sub display_history_graph($;$$$)
     $instance->{appbar}->set_status(__("Building ancestry graph"));
     $wm->update_gui();
     generate_ancestry_graph($instance, 1, $branches, $from_date, $to_date);
+
+    # Populate all of the graphed nodes with essential revision information.
+
+    $instance->{appbar}->set_status(__("Getting revision information"));
+    $wm->update_gui();
+    foreach my $revision_id (keys(%{$instance->{graph_data}->{child_graph}}))
+    {
+	populate_revision_details($instance, $revision_id);
+    }
 
     # get_revision_history_helper($instance, $revision_id);
 
@@ -497,7 +512,7 @@ sub generate_ancestry_graph($$;$$$)
     }
 
     # Now use this hash to mark up nodes that either have no parents or
-    # multiple ones (i.e. merge nodes).
+    # multiple ones (i.e. what will be rendered as circular merge nodes).
 
     foreach my $revision_id (keys(%graph_db))
     {
@@ -512,7 +527,7 @@ sub generate_ancestry_graph($$;$$$)
 	}
 	elsif ($nr_parents > 1)
 	{
-	    $graph_db{$revision_id}->{flags} |= MERGE_NODE;
+	    $graph_db{$revision_id}->{flags} |= CIRCULAR_NODE;
 	}
     }
     %nr_of_parents = ();
@@ -775,6 +790,9 @@ sub layout_graph($)
 	$fh_err,
 	$fh_in,
 	$fh_out,
+	$hex_id_height,
+	$hex_id_width,
+	$layout,
 	$my_pid,
 	$pid,
 	$prev_lines,
@@ -858,6 +876,16 @@ sub layout_graph($)
 	     return TRUE;
 	 });
 
+    # Create a layout object based on the main graph window and then use it to
+    # get the pixel size of a hex id when displayed on the screen. This layout
+    # is also used later on for any tags that need to be displayed.
+
+    $layout = $instance->{window}->create_pango_layout("A" x HEX_ID_LENGTH);
+    $layout->set_font_description($instance->{fontdescription});
+    ($hex_id_width, $hex_id_height) = $layout->get_pixel_size();
+    $hex_id_height = max(HEIGHT, $hex_id_height + TEXT_BORDER);
+    $hex_id_width = max(WIDTH, $hex_id_width + TEXT_BORDER);
+
     # Generate a list of topographically sorted revision ids for each revision
     # in the graph database.
 
@@ -875,27 +903,43 @@ sub layout_graph($)
 		  . "  graph [ranksep=\"0.25\"];\n"
 		  . "  node [label=\"\"];\n");
 
-    # Rectangular non-merge nodes.
+    # Rectangular non-merge nodes, possibly changing the width for tagged nodes
+    # if we need more space.
 
     $fh_in->printf("  node [shape=box, width = %f, height = %f];\n",
-		   WIDTH / DPI,
-		   HEIGHT / DPI);
+		   $hex_id_width / DPI,
+		   $hex_id_height / DPI);
     foreach my $revision_id (@revision_ids)
     {
-	if (! ($child_db->{$revision_id}->{flags} & MERGE_NODE))
+	if (! ($child_db->{$revision_id}->{flags} & CIRCULAR_NODE))
 	{
-	    $fh_in->print("  \"" . $revision_id . "\";\n");
+	    my $width = WIDTH;
+	    $fh_in->print("  \"" . $revision_id . "\"");
+	    if (scalar(@{$child_db->{$revision_id}->{tags}}) > 0)
+	    {
+		$layout->set_text($child_db->{$revision_id}->{tags}->[0]);
+		$width = max(WIDTH,
+			     ($layout->get_pixel_size())[0] + TEXT_BORDER);
+	    }
+	    if ($width != WIDTH)
+	    {
+		$fh_in->printf(" [width = %f];\n", $width / DPI);
+	    }
+	    else
+	    {
+		$fh_in->print(";\n");
+	    }
 	}
     }
 
     # Circular merge nodes.
 
     $fh_in->printf("  node [shape=circle, width = %f, height = %f];\n",
-		   HEIGHT / DPI,
-		   HEIGHT / DPI);
+		   $hex_id_height / DPI,
+		   $hex_id_height / DPI);
     foreach my $revision_id (@revision_ids)
     {
-	if ($child_db->{$revision_id}->{flags} & MERGE_NODE)
+	if ($child_db->{$revision_id}->{flags} & CIRCULAR_NODE)
 	{
 	    $fh_in->print("  \"" . $revision_id . "\";\n");
 	}
@@ -1187,10 +1231,10 @@ sub layout_graph($)
 
 	# Bounding box (i.e. the total size of the graph).
 
-	elsif ($line =~ m/bb=\"\d+,\d+,(\d+),(\d+)\"/)
+	elsif ($line =~ m/bb=\"(\d+),(\d+),(\d+),(\d+)\"/)
 	{
-	    $instance->{graph_data}->{max_x} = $1;
-	    $instance->{graph_data}->{max_y} = $2;
+	    $instance->{graph_data}->{max_x} = max($1, $3);
+	    $instance->{graph_data}->{max_y} = max($2, $4);
 	}
 
     }
@@ -1238,17 +1282,12 @@ sub draw_graph($)
 				  "Gnome2::Canvas::Group",
 				  x => CANVAS_BORDER,
 				  y => CANVAS_BORDER);
-    $instance->{text_group} =
-	Gnome2::Canvas::Item->new($instance->{graph_group},
-				  "Gnome2::Canvas::Group",
-				  x => 0,
-				  y => 0);
 
     $total = scalar(@{$instance->{graph_data}->{rectangles}})
 	+ scalar(@{$instance->{graph_data}->{circles}});
     $update_interval = calculate_update_interval($total);
 
-    # Draw the rectangular nodes.
+    # Draw the rectangular nodes with text inside them.
 
     $instance->{appbar}->set_progress_percentage(0);
     $instance->{appbar}->set_status(__("Drawing graph"));
@@ -1256,24 +1295,57 @@ sub draw_graph($)
     $counter = 1;
     foreach my $rectangle (@{$instance->{graph_data}->{rectangles}})
     {
-	my $widget;
-	populate_revision_details($instance, $rectangle->{revision_id});
+
+	my ($label,
+	    $text,
+	    $widget);
+	my $node = $child_db->{$rectangle->{revision_id}};
+	my $node_group = Gnome2::Canvas::Item->new($instance->{graph_group},
+						   "Gnome2::Canvas::Group",
+						   x => 0,
+						   y => 0);
+
+	# Draw the rectangle.
+
 	$widget = Gnome2::Canvas::Item->new
-	    ($instance->{graph_group},
+	    ($node_group,
 	     "Gnome2::Canvas::Rect",
 	     x1             => $rectangle->{tl_x},
 	     y1             => $rectangle->{tl_y},
 	     x2             => $rectangle->{br_x},
 	     y2             => $rectangle->{br_y},
-	     fill_color_gdk => get_node_colour
-	                           ($instance,
-				    $child_db->{$rectangle->{revision_id}}),
-	     outline_color  => ($child_db->{$rectangle->{revision_id}}->{flags}
-				& SELECTED_NODE) ?
+	     fill_color_gdk => get_node_colour ($instance, $node),
+	     outline_color  => ($node->{flags} & SELECTED_NODE) ?
 				   SELECTED_BORDER_COLOUR :
 				   NOT_SELECTED_BORDER_COLOUR,
 	     width_pixels   => LINE_WIDTH);
-	$widget->signal_connect
+
+	# Now the text, use a revision's tag and failing that use the first
+	# eight characters of its hex id. Also use a Gtk2::Label as the
+	# Gnome2::Canvas::Text widget just takes too long to render.
+
+	if (scalar(@{$node->{tags}}) > 0)
+	{
+	    $text = $node->{tags}->[0];
+	}
+	else
+	{
+	    $text = substr($rectangle->{revision_id}, 0, HEX_ID_LENGTH);
+	}
+	$label = Gtk2::Label->new($text);
+	$label->modify_font($instance->{fontdescription});
+	$label->show();
+	$widget = Gnome2::Canvas::Item->new
+	    ($node_group,
+	     "Gnome2::Canvas::Widget",
+	     widget => $label,
+	     height => $rectangle->{br_y} - $rectangle->{tl_y} + 1,
+	     width  => $rectangle->{br_x} - $rectangle->{tl_x} + 1,
+	     x      => $rectangle->{tl_x},
+	     y      => $rectangle->{tl_y});
+	$widget->raise_to_top();
+
+	$node_group->signal_connect
 	    ("event",
 	     sub {
 		 my ($widget, $event, $data) = @_;
@@ -1284,6 +1356,7 @@ sub draw_graph($)
 		 return TRUE;
 	     },
 	     $rectangle->{revision_id});
+
 	if (($counter % $update_interval) == 0)
 	{
 	    $instance->{appbar}->set_progress_percentage($counter / $total);
@@ -1294,6 +1367,7 @@ sub draw_graph($)
 	# Stop if the user wants to.
 
 	last if ($instance->{stop});
+
     }
 
     # Draw the circular nodes.
@@ -1301,7 +1375,7 @@ sub draw_graph($)
     foreach my $circle (@{$instance->{graph_data}->{circles}})
     {
 	my $widget;
-	populate_revision_details($instance, $circle->{revision_id});
+	my $node = $child_db->{$circle->{revision_id}};
 	$widget = Gnome2::Canvas::Item->new
 	    ($instance->{graph_group},
 	     "Gnome2::Canvas::Ellipse",
@@ -1309,11 +1383,8 @@ sub draw_graph($)
 	     y1             => $circle->{y} - $circle->{height},
 	     x2             => $circle->{x} + $circle->{width},
 	     y2             => $circle->{y} + $circle->{height},
-	     fill_color_gdk => get_node_colour
-	                           ($instance,
-				    $child_db->{$circle->{revision_id}}),
-	     outline_color  => ($child_db->{$circle->{revision_id}}->{flags}
-				& SELECTED_NODE) ?
+	     fill_color_gdk => get_node_colour($instance, $node),
+	     outline_color  => ($node->{flags} & SELECTED_NODE) ?
 				   SELECTED_BORDER_COLOUR :
 				   NOT_SELECTED_BORDER_COLOUR,
 	     width_pixels   => LINE_WIDTH);
@@ -1410,7 +1481,6 @@ sub draw_graph($)
     {
 	my $group = $instance->{graph_group};
 	$instance->{graph_group} = undef;
-	$instance->{text_group} = undef;
 	$group->destroy();
 	$instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
     }
@@ -1521,69 +1591,6 @@ sub get_node_colour($$)
 #
 ##############################################################################
 #
-#   Routine      - populate_revision_details
-#
-#   Description  - Given the specified revision id, populate the relevant node
-#                  in the graph database with the revision's details such as
-#                  its author, its date and lists of its branches and tags.
-#
-#   Data         - $instance    : The history graph window instance.
-#                  $revision_id : The id of the revision that is to have its
-#                                 details populated in the graph database.
-#
-##############################################################################
-
-
-
-sub populate_revision_details($$)
-{
-
-    my ($instance, $revision_id) = @_;
-
-    my ($author,
-	@branches,
-	@certs,
-	$date,
-	$node,
-	@tags);
-
-    # Get the revision's list of branches, tags and date.
-
-    $instance->{mtn}->certs(\@certs, $revision_id);
-    foreach my $cert (@certs)
-    {
-	if ($cert->{name} eq "author")
-	{
-	    $author = $cert->{value} unless (defined($author));
-	}
-	elsif ($cert->{name} eq "branch")
-	{
-	    push(@branches, $cert->{value});
-	}
-	elsif ($cert->{name} eq "date")
-	{
-	    $date = $cert->{value} unless (defined($date));
-	}
-	elsif ($cert->{name} eq "tag")
-	{
-	    push(@tags, $cert->{value});
-	}
-    }
-    @branches = sort(@branches);
-    @tags = sort(@tags);
-
-    # Now store this data in the relevant node in the graph database.
-
-    $node = $instance->{graph_data}->{child_graph}->{$revision_id};
-    $node->{author} = $author;
-    $node->{branches} = \@branches;
-    $node->{date} = $date;
-    $node->{tags} = \@tags;
-
-}
-#
-##############################################################################
-#
 #   Routine      - hsv_to_rgb
 #
 #   Description  - Convert hue, saturation and value into RGB values. This
@@ -1680,6 +1687,72 @@ sub hsv_to_rgb($$$$$$)
 #
 ##############################################################################
 #
+#   Routine      - populate_revision_details
+#
+#   Description  - Given the specified revision id, populate the relevant node
+#                  in the graph database with the revision's details such as
+#                  its author, its date and lists of its branches and tags.
+#
+#   Data         - $instance    : The history graph window instance.
+#                  $revision_id : The id of the revision that is to have its
+#                                 details populated in the graph database.
+#
+##############################################################################
+
+
+
+sub populate_revision_details($$)
+{
+
+    my ($instance, $revision_id) = @_;
+
+    my ($author,
+	@branches,
+	@certs,
+	$date,
+	$node,
+	@tags);
+
+    # Get the revision's list of branches, tags and date.
+
+    $instance->{mtn}->certs(\@certs, $revision_id);
+    foreach my $cert (@certs)
+    {
+	if ($cert->{name} eq "author")
+	{
+	    $author = $cert->{value} unless (defined($author));
+	}
+	elsif ($cert->{name} eq "branch")
+	{
+	    push(@branches, $cert->{value});
+	}
+	elsif ($cert->{name} eq "date")
+	{
+	    $date = $cert->{value} unless (defined($date));
+	}
+	elsif ($cert->{name} eq "tag")
+	{
+	    push(@tags, $cert->{value});
+	}
+    }
+    @branches = sort(@branches);
+    @tags = sort(@tags);
+
+    # Now store this data in the relevant node in the graph database. Also make
+    # sure that the node is no longer circular if it has a tag name that needs
+    # to be displayed.
+
+    $node = $instance->{graph_data}->{child_graph}->{$revision_id};
+    $node->{author} = $author;
+    $node->{branches} = \@branches;
+    $node->{date} = $date;
+    $node->{tags} = \@tags;
+    $node->{flags} &= ~CIRCULAR_NODE if (scalar(@tags) > 0);
+
+}
+#
+##############################################################################
+#
 #   Routine      - get_history_graph_window
 #
 #   Description  - Creates or prepares an existing history graph window for
@@ -1758,7 +1831,6 @@ sub get_history_graph_window()
 		 {
 		     my $group = $instance->{graph_group};
 		     $instance->{graph_group} = undef;
-		     $instance->{text_group} = undef;
 		     $group->destroy();
 		 }
 		 $instance->{colour_db} = {};
@@ -1779,9 +1851,16 @@ sub get_history_graph_window()
 	    sub {
 		my $instance = $_[0];
 		$instance->{graph_group} = undef;
-		$instance->{text_group} = undef;
 		$instance->{graph_canvas} = undef;
 	    };
+
+	# Create the font description for displaying text on the graph. I am
+	# using a fixed width or monospaced font as I thing on balance it makes
+	# it easier to read hex ids.
+
+	$instance->{fontdescription} = Gtk2::Pango::FontDescription->
+	    from_string($user_preferences->{fixed_font});
+	$instance->{fontdescription}->set_size(FONT_SIZE * PANGO_SCALE);
 
 	# Setup button sensitivity groups.
 
@@ -1828,6 +1907,7 @@ sub get_history_graph_window()
     }
 
     $instance->{colour_db} = {};
+    $instance->{font_size} = FONT_SIZE;
     $instance->{graph_group} = undef;
     $instance->{graph_data} = undef;
     $instance->{stop} = 0;
