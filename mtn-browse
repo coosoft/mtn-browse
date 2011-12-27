@@ -1148,8 +1148,8 @@ sub history_graph_button_clicked_cb($$)
 
     return unless (program_valid(GRAPHVIZ_LAYOUT_PROGRAM, $browser->{window}));
 
-    # Ok work out what revision we are going to graph and how far back we want
-    # to graph.
+    # Ok work out what revision we are going to graph around and the time
+    # window around that revision.
 
     # Get the details that the user has selected in the browser window.
 
@@ -1172,28 +1172,29 @@ sub history_graph_button_clicked_cb($$)
         $revision_id = $revision_ids[0];
     }
 
-    # Ok if we now have a revision then get its date and adjust that back by
-    # six months. Also if the user explicitly specified the revision then use
-    # its date as a to-date value so that we don't go and graph a whole load of
-    # revisions after the selected one.
+    # Ok if we now have a revision then set the from and to dates to two months
+    # either side of the revision's date.
 
     if (scalar(@revision_ids) > 0)
     {
         my (@certs,
-            @local_time);
+            @from_local_time,
+            @to_local_time);
         $browser->{mtn}->certs(\@certs, $revision_ids[0]);
         foreach my $cert (@certs)
         {
             if ($cert->{name} eq "date")
             {
                 $from_date = $cert->{value};
-                $to_date = $from_date if (defined($revision_id));
                 last;
             }
         }
-        @local_time = localtime(mtn_time_string_to_time($from_date));
-        adjust_time(\@local_time, 6, DURATION_MONTHS);
-        $from_date = strftime(MTN_TIME_STRING, @local_time);
+        @from_local_time = @to_local_time =
+            localtime(mtn_time_string_to_time($from_date));
+        adjust_time(\@from_local_time, -2, DURATION_MONTHS);
+        $from_date = strftime(MTN_TIME_STRING, @from_local_time);
+        adjust_time(\@to_local_time, 2, DURATION_MONTHS);
+        $to_date = strftime(MTN_TIME_STRING, @to_local_time);
     }
 
     # Now graph it. If the user explicitly specified the revision then we give

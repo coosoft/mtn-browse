@@ -2042,11 +2042,11 @@ sub build_help_ref_to_url_map()
 #   Routine      - adjust_time
 #
 #   Description  - This routine adjusts the specified localtime() style time
-#                  by subtracting the specified time period from it.
+#                  by the specified time period.
 #
 #   Data         - $time_value : A reference to the localtime() style list
 #                                that is to be adjusted.
-#                  $period     : The time period to subtract.
+#                  $period     : The time period to add or subtract.
 #                  $units      : The units that the time period is expressed
 #                                in.
 #
@@ -2071,26 +2071,42 @@ sub adjust_time($$$)
         my ($month,
             $year);
         ($month, $year) = @$time_value[4, 5];
-        if ($period > 12)
+        if (abs($period) > 12)
         {
-            $year -= floor($period / 12);
+            $year += floor($period / 12);
             $period %= 12;
         }
-        if ($period > $month)
+        if ($period >= 0)
         {
-            -- $year;
-            $month = 12 - ($period - $month);
+            if (($period + $month) > 11)
+            {
+                ++ $year;
+                $month = $period + $month - 12;
+            }
+            else
+            {
+                $month += $period;
+            }
         }
         else
         {
-            $month -= $period;
+            $period = abs($period);
+            if ($period > $month)
+            {
+                -- $year;
+                $month = 12 - ($period - $month);
+            }
+            else
+            {
+                $month -= $period;
+            }
         }
         @$time_value[4, 5] = ($month, $year);
         $time = timelocal(@$time_value[0 .. 5]);
     }
     elsif ($units == DURATION_YEARS)
     {
-        @$time_value[5] -= $period;
+        @$time_value[5] += $period;
         $time = timelocal(@$time_value[0 .. 5]);
     }
     else
@@ -2098,15 +2114,15 @@ sub adjust_time($$$)
         $time = timelocal(@$time_value[0 .. 5]);
         if ($units == DURATION_MINUTES)
         {
-            $time -= $period * 60;
+            $time += $period * 60;
         }
         elsif ($units == DURATION_HOURS)
         {
-            $time -= $period * 60 * 60;
+            $time += $period * 60 * 60;
         }
         elsif ($units == DURATION_DAYS)
         {
-            $time -= $period * 60 * 60 * 24;
+            $time += $period * 60 * 60 * 24;
         }
     }
 

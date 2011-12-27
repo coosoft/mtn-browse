@@ -299,7 +299,7 @@ sub get_date_range($$$)
 
         # Now work out the actual start date.
 
-        adjust_time(\@time_val, $period, $period_units);
+        adjust_time(\@time_val, - $period, $period_units);
 
         # Sort out the return values.
 
