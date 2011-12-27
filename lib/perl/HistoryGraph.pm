@@ -1703,6 +1703,10 @@ sub layout_graph($)
         @circles,
         $prev_lines,
         @rectangles);
+    my $nre = '[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?';
+
+    # The above $nre variable is used to match numbers (integers, integers with
+    # exponents and floats). It keeps the subsequent REs readable and sane.
 
     $instance->{graph_data}->{arrows} = [];
     $instance->{graph_data}->{circles} = [];
@@ -1751,7 +1755,7 @@ sub layout_graph($)
 
         # Lines with arrow heads.
 
-        if ($line =~ m/B \d+(( \d+ \d+)+) *\".* P 3(( \d+){6}) *\"/)
+        if ($line =~ m/B $nre(( $nre $nre)+) *\".* P 3(( $nre){6}) *\"/)
         {
             my (@arrow_points,
                 @line_points);
@@ -1771,7 +1775,7 @@ sub layout_graph($)
 
         # Boxes.
 
-        elsif ($line =~ m/p 4(( \d+){8}) *\"/)
+        elsif ($line =~ m/p 4(( $nre){8}) *\"/)
         {
             my ($br_x,
                 $br_y,
@@ -1803,7 +1807,7 @@ sub layout_graph($)
 
         # Circles.
 
-        elsif ($line =~ m/e(( \d+){4}) *\"/)
+        elsif ($line =~ m/e(( $nre){4}) *\"/)
         {
             my @list;
             @list = split(/ /, $1);
@@ -1817,7 +1821,7 @@ sub layout_graph($)
 
         # Bounding box (i.e. the total size of the graph).
 
-        elsif ($line =~ m/bb=\"(\d+),(\d+),(\d+),(\d+)\"/)
+        elsif ($line =~ m/bb=\"($nre),($nre),($nre),($nre)\"/)
         {
             $instance->{graph_data}->{max_x} = max($1, $3);
             $instance->{graph_data}->{max_y} = max($2, $4);
