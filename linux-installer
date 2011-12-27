@@ -98,13 +98,14 @@ use Installer;
 	$prefix_dir,
 	$prefix_dest_dir,
 	$quiet,
-	$use_dists_mas_lib);
+	$use_dists_mas_lib,
+	$use_source_view_2);
 
     # Assign defaults.
 
     $dep_level = 2;
     $dest_dir = "";
-    $file_comparison = "kompare";
+    $file_comparison = "meld";
     $globs_file = "/usr/share/mime/globs";
     $html_viewer = "";
     $prefix_dir = "/usr";
@@ -148,17 +149,33 @@ use Installer;
 	%deps = ("Glib"               => 1.144,
 		 "Gnome2"             => 1.040,
 		 "Gnome2::Canvas"     => 1.002,
-		 "Gnome2::Print"      => 0.950,
 		 "Gnome2::VFS"        => 1.080,
 		 "Gtk2"               => 1.146,
 		 "Gtk2::GladeXML"     => 1.006,
-		 "Gtk2::SourceView"   => 1.000,
+		 "Gtk2::SourceView2"  => 0.10,
 		 "Locale::TextDomain" => 1.16);
 	$deps{"Monotone::AutomateStdio"} = 0.05 if (! $use_dists_mas_lib);
 
 	# Do the check.
 
 	$met = DependencyChecker::check(\%deps, \$err_msg);
+
+	# If the error was down to a missing Gtk2::SourceView2 package then
+	# look for Gtk2::SourceView.
+
+	if ($met)
+	{
+	    $use_source_view_2 = 1;
+	}
+	else
+	{
+	    if ($err_msg =~ m/Gtk2::SourceView2 [0-9.]+ not found\.$/)
+	    {
+		delete($deps{"Gtk2::SourceView2"});
+		$deps{"Gtk2::SourceView"} = 1.000;
+		$met = DependencyChecker::check(\%deps, \$err_msg);
+	    }
+	}
 
 	# Deal with the result depending upon what the user wants.
 
@@ -280,10 +297,8 @@ use Installer;
 
 	    if (! $found)
 	    {
-		print("Error: Program `" . $file_comparison
+		print("Warning: Program `" . $file_comparison
 		      . "' cannot be found or is not executable.\n");
-		exit(1) if (! $interactive);
-		next;
 	    }
 	}
 
@@ -383,8 +398,16 @@ use Installer;
 
     # Install `executable'.
 
-    die("IO::File failed with $!")
-	if (! defined($infile = IO::File->new("mtn-browse", "r")));
+    if ($use_source_view_2)
+    {
+	die("IO::File failed with $!")
+	    if (! defined($infile = IO::File->new("mtn-browse-sv2", "r")));
+    }
+    else
+    {
+	die("IO::File failed with $!")
+	    if (! defined($infile = IO::File->new("mtn-browse", "r")));
+    }
     die("IO::File failed with $!")
 	if (! defined($outfile = IO::File->new("mtn-browse.out", "w")));
     while (defined($input = $infile->getline()))
