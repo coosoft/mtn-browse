@@ -72,9 +72,9 @@ my $__select_id_file_1_ttip = __("Select this file revision for\n"
 my $__select_id_file_2_ttip = __("Select this file revision for\n"
 				 . "comparison as the second file");
 my $__select_id_rev_1_ttip  = __("Select this revision for comparison\n"
-				 . "as the second revision");
-my $__select_id_rev_2_ttip  = __("Select this revision for comparison\n"
 				 . "as the first revision");
+my $__select_id_rev_2_ttip  = __("Select this revision for comparison\n"
+				 . "as the second revision");
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
