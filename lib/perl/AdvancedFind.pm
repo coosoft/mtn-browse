@@ -1201,7 +1201,7 @@ sub update_advanced_find_state($$)
                       author      => $author,
                       date        => $date});
 
-                if ((($i + 1) % 10) == 0)
+                if ((($i + 1) % 100) == 0)
                 {
                     $advanced_find->{appbar}->set_progress_percentage
                         (($i + 1) / scalar(@revision_ids));
