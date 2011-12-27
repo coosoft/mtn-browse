@@ -84,7 +84,7 @@ use List::Util qw(max);
 use Locale::TextDomain (APPLICATION_NAME,
                         File::Spec->catfile(PREFIX_DIR, "share", "locale"));
 use POSIX qw(:errno_h :locale_h :sys_wait_h floor strftime);
-use Scalar::Util qw(blessed);
+use Scalar::Util qw(blessed refaddr);
 use Symbol qw(gensym);
 use Text::Tabs;
 use Time::Local;
@@ -1317,6 +1317,7 @@ sub directory_up_button_clicked_cb($$)
         $value = dirname($value);
         $value = "" if ($value eq ".");
         $browser->{directory_combo_details}->{filter} = $value;
+        $browser->{directory_combo_details}->{update} = 1;
         $browser->{directory_combo_details}->{value} = $value;
         $browser->{directory_combo_details}->{complete} = 1;
         $browser->{directory_entry}->set_text($value);
@@ -2648,6 +2649,7 @@ sub update_browser_state($$)
 
         $browser->{branch_combo_details}->{filter} =
             $browser->{branch_combo_details}->{value};
+        $browser->{branch_combo_details}->{update} = 1;
         $browser->{branch_entry}->
             set_text($browser->{branch_combo_details}->{value});
         $browser->{branch_entry}->set_position(-1);
@@ -2800,6 +2802,7 @@ sub update_browser_state($$)
 
         $browser->{revision_combo_details}->{filter} =
             $browser->{revision_combo_details}->{value};
+        $browser->{revision_combo_details}->{update} = 1;
         $browser->{revision_entry}->
             set_text($browser->{revision_combo_details}->{value});
         $browser->{appbar}->set_progress_percentage(0);
@@ -2913,6 +2916,7 @@ sub update_browser_state($$)
 
                     $browser->{revision_combo_details}->{complete} = 0;
                     $browser->{revision_combo_details}->{filter} = "";
+                    $browser->{revision_combo_details}->{update} = 1;
                     $browser->{revision_combo_details}->{value} = "";
                     $browser->{revision_entry}->set_text("");
 
@@ -2991,17 +2995,18 @@ sub update_browser_state($$)
 
         $browser->{directory_combo_details}->{filter} =
             $browser->{directory_combo_details}->{value};
+        $browser->{directory_combo_details}->{update} = 1;
         $browser->{directory_entry}->
             set_text($browser->{directory_combo_details}->{value});
         $browser->{directory_entry}->set_position(-1);
-        $browser->{appbar}->set_progress_percentage(0);
-        $browser->{appbar}->set_status("");
         foreach my $widget (@{$browser->{revision_sensitive_group}})
         {
             $widget->
                 set_sensitive($browser->{revision_combo_details}->{complete}
                               ? TRUE : FALSE);
         }
+        $browser->{appbar}->set_progress_percentage(0);
+        $browser->{appbar}->set_status("");
         $wm->update_gui();
 
     }

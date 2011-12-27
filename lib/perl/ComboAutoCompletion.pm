@@ -83,13 +83,12 @@ sub auto_completion_entry_key_release_event_cb($$$);
 sub calculate_window_coordinates($$);
 sub completions_list_togglebutton_toggled_cb($$);
 sub completions_treeselection_changed_cb($$);
-sub completions_window_configure_event_cb($$$);
 sub completions_window_done_event_handler($$);
 sub get_completions_window($$$$$);
 sub get_tooltip_window($$$$);
 sub hide_completions_window();
 sub hide_tooltip_window();
-sub update_completions_list_window($$$);
+sub update_completions_list_window($$$$$);
 #
 ##############################################################################
 #
@@ -102,8 +101,8 @@ sub update_completions_list_window($$$);
 #                              auto-completion.
 #                  $instance : The window instance that is associated with
 #                              this widget. It is expected to have a window,
-#                              appbar, update_handler and combobox details
-#                              fields.
+#                              appbar, update_handler and custom combo entry
+#                              details.
 #
 ##############################################################################
 
@@ -120,8 +119,8 @@ sub activate_auto_completion($$)
         $name,
         $togglebutton);
 
-    # Sort out the precise details depending upon which comboboxentry widget
-    # has been passed.
+    # Sort out the precise details depending upon which custom combo entry
+    # widget has been passed in.
 
     if ($entry == $instance->{branch_entry})
     {
@@ -286,9 +285,12 @@ sub completions_list_togglebutton_toggled_cb($$)
                 if ($len <= $item_len
                     && $combo_details->{filter} eq substr($item, 0, $len));
         }
-        update_completions_list_window($instance,
+        update_completions_list_window($instance->{appbar},
                                        $details->{name},
-                                       \@item_list);
+                                       \@item_list,
+                                       refaddr($combo_details),
+                                       $combo_details->{update});
+        $combo_details->{update} = 0;
 
         $wm->make_busy($instance, 0);
 
@@ -424,6 +426,7 @@ sub auto_completion_entry_key_release_event_cb($$$)
             hide_tooltip_window();
         }
         $combo_details->{filter} = $value;
+        $combo_details->{update} = 1;
         $combo_details->{value} = $value;
         $combo_details->{complete} = $complete;
 
@@ -463,10 +466,15 @@ sub auto_completion_entry_key_release_event_cb($$$)
                     }
                 }
             }
-            update_completions_list_window($instance,
-                                           $details->{name},
-                                           \@item_list)
-                if ($completion_list_displayed);
+            if ($completion_list_displayed)
+            {
+                update_completions_list_window($instance->{appbar},
+                                               $details->{name},
+                                               \@item_list,
+                                               refaddr($combo_details),
+                                               $combo_details->{update});
+                $combo_details->{update} = 0;
+            }
 
         }
 
@@ -564,78 +572,6 @@ sub completions_treeselection_changed_cb($$)
 #
 ##############################################################################
 #
-#   Routine      - completions_window_configure_event_cb
-#
-#   Description  - Callback routine called when ever the completions window
-#                  gets a configure event. This routine basically resizes the
-#                  completions window when it gets too large and turns on any
-#                  necessary scroll bars in order to cope with the resize
-#                  nicely.
-#
-#   Data         - $widget      : The widget object that received the signal.
-#                  $event       : A Gtk2::Gdk::Event object describing the
-#                                 event that has occurred.
-#                  $instance    : The window instance that is associated with
-#                                 this widget.
-#                  Return Value : TRUE if the event has been handled and needs
-#                                 no further handling, otherwise false if the
-#                                 event should carry on through the remaining
-#                                 event handling.
-#
-##############################################################################
-
-
-
-sub completions_window_configure_event_cb($$$)
-{
-
-    my ($widget, $event, $instance) = @_;
-
-    return FALSE if ($instance->{in_cb});
-    local $instance->{in_cb} = 1;
-
-    my ($height,
-        $width);
-    my $handled = FALSE;
-
-    # Get the new width and height. If either of them have got too large then
-    # turn on the relevant scroll bar and force the window to resize back down
-    # to the maximum allowed size. Remember to operate independently in each
-    # axis. If we to adjust something then say we have consumed the event.
-
-    $width = $event->width();
-    $height = $event->height();
-    if ($width > $instance->{max_width})
-    {
-        my ($v_policy,
-            $y_size);
-        $v_policy = ($instance->{completions_scrolledwindow}->get_policy())[1];
-        $y_size = ($instance->{window}->get_size_request())[1];
-        $instance->{completions_scrolledwindow}->set_policy("automatic",
-                                                            $v_policy);
-        $instance->{window}->set_size_request($instance->{max_width}, $y_size);
-        $handled = TRUE;
-    }
-    if ($height > $instance->{max_height})
-    {
-        my ($h_policy,
-            $x_size);
-        $h_policy = ($instance->{completions_scrolledwindow}->get_policy())[0];
-        $x_size = ($instance->{window}->get_size_request())[0];
-        $instance->{completions_scrolledwindow}->set_policy($h_policy,
-                                                            "automatic");
-        $instance->{window}->set_size_request($x_size,
-                                              $instance->{max_height});
-        $instance->{vertically_resized} = 1;
-        $handled = TRUE;
-    }
-
-    return $handled;
-
-}
-#
-##############################################################################
-#
 #   Routine      - completions_window_done_event_handler
 #
 #   Description  - Event handler for determining when the completions window
@@ -697,30 +633,37 @@ sub completions_window_done_event_handler($$)
 #   Description  - Update the visible completions window with the specified
 #                  list of values.
 #
-#   Data         - $instance : The window instance that is associated with
-#                              this widget. It is expected to have a window,
-#                              appbar, update_handler and combobox details
-#                              fields.
-#                  $name     : The name of the custom combo entry associated
-#                              with the completions window.
-#                  $list     : A reference to the list of values that are to
-#                              be loaded into the completions window.
+#   Data         - $appbar     : The appbar widget in the parent window that
+#                                needs to be updated with any progress
+#                                information.
+#                  $name       : The name of the custom combo entry associated
+#                                with the completions window.
+#                  $list       : A reference to the list of values that are to
+#                                be loaded into the completions window.
+#                  $context_id : The unique id associated with the custom
+#                                combo entry details.
+#                  $update     : True if the completion list should be updated
+#                                regardless of the internal state of the
+#                                completions list window, otherwise false if
+#                                the update should only be done if the
+#                                completions list window thinks that it is
+#                                necessary.
 #
 ##############################################################################
 
 
 
-sub update_completions_list_window($$$)
+sub update_completions_list_window($$$$$)
 {
 
-    my ($instance, $name, $list) = @_;
+    my ($appbar, $name, $list, $context_id, $update) = @_;
 
-    my $completions;
+    my $instance;
     my $wm = WindowManager->instance();
 
     # Only do something if there is a mapped completions window.
 
-    if (defined($completions = $wm->cond_find
+    if (defined($instance = $wm->cond_find
                 ($completions_window_type,
                  sub {
                      my $instance = $_[0];
@@ -728,35 +671,123 @@ sub update_completions_list_window($$$)
                  })))
     {
 
-        my ($counter,
-            $update_interval);
+        # Only update the completion list if we have to.
 
-        $instance->{appbar}->set_progress_percentage(0);
-        $instance->{appbar}->push(__x("Populating {name} list",
-                                      name => $name));
-        $wm->update_gui();
-        $counter = 1;
-        $update_interval = calculate_update_interval($list);
-        $completions->{completions_liststore}->clear();
-        foreach my $item (@$list)
+        if ($update
+            || $instance->{context_id} != $context_id
+            || $instance->{completions_liststore}->iter_n_children() == 0)
         {
-            $completions->{completions_liststore}->
-                set($completions->{completions_liststore}->append(), 0, $item);
-            if (! $completions->{vertically_resized}
-                || ($counter % $update_interval) == 0)
+
+            my ($counter,
+                $update_interval);
+
+            $appbar->set_progress_percentage(0);
+            $appbar->push(__x("Populating {name} list", name => $name));
+            $wm->update_gui();
+            $counter = 1;
+            $update_interval = calculate_update_interval($list);
+            $instance->{completions_liststore}->clear();
+            $instance->{completions_treeview}->hide();
+            foreach my $item (@$list)
             {
-                $instance->{appbar}->set_progress_percentage
-                    ($counter / scalar(@$list));
-                $wm->update_gui();
+                $instance->{completions_liststore}->
+                    set($instance->{completions_liststore}->append(),
+                        0, $item);
+                if (($counter % $update_interval) == 0)
+                {
+                    $appbar->set_progress_percentage
+                        ($counter / scalar(@$list));
+                    $wm->update_gui();
+
+                    # Abort this whole update process if the user has hidden
+                    # the completions window by changing the focus.
+
+                    if (! $instance->{window}->mapped())
+                    {
+                        $instance->{completions_liststore}->clear();
+                        $list = [];
+                        last;
+                    }
+                }
+                ++ $counter;
             }
-            ++ $counter;
+            $instance->{context_id} = $context_id;
+            $appbar->set_progress_percentage(1);
+            $wm->update_gui();
+
         }
-        $instance->{appbar}->set_progress_percentage(1);
-        $wm->update_gui();
-        $completions->{completions_treeview}->scroll_to_point(0, 0)
-            if ($completions->{completions_treeview}->realized());
-        $instance->{appbar}->set_progress_percentage(0);
-        $instance->{appbar}->pop();
+
+        # Adjust the size of the completions window. Do this by using the size
+        # of a cell in the treeview to calculate the treeview's total size. If
+        # this total size exceeds what is desirable then resize the top level
+        # window and activate/deactivate any scrollbars as necessary.
+
+        if (scalar(@$list) > 0)
+        {
+
+            my ($h_policy,
+                $height,
+                $v_policy,
+                $width,
+                $x_size,
+                $y_size);
+            my ($default_width, $default_height) =
+                $instance->{window}->get_default_size();
+            my $tv_column = $instance->{completions_treeview}->get_column(0);
+
+            ($width, $height) = ($tv_column->cell_get_size())[2, 3];
+            $width += 2;
+            $height = ($height * scalar(@$list)) + 2;
+
+            $v_policy =
+                ($instance->{completions_scrolledwindow}->get_policy())[1];
+            $y_size = ($instance->{window}->get_size_request())[1];
+            if ($width > $instance->{max_width})
+            {
+                $instance->{completions_scrolledwindow}->
+                    set_policy("automatic", $v_policy);
+                $instance->{window}->
+                    set_size_request($instance->{max_width}, $y_size);
+            }
+            else
+            {
+                $instance->{completions_scrolledwindow}->
+                    set_policy("never", $v_policy);
+                $instance->{window}->resize
+                    ($default_width,
+                     ($y_size > 0) ? $y_size : $default_height);
+                $instance->{window}->set_size_request(-1, $y_size);
+            }
+
+            $h_policy =
+                ($instance->{completions_scrolledwindow}->get_policy())[0];
+            $x_size = ($instance->{window}->get_size_request())[0];
+            if ($height > $instance->{max_height})
+            {
+                $instance->{completions_scrolledwindow}->
+                    set_policy($h_policy, "automatic");
+                $instance->{window}->
+                    set_size_request($x_size, $instance->{max_height});
+            }
+            else
+            {
+                $instance->{completions_scrolledwindow}->
+                    set_policy($h_policy, "never");
+                $instance->{window}->resize
+                    (($x_size > 0) ? $x_size : $default_width,
+                     $default_height);
+                $instance->{window}->set_size_request($x_size, -1);
+            }
+
+        }
+
+        $instance->{completions_treeview}->show();
+        $instance->{completions_treeview}->scroll_to_point(0, 0)
+            if ($instance->{completions_treeview}->realized());
+        $instance->{completions_treeview}->get_selection()->unselect_all();
+
+        $appbar->set_progress_percentage(0);
+        $appbar->pop();
         $wm->update_gui();
 
     }
@@ -858,6 +889,8 @@ sub get_completions_window($$$$$)
                            \&completions_treeselection_changed_cb,
                            $instance);
 
+        $instance->{context_id} = undef;
+
     }
     else
     {
@@ -865,11 +898,10 @@ sub get_completions_window($$$$$)
         local $instance->{in_cb} = 1;
 
         $instance->{window}->hide();
-        $instance->{window}->set_size_request(-1, -1);
         ($width, $height) = $instance->{window}->get_default_size();
         $instance->{window}->resize($width, $height);
+        $instance->{window}->set_size_request($width, $height);
         $instance->{completions_scrolledwindow}->set_policy("never", "never");
-        $instance->{completions_liststore}->clear();
         $instance->{togglebutton}->set_active(FALSE)
             if (defined($instance->{togglebutton})
                 && $togglebutton != $instance->{togglebutton});
@@ -886,13 +918,13 @@ sub get_completions_window($$$$$)
     $width = ($parent_instance->{window}->get_size())[0];
     $instance->{max_width} = $root_x + $width - $x;
     $instance->{max_height} = $root_y + $appbar_y - $y;
-    $instance->{vertically_resized} = undef;
 
     # Position it, reparent window and display it.
 
     $instance->{window}->move($x, $y);
     $instance->{window}->set_transient_for($parent_instance->{window});
     $instance->{window}->show_all();
+    $instance->{completions_treeview}->hide();
     $instance->{window}->present();
 
     # Stash any widgets associated with this completions window that we will
@@ -1096,7 +1128,6 @@ sub hide_completions_window()
         local $instance->{in_cb} = 1;
         WindowManager->instance()->event_handler();
         $instance->{window}->hide();
-        $instance->{completions_liststore}->clear();
         $instance->{details} = undef;
         if (defined($instance->{togglebutton}))
         {

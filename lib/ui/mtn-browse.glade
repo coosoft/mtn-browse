@@ -12548,7 +12548,6 @@ that do not match entries in this list</property>
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <signal name="configure_event" handler="completions_window_configure_event_cb" last_modification_time="Sat, 06 Aug 2011 17:01:36 GMT"/>
 
   <child>
     <widget class="GtkScrolledWindow" id="completions_scrolledwindow">

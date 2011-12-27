@@ -969,6 +969,7 @@ sub update_advanced_find_state($$)
 
         $advanced_find->{branch_combo_details}->{filter} =
             $advanced_find->{branch_combo_details}->{value};
+        $advanced_find->{branch_combo_details}->{update} = 1;
         $advanced_find->{branch_entry}->
             set_text($advanced_find->{branch_combo_details}->{value});
         $advanced_find->{branch_entry}->set_position(-1);
@@ -1018,6 +1019,7 @@ sub update_advanced_find_state($$)
 
         $advanced_find->{revision_combo_details}->{filter} =
             $advanced_find->{revision_combo_details}->{value};
+        $advanced_find->{revision_combo_details}->{update} = 1;
         $advanced_find->{revision_entry}->
             set_text($advanced_find->{revision_combo_details}->{value});
         $advanced_find->{appbar}->set_progress_percentage(0);
