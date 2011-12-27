@@ -923,7 +923,7 @@ sub generate_history_graph($)
 	$instance->{appbar}->set_status(__("Getting revision information"));
 	$wm->update_gui();
 	$instance->{mtn}->branches(\@branches);
-	for my $branch (@branches)
+	foreach my $branch (@branches)
 	{
 	    $branch_set{$branch} = undef;
 	}
@@ -2479,7 +2479,7 @@ sub scale_canvas($)
     $instance->{graph_canvas}->set_pixels_per_unit($instance->{scale});
     if ((FONT_SIZE * $instance->{scale}) < 3)
     {
-	for my $label (@{$instance->{graph}->{node_labels}})
+	foreach my $label (@{$instance->{graph}->{node_labels}})
 	{
 	    $label->hide();
 	}
@@ -2488,7 +2488,7 @@ sub scale_canvas($)
     {
 	$instance->{fontdescription}->set_size
 	    (floor(FONT_SIZE * $instance->{scale}) * PANGO_SCALE);
-	for my $label (@{$instance->{graph}->{node_labels}})
+	foreach my $label (@{$instance->{graph}->{node_labels}})
 	{
 	    $label->modify_font($instance->{fontdescription});
 	    $label->show();

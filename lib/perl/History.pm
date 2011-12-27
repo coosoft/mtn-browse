@@ -1608,7 +1608,7 @@ sub generate_history_report($$)
     # Display revision details and associated buttons for each revision in the
     # specified list.
 
-    for my $revision_id (@$history)
+    foreach my $revision_id (@$history)
     {
 
 	++ $counter;
@@ -1620,7 +1620,7 @@ sub generate_history_report($$)
 
 	if ($no_branch_history)
 	{
-	    for my $cert (@certs_list)
+	    foreach my $cert (@certs_list)
 	    {
 		if ($cert->{name} eq "branch")
 		{

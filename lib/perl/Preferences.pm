@@ -1368,7 +1368,7 @@ sub load_preferences_into_gui($)
 		   ? TRUE : FALSE);
     $instance->{comparison_pretty_print_checkbutton}->
 	set_active($instance->{preferences}->{coloured_diffs} ? TRUE : FALSE);
-    for my $item (@colour_mapping_table)
+    foreach my $item (@colour_mapping_table)
     {
 	my $field;
 	if ($item->{widget} =~ m/foreground/)
@@ -1550,7 +1550,7 @@ sub save_preferences_from_gui($)
 	$instance->{fixed_checkbutton}->get_active() ? 1 : 0;
     $instance->{preferences}->{coloured_diffs} =
 	$instance->{comparison_pretty_print_checkbutton}->get_active() ? 1 : 0;
-    for my $item (@colour_mapping_table)
+    foreach my $item (@colour_mapping_table)
     {
 	my $field;
 	if ($item->{widget} =~ m/foreground/)

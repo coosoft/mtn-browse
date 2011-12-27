@@ -287,8 +287,8 @@ sub annotation_textview_populate_popup_cb($$$)
 	    unless ($no_more);
     }
 
-    # Add a `Display Change Log' option to the right-click menu that displays
-    # the change log of the revision responsible for the text directly under
+    # Add a number of display, browse and comparison options to the right-click
+    # menu that acts on the revision responsible for the text directly under
     # the mouse cursor.
 
     $separator = Gtk2::SeparatorMenuItem->new();
@@ -368,6 +368,47 @@ sub annotation_textview_populate_popup_cb($$$)
 					   $revision_id);
 				  },
 	      progress_message => __("Displaying revision history"),
+	      revision_part    => $revision_part});
+    }
+    $menu_item->show();
+    $menu->append($menu_item);
+
+    $separator = Gtk2::SeparatorMenuItem->new();
+    $separator->show();
+    $menu->append($separator);
+
+    $menu_item = Gtk2::MenuItem->new(__("_Browse Revision"));
+    if (! defined($revision_part))
+    {
+	$menu_item->set_sensitive(FALSE);
+    }
+    else
+    {
+	$menu_item->signal_connect
+	    ("activate",
+	     \&annotation_textview_popup_menu_item_cb,
+	     {instance         => $instance,
+	      cb               => sub {
+		                      my ($instance, $revision_id) = @_;
+				      my @certs;
+				      my $branch = "";
+				      $instance->{mtn}->certs(\@certs,
+							      $revision_id);
+				      foreach my $cert (@certs)
+				      {
+					  if ($cert->{name} eq "branch"
+					      && ($branch eq ""
+						  || $cert->{value}
+						      lt $branch))
+					  {
+					      $branch = $cert->{value};
+					  }
+				      }
+				      get_browser_window($instance->{mtn},
+							 $branch,
+							 $revision_id);
+				  },
+	      progress_message => __("Displaying revision in a new browser"),
 	      revision_part    => $revision_part});
     }
     $menu_item->show();
@@ -473,7 +514,7 @@ sub annotation_textview_popup_menu_item_cb($$)
 	     ["modal"],
 	     "warning",
 	     "close",
-	     __("Cannot access unique revision id."));
+	     __("Cannot access a unique revision id."));
 	busy_dialog_run($dialog);
 	$dialog->destroy();
     }

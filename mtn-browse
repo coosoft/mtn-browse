@@ -1178,7 +1178,7 @@ sub history_graph_button_clicked_cb($$)
 	my (@certs,
 	    @local_time);
 	$browser->{mtn}->certs(\@certs, $revision_ids[0]);
-	for my $cert (@certs)
+	foreach my $cert (@certs)
 	{
 	    if ($cert->{name} eq "date")
 	    {
@@ -2044,7 +2044,7 @@ sub get_browser_window(;$$$$$)
 		     new_encoding => __($details->{encoding})));
 	    $file_encoding = $details->{encoding};
 	};
-	for my $encoding ("ascii", "utf8", "UTF-16")
+	foreach my $encoding ("ascii", "utf8", "UTF-16")
 	{
 	    $menu_item = Gtk2::MenuItem->new_with_label(__($encoding));
 	    $menu_item->signal_connect("activate",
@@ -2055,7 +2055,7 @@ sub get_browser_window(;$$$$$)
 	    $submenu->append($menu_item);
 	}
 	$subsubmenu = Gtk2::Menu->new();
-	for my $encoding (@encodings)
+	foreach my $encoding (@encodings)
 	{
 	    $menu_item = Gtk2::MenuItem->new_with_label(__($encoding));
 	    $menu_item->signal_connect("activate",
@@ -2102,7 +2102,7 @@ sub get_browser_window(;$$$$$)
 	$submenu->append($menu_item);
 	if (scalar(@keys) > 0)
 	{
-	    for my $key (@keys)
+	    foreach my $key (@keys)
 	    {
 		$menu_item = Gtk2::MenuItem->new_with_label($key);
 		$menu_item->signal_connect("activate",
@@ -2173,9 +2173,17 @@ sub get_browser_window(;$$$$$)
 
 	$tv_column = Gtk2::TreeViewColumn->new();
 	$tv_column->set_title(__("File Name"));
-	$tv_column->set_resizable(TRUE);
-	$tv_column->set_sizing("fixed");
-	$tv_column->set_fixed_width(180);
+	if ($user_preferences->{show_file_details})
+	{
+	    $tv_column->set_resizable(TRUE);
+	    $tv_column->set_sizing("fixed");
+	    $tv_column->set_fixed_width(180);
+	}
+	else
+	{
+	    $tv_column->set_resizable(FALSE);
+	    $tv_column->set_sizing("grow-only");
+	}
 	$tv_column->set_sort_column_id(MLS_NAME_COLUMN);
 	$renderer = Gtk2::CellRendererText->new();
 	$tv_column->pack_start($renderer, TRUE);
@@ -2528,7 +2536,7 @@ sub update_server_bookmarks_menu($)
     $submenu = Gtk2::Menu->new();
     if (scalar(@{$user_preferences->{server_bookmarks}}) > 0)
     {
-	for my $server (@{$user_preferences->{server_bookmarks}})
+	foreach my $server (@{$user_preferences->{server_bookmarks}})
 	{
 	    $menu_item = Gtk2::MenuItem->new_with_label($server);
 	    $menu_item->signal_connect("activate",

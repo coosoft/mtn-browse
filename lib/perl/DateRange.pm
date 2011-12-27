@@ -87,20 +87,20 @@ sub date_range_checkbutton_toggled_cb($$)
 
     if ($instance->{date_range_checkbutton}->get_active())
     {
-	for my $widget (@{$instance->{date_sensitive_group}})
+	foreach my $widget (@{$instance->{date_sensitive_group}})
 	{
 	    $widget->set_sensitive(TRUE);
 	}
 	if ($instance->{between_range_radiobutton}->get_active())
 	{
-	    for my $widget (@{$instance->{during_dates_sensitive_group}})
+	    foreach my $widget (@{$instance->{during_dates_sensitive_group}})
 	    {
 		$widget->set_sensitive(FALSE);
 	    }
 	}
 	else
 	{
-	    for my $widget (@{$instance->{between_dates_sensitive_group}})
+	    foreach my $widget (@{$instance->{between_dates_sensitive_group}})
 	    {
 		$widget->set_sensitive(FALSE);
 	    }
@@ -108,7 +108,7 @@ sub date_range_checkbutton_toggled_cb($$)
     }
     else
     {
-	for my $widget (@{$instance->{date_sensitive_group}})
+	foreach my $widget (@{$instance->{date_sensitive_group}})
 	{
 	    $widget->set_sensitive(FALSE);
 	}
@@ -143,22 +143,22 @@ sub between_range_radiobutton_toggled_cb($$)
 
     if ($instance->{between_range_radiobutton}->get_active())
     {
-	for my $widget (@{$instance->{between_dates_sensitive_group}})
+	foreach my $widget (@{$instance->{between_dates_sensitive_group}})
 	{
 	    $widget->set_sensitive(TRUE);
 	}
-	for my $widget (@{$instance->{during_dates_sensitive_group}})
+	foreach my $widget (@{$instance->{during_dates_sensitive_group}})
 	{
 	    $widget->set_sensitive(FALSE);
 	}
     }
     else
     {
-	for my $widget (@{$instance->{during_dates_sensitive_group}})
+	foreach my $widget (@{$instance->{during_dates_sensitive_group}})
 	{
 	    $widget->set_sensitive(TRUE);
 	}
-	for my $widget (@{$instance->{between_dates_sensitive_group}})
+	foreach my $widget (@{$instance->{between_dates_sensitive_group}})
 	{
 	    $widget->set_sensitive(FALSE);
 	}
@@ -338,11 +338,11 @@ sub set_date_range($$$)
 
     $instance->{date_range_checkbutton}->set_active(TRUE);
     $instance->{between_range_radiobutton}->set_active(TRUE);
-    for my $widget (@{$instance->{date_sensitive_group}})
+    foreach my $widget (@{$instance->{date_sensitive_group}})
     {
 	$widget->set_sensitive(TRUE);
     }
-    for my $widget (@{$instance->{during_dates_sensitive_group}})
+    foreach my $widget (@{$instance->{during_dates_sensitive_group}})
     {
 	$widget->set_sensitive(FALSE);
     }
@@ -407,7 +407,7 @@ sub setup_date_range_widgets($)
 
     # Disable the appropriate widgets by default.
 
-    for my $widget (@{$instance->{date_sensitive_group}})
+    foreach my $widget (@{$instance->{date_sensitive_group}})
     {
 	$widget->set_sensitive(FALSE);
     }

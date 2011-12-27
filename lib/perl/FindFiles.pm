@@ -156,14 +156,14 @@ sub size_comparitor_combobox_changed_cb($$)
 
     if ($widget->get_active() == CMP_ANY_SIZE)
     {
-	for my $widget (@{$instance->{size_sensitive_group}})
+	foreach my $widget (@{$instance->{size_sensitive_group}})
 	{
 	    $widget->set_sensitive(FALSE);
 	}
     }
     else
     {
-	for my $widget (@{$instance->{size_sensitive_group}})
+	foreach my $widget (@{$instance->{size_sensitive_group}})
 	{
 	    $widget->set_sensitive(TRUE);
 	}
@@ -791,7 +791,7 @@ sub get_find_files_window()
 
 	# Disable the appropriate widgets by default.
 
-	for my $widget (@{$instance->{size_sensitive_group}})
+	foreach my $widget (@{$instance->{size_sensitive_group}})
 	{
 	    $widget->set_sensitive(FALSE);
 	}
