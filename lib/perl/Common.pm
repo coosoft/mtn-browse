@@ -1579,6 +1579,8 @@ sub register_help_callbacks($$@)
 
     my ($instance, $glade, @details) = @_;
 
+    my $wm = WindowManager->instance();
+
     build_help_ref_to_url_map()
 	if (HTML_VIEWER_CMD ne "" && keys(%help_ref_to_url_map) == 0);
 
@@ -1587,15 +1589,14 @@ sub register_help_callbacks($$@)
 	my $help_ref = $entry->{help_ref};
 	my $widget = defined($entry->{widget})
 	    ? $glade->get_widget($entry->{widget}) : undef;
-	WindowManager->instance()->help_connect
-	    ($instance,
-	     $widget,
-	     sub {
-		 my ($widget, $instance) = @_;
-		 return if ($instance->{in_cb});
-		 local $instance->{in_cb} = 1;
-		 display_help($help_ref);
-	     });
+	$wm->help_connect($instance,
+			  $widget,
+			  sub {
+			      my ($widget, $instance) = @_;
+			      return if ($instance->{in_cb});
+			      local $instance->{in_cb} = 1;
+			      display_help($help_ref);
+			  });
     }
 
 }
