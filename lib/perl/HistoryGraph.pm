@@ -145,32 +145,24 @@ sub zoom_out_button_clicked_cb($$);
 #   Description  - Display a history graph for the specified branches within
 #                  the specified date range.
 #
-#   Data         - $mtn                      : The Monotone::AutomateStdio
-#                                              object that is to be used to
-#                                              generate the history graph.
-#                  $branches                 : A reference to a list of
-#                                              branches to generate a graph
-#                                              from. This parameter can be
-#                                              undef or an empty list if all
-#                                              branches are to be selected.
-#                  $from_date                : The earliest date from which
-#                                              revisions will be selected for
-#                                              the history graph. This
-#                                              parameter can be undef or an
-#                                              empty string if no such age
-#                                              restriction is required.
-#                  $to_date                  : The latest date from which
-#                                              revisions will be selected for
-#                                              the history graph. This
-#                                              parameter can be undef or an
-#                                              empty string if no such age
-#                                              restriction is required.
-#                  $revision_id              : The id of the revision that is
-#                                              to be selected and shown when
-#                                              the history graph is drawn.
-#                                              This parameter can be undef if
-#                                              no specific revision is to be
-#                                              selected.
+#   Data         - $mtn         : The Monotone::AutomateStdio object that is
+#                                 to be used to generate the history graph.
+#                  $branches    : A reference to a list of branches to
+#                                 generate a graph from. This parameter can be
+#                                 undef or an empty list if all branches are
+#                                 to be selected.
+#                  $from_date   : The earliest date from which revisions will
+#                                 be selected for the history graph. This
+#                                 parameter can be undef or an empty string if
+#                                 no such age restriction is required.
+#                  $to_date     : The latest date from which revisions will be
+#                                 selected for the history graph. This
+#                                 parameter can be undef or an empty string if
+#                                 no such age restriction is required.
+#                  $revision_id : The id of the revision that is to be
+#                                 selected and shown when the history graph is
+#                                 drawn. This parameter can be undef if no
+#                                 specific revision is to be selected.
 #
 ##############################################################################
 
@@ -209,7 +201,25 @@ sub display_history_graph($;$$$$)
     $instance->{window}->show_all();
     $instance->{window}->present();
 
-    generate_history_graph($instance);
+    # If the caller hasn't provided any selectors then present the user with
+    # the change graph parameters window as well as an empty graph window,
+    # otherwise simply display the revision graph.
+
+    if (scalar(@{$instance->{graph_data}->{parameters}->{branches}}) == 0
+	&& $instance->{graph_data}->{parameters}->{from_date} eq ""
+	&& $instance->{graph_data}->{parameters}->{to_date} eq "")
+    {
+	WindowManager->instance()->update_gui();
+	if (change_history_graph_parameters
+	    ($instance, $instance->{graph_data}->{parameters}))
+	{
+	    generate_history_graph($instance);
+	}
+    }
+    else
+    {
+	generate_history_graph($instance);
+    }
 
 }
 #

@@ -340,7 +340,7 @@ sub populate_button_clicked_cb($$)
     $selector = $advanced_find->{term_combobox}->get_model()->get
 	($advanced_find->{term_combobox}->get_active_iter(), 0);
     $arg = $advanced_find->{argument_entry}->get_text();
-    $time_val = strftime("%Y-%m-%dT%H:%M:%S",
+    $time_val = strftime(MTN_TIME_STRING,
 			 localtime($advanced_find->{date_dateedit}->
 				   get_time()));
     $to_insert = "";

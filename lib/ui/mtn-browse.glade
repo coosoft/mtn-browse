@@ -715,19 +715,19 @@ criteria for choosing a revision</property>
 			  </child>
 
 			  <child>
-			    <widget class="GtkButton" id="monotone_viz_button">
+			    <widget class="GtkButton" id="history_graph_button">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">View revision history
-in Monotone-Viz</property>
+			      <property name="tooltip" translatable="yes">View the revision
+history as a graph</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NONE</property>
 			      <property name="focus_on_click">False</property>
-			      <signal name="clicked" handler="monotone_viz_button_clicked_cb" last_modification_time="Thu, 24 Apr 2008 15:10:30 GMT"/>
+			      <signal name="clicked" handler="history_graph_button_clicked_cb" last_modification_time="Fri, 17 Jun 2011 22:27:32 GMT"/>
 
 			      <child>
-				<widget class="GtkImage" id="image33">
+				<widget class="GtkImage" id="image193">
 				  <property name="visible">True</property>
-				  <property name="pixbuf">monotone-viz.png</property>
+				  <property name="pixbuf">history-graph.png</property>
 				  <property name="xalign">0.5</property>
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>

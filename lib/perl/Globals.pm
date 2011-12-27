@@ -86,6 +86,11 @@ use constant REVISION_CHANGED          => (DIRECTORY | REVISION_LIST
 					   | DIRECTORY_VIEW | DISPLAY_OF_FILE);
 use constant SELECTED_REVISION_CHANGED => (REVISION_DETAILS);
 
+# Constant for the strftime() format string that is used to generate Montoone
+# style time strings.
+
+use constant MTN_TIME_STRING => "%Y-%m-%dT%H:%M:%S";
+
 # Location of the Glade UI XML file for mtn-browse.
 
 our $glade_file;
@@ -148,6 +153,7 @@ our %EXPORT_TAGS = (constants => [qw(ALL_CHANGED
 				     DURATION_MONTHS
 				     DURATION_YEARS
 				     FILE_CHANGED
+				     MTN_TIME_STRING
 				     NEW_FIND
 				     REVISION
 				     REVISION_CHANGED

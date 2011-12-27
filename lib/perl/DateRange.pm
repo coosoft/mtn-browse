@@ -216,12 +216,12 @@ sub get_date_range($$$)
 
 	# Simple `from - to' style date range.
 
-	$older_date = strftime("%Y-%m-%dT%H:%M:%S",
+	$older_date = strftime(MTN_TIME_STRING,
 			       localtime($instance->{older_date_dateedit}->
 					 get_time()));
-	$younger_date =strftime("%Y-%m-%dT%H:%M:%S",
-				localtime($instance->{younger_date_dateedit}->
-					  get_time()));
+	$younger_date = strftime(MTN_TIME_STRING,
+				 localtime($instance->{younger_date_dateedit}->
+					   get_time()));
 
 	# Check that any date range is the right way around.
 
@@ -305,7 +305,7 @@ sub get_date_range($$$)
 
 	# Sort out the return values.
 
-	$$from_date = strftime("%Y-%m-%dT%H:%M:%S", @time_val);
+	$$from_date = strftime(MTN_TIME_STRING, @time_val);
 	$$to_date = undef;
 
     }

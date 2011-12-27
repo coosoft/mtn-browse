@@ -2039,7 +2039,7 @@ sub adjust_time($$$)
     my $time;
 
     # Please note that values from localtime() etc start from 0. Also the
-    # apparent needless:
+    # apparently needless:
     #     @time_value = localtime(timelocal(@time_value[0 .. 5))
     # is so that the wday, yday and isdst fields are correctly recalculated.
 
