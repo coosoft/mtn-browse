@@ -90,7 +90,7 @@ sub manage_server_bookmarks($$)
 	$response);
 
     $instance = get_manage_server_bookmarks_window($parent, $bookmarks);
-    $response = $instance->{window}->run();
+    $response = busy_dialog_run($instance);
     $instance->{window}->hide();
     if ($response eq "ok")
     {
@@ -214,7 +214,7 @@ sub add_server_button_clicked_cb($$)
 	     __x("`{server}' is an invalid server\n"
 		 . "name (<server>[:port] is expected).",
 		 server => $server));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -230,7 +230,7 @@ sub add_server_button_clicked_cb($$)
 	     "close",
 	     __x("`{server}' is already entered\ninto your bookmarks list.",
 		 server => $server));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }

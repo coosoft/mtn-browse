@@ -880,7 +880,6 @@ sub display_renamed_file_comparison($$$$$$)
 	@manifest,
 	$new_file_id,
 	$old_file_id);
-    my $wm = WindowManager->instance();
 
     $dialog = Gtk2::MessageDialog->new
 	($parent,
@@ -892,7 +891,7 @@ sub display_renamed_file_comparison($$$$$$)
 	    . "be compared internally. Would you like to do\n"
 	    . "the comparison using the external helper application?"));
     $dialog->set_title(__("External Comparison"));
-    $wm->allow_input(sub { $answer = $dialog->run(); });
+    $answer = busy_dialog_run($dialog);
     $dialog->destroy();
 
     # Only continue if asked to do so.
@@ -935,7 +934,7 @@ sub display_renamed_file_comparison($$$$$$)
 		 __("The file contents cannot be\n"
 		    . "found in the selected revisions.\n"
 		    . "This should not be happening."));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
@@ -2449,7 +2448,6 @@ sub external_diffs($$$$$$)
 	$new_file,
 	$old_fh,
 	$old_file);
-    my $wm = WindowManager->instance();
 
     # Just check that we do actually have an external helper application to
     # call.
@@ -2465,7 +2463,7 @@ sub external_diffs($$$$$$)
 	     __("Cannot call the external helper application\n"
 		. "to do the comparison as one has not been\n"
 		. "specified in the user's preferences."));
-	$wm->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -2489,7 +2487,7 @@ sub external_diffs($$$$$$)
 	     "close",
 	     __x("Cannot generate temporary file name:\n{error_message}.",
 		 error_message => $!));
-	$wm->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -2505,7 +2503,7 @@ sub external_diffs($$$$$$)
 	     "warning",
 	     "close",
 	     __x("{error_message}.", error_message => $!));
-	$wm->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -2611,7 +2609,7 @@ sub mtn_diff($$$$$;$)
 		         . "<b><i>{error_message}</i></b>\n"
 		         . "This should not be happening!",
 		     error_message => Glib::Markup::escape_text($exception)));
-	    WindowManager->instance()->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}

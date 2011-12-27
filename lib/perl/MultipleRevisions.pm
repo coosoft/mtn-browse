@@ -104,8 +104,7 @@ sub multiple_revisions_selection($$$@)
 
     # Wait for the user to respond.
 
-    WindowManager->instance()->allow_input
-	(sub { $response = $instance->{window}->run(); });
+    $response = busy_dialog_run($instance);
     $instance->{window}->hide();
 
     # Deal with the result, remember that the advanced find button is not a

@@ -296,7 +296,7 @@ sub tag_weightings_button_clicked_cb($$)
 		 "warning",
 		 "close",
 		 __("Your preferences could not be saved:\n") . $@);
-	    $dialog->run();
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	}
 
@@ -500,8 +500,7 @@ sub graph_advanced_find_button_clicked_cb($$)
 			      . "cannot be found within the current history "
 			      . "graph.\nPlease select another revision.",
 			  revision_id => $revision_id));
-		 WindowManager->instance()->
-		     allow_input(sub { $dialog->run(); });
+		 busy_dialog_run($dialog);
 		 $dialog->destroy();
 		 return;
 	     }
@@ -866,8 +865,7 @@ sub canvas_item_event_cb($$$)
 			 . "is not on a branch and so a separate history\n"
 			 . "graph showing that branch cannot be generated.",
 			 revision_id => $revision_id));
-		WindowManager->instance()->
-		    allow_input(sub { $dialog->run(); });
+		busy_dialog_run($dialog);
 		$dialog->destroy();
 	    }
 	}
@@ -1093,7 +1091,7 @@ sub generate_ancestry_graph($)
 			  . "gave:\n<b><i>{error_message}</i></b>",
 		      error_message =>
 			  Glib::Markup::escape_text($message)));
-	     WindowManager->instance()->allow_input(sub { $dialog->run(); });
+	     busy_dialog_run($dialog);
 	     $dialog->destroy();
 	     die("Bad query");
 	 });
@@ -3308,7 +3306,6 @@ sub select_pattern_button_clicked_cb($$)
 	$search_term,
 	$selection,
 	$use_regexp);
-    my $wm = WindowManager->instance();
 
     # Get the search parameters.
 
@@ -3342,7 +3339,7 @@ sub select_pattern_button_clicked_cb($$)
 		 "close",
 		 __x("`{pattern}' is an invalid\nbranch search pattern.",
 		     pattern => $search_term));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
@@ -3397,7 +3394,7 @@ sub select_pattern_button_clicked_cb($$)
 	     "close",
 	     __x("Could not find\n`{search_term}'.",
 		 search_term => $search_term));
-	$wm->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
     }
 

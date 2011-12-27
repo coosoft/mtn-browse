@@ -474,7 +474,7 @@ sub annotation_textview_popup_menu_item_cb($$)
 	     "warning",
 	     "close",
 	     __("Cannot access unique revision id."));
-	$wm->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
     }
 
@@ -507,7 +507,6 @@ sub compare_file_with_previous($$)
 	$file_name,
 	$old_file_name,
 	@parents);
-    my $wm = WindowManager->instance();
 
     # Remember that a warning is generated when one goes back beyond a file's
     # addition revision, so temporarily disable the warning handler.
@@ -538,7 +537,7 @@ sub compare_file_with_previous($$)
 		 __("The selected revision has more than one parent.\n"
 		    . "I will display the file's history so you can select\n"
 		    . "the specific parent revision."));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    display_file_change_history($instance->{mtn},
 					$revision_id,
@@ -553,7 +552,7 @@ sub compare_file_with_previous($$)
 		 "info",
 		 "close",
 		 __("The selected revision has no parents."));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
@@ -572,7 +571,7 @@ sub compare_file_with_previous($$)
 		    . "descended from multiple versions.\n"
 		    . "I will display the file's history so you\n"
 		    . "can select the specific parent revision."));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    display_file_change_history($instance->{mtn},
 					$revision_id,
@@ -587,7 +586,7 @@ sub compare_file_with_previous($$)
 		 "info",
 		 "close",
 		 __("The selected file version has no ancestors."));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
@@ -642,7 +641,6 @@ sub compare_revision_with_parent($$)
     my ($instance, $revision_id) = @_;
 
     my @parents;
-    my $wm = WindowManager->instance();
 
     # First get the revision's parent(s).
 
@@ -657,7 +655,7 @@ sub compare_revision_with_parent($$)
 	     __("The selected revision has more than one parent.\n"
 		. "I will display the revision's history so you can select\n"
 		. "the specific parent revision."));
-	$wm->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	display_revision_change_history($instance->{mtn}, undef, $revision_id);
 	return;
@@ -670,7 +668,7 @@ sub compare_revision_with_parent($$)
 	     "info",
 	     "close",
 	     __("The selected revision has no parents."));
-	$wm->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -853,7 +851,7 @@ sub mtn_annotate($$$$)
 		     . "<b><i>{error_message}</i></b>\n"
 		     . "This should not be happening!",
 		 error_message => Glib::Markup::escape_text($exception)));
-	WindowManager->instance()->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }

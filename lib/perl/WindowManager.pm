@@ -412,7 +412,7 @@ sub cond_find($$&)
 #   Data         - $this     : The object.
 #                  $instance : The window instance that is to have the input
 #                              grab (this is invariably the window that is
-#                              busy processing something).
+#                              busy processing something). This is optional.
 #                  $busy     : True if the window is to be made busy,
 #                              otherwise false if the window is to be made
 #                              active.
@@ -440,9 +440,21 @@ sub make_busy($$$;$)
     if ($busy)
     {
 
-	my $entry = $this->find_record($instance);
-	my $exclude_window = $exclude ? $entry->{window} : undef;
-	my @list;
+	my ($exclude_window,
+	    $grab_widget,
+	    @list);
+
+	if (defined($instance))
+	{
+	    my $entry;
+	    $entry = $this->find_record($instance);
+	    $grab_widget = $entry->{grab_widget};
+	    $exclude_window = $exclude ? $entry->{window} : undef;
+	}
+	else
+	{
+	    $grab_widget = $exclude_window = undef;
+	}
 
 	# Make the application busy.
 
@@ -453,7 +465,7 @@ sub make_busy($$$;$)
 	    (\&busy_event_filter,
 	     {singleton      => $this,
 	      exclude_window => $exclude_window,
-	      grab_widget    => $entry->{grab_widget}});
+	      grab_widget    => $grab_widget});
 
 	# Make all visible windows busy by changing their mouse cursors,
 	# excluding the current window if required. Also make a record of what
@@ -483,7 +495,7 @@ sub make_busy($$$;$)
 	push(@{$this->{busy_state_stack}},
 	     {affected_gdk_windows => \@list,
 	      exclude_window       => $exclude_window,
-	      grab_widget          => $entry->{grab_widget}});
+	      grab_widget          => $grab_widget});
 
     }
     else
@@ -589,8 +601,10 @@ sub update_gui()
 #                  keyboard input. Used for displaying dialog windows when the
 #                  application is busy.
 #
-#   Data         - $this : The object.
-#                  $code : The code block to be executed.
+#   Data         - $this        : The object.
+#                  $code        : The code block to be executed.
+#                  Return Value : The return value from the code block given
+#                                 by $code.
 #
 ##############################################################################
 
@@ -603,7 +617,7 @@ sub allow_input($&)
 
     local $this->{allow_input} = 1;
 
-    &$code();
+    return &$code();
 
 }
 #

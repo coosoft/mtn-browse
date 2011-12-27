@@ -398,7 +398,7 @@ sub find_text_button_clicked_cb($$)
 		 "close",
 		 __x("`{pattern}' is an invalid\ncontent search pattern.",
 		     pattern => $search_term));
-	    $dialog->run();
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
@@ -569,7 +569,7 @@ sub find_text_button_clicked_cb($$)
 	     "close",
 	     __x("Could not find\n`{search_term}'.",
 		 search_term => $search_term));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
     }
 

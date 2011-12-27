@@ -213,7 +213,7 @@ sub preferences($)
 	     "warning",
 	     "close",
 	     __("The preferences dialog cannot be displayed:\n") . $@);
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -260,7 +260,7 @@ sub preferences($)
 		 "warning",
 		 "close",
 		 __("Your preferences could not be saved:\n") . $@);
-	    $dialog->run();
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
@@ -658,7 +658,7 @@ sub add_mime_type_button_clicked_cb($$)
 	     "close",
 	     __x("`{mime_type}' does not\nlook like a valid MIME type.",
 		 mime_type => $mime_type));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -681,7 +681,7 @@ sub add_mime_type_button_clicked_cb($$)
 	     "warning",
 	     "close",
 	     __x("`{mime_type}' is already listed.", mime_type => $mime_type));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -864,7 +864,7 @@ sub add_file_name_pattern_button_clicked_cb($$)
 	     "close",
 	     __x("`{pattern}' is an invalid\nfile name pattern.",
 		 pattern => $pattern));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -889,7 +889,7 @@ sub add_file_name_pattern_button_clicked_cb($$)
 	     __x("`{pattern}' is already used in MIME type\n`{mime_type}'.",
 		 pattern   => $pattern,
 		 mime_type => $match));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -1699,7 +1699,7 @@ sub validate_preferences($)
 		 "close",
 		 __("The external file comparison application field is\n"
 		    . "invalid, please correct before attempting to resave."));
-	    WindowManager->instance()->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}

@@ -72,6 +72,7 @@ my %help_ref_to_url_map;
 # Public routines.
 
 sub adjust_time($$$);
+sub busy_dialog_run($);
 sub cache_extra_file_info($$$);
 sub calculate_update_interval($;$);
 sub colour_to_string($);
@@ -230,7 +231,7 @@ sub run_command($$$$@)
 		         . "the system gave:\n<b><i>{error_message}</b></i>",
 		     name => Glib::Markup::escape_text($args[0]),
 		     error_message => Glib::Markup::escape_text($@)));
-	    WindowManager->instance()->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 
@@ -338,8 +339,7 @@ sub run_command($$$$@)
 			     exit_code => WEXITSTATUS($exit_status),
 			     error_message => Glib::Markup::escape_text
 					      (join("", @err))));
-		    WindowManager->instance()->allow_input
-			(sub { $dialog->run(); });
+		    busy_dialog_run($dialog);
 		    $dialog->destroy();
 		    return;
 		}
@@ -354,8 +354,7 @@ sub run_command($$$$@)
 				 . "{number}.",
 			     name   => Glib::Markup::escape_text($args[0]),
 			     number => WTERMSIG($exit_status)));
-		    WindowManager->instance()->allow_input
-			(sub { $dialog->run(); });
+		    busy_dialog_run($dialog);
 		    $dialog->destroy();
 		    return;
 		}
@@ -404,7 +403,7 @@ sub run_command($$$$@)
 		 "close",
 		 __x("waitpid failed with:\n<b><i>{error_message}</i></b>",
 		     error_message => Glib::Markup::escape_text($!)));
-	    WindowManager->instance()->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
@@ -537,7 +536,7 @@ sub open_database($$$)
 
     do
     {
-	if ($chooser_dialog->run() eq "ok")
+	if (busy_dialog_run($chooser_dialog) eq "ok")
 	{
 
 	    my ($exception,
@@ -559,7 +558,7 @@ sub open_database($$$)
 		     "warning",
 		     "close",
 		     $! . ".");
-		$dialog->run();
+		busy_dialog_run($dialog);
 		$dialog->destroy();
 	    }
 	    else
@@ -592,7 +591,7 @@ sub open_database($$$)
 				  . "<b><i>{error_message}</i></b>",
 				  error_message =>
 			              Glib::Markup::escape_text($message)));
-			 $dialog->run();
+			 busy_dialog_run($dialog);
 			 $dialog->destroy();
 			 die("Bad open");
 		     });
@@ -671,7 +670,7 @@ sub save_as_file($$$)
 
     do
     {
-	if ($chooser_dialog->run() eq "ok")
+	if (busy_dialog_run($chooser_dialog) eq "ok")
 	{
 
 	    my ($fh,
@@ -692,7 +691,7 @@ sub save_as_file($$$)
 		     "yes-no",
 		     __("File already exists.\nDo you want to replace it?"));
 		$dialog->set_title(__("Confirm"));
-		$continue = 0 if ($dialog->run() ne "yes");
+		$continue = 0 if (busy_dialog_run($dialog) ne "yes");
 		$dialog->destroy();
 	    }
 
@@ -709,7 +708,7 @@ sub save_as_file($$$)
 			 "warning",
 			 "close",
 			 __x("{error_message}.", error_message => $!));
-		    $dialog->run();
+		    busy_dialog_run($dialog);
 		    $dialog->destroy();
 		}
 		else
@@ -1341,7 +1340,7 @@ sub program_valid($;$)
 	     __x("The program `{program_name}' cannot be found.\n"
 		     . "Is it installed?",
 		 program_name => $program));
-	WindowManager->instance()->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
     }
 
@@ -1415,8 +1414,7 @@ sub handle_comboxentry_history($$;$)
 		     "warning",
 		     "close",
 		     __("Your preferences could not be saved:\n") . $@);
-		WindowManager->instance()->allow_input
-		    (sub { $dialog->run(); });
+		busy_dialog_run($dialog);
 		$dialog->destroy();
 	    }
 	}
@@ -1498,7 +1496,7 @@ sub display_help(;$)
 		 "close",
 		 __("The requested help section\n"
 		    . "cannot be found or is not known."));
-	    WindowManager->instance()->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
@@ -1581,8 +1579,6 @@ sub register_help_callbacks($$@)
 
     my ($instance, $glade, @details) = @_;
 
-    my $wm = WindowManager->instance();
-
     build_help_ref_to_url_map()
 	if (HTML_VIEWER_CMD ne "" && keys(%help_ref_to_url_map) == 0);
 
@@ -1591,14 +1587,15 @@ sub register_help_callbacks($$@)
 	my $help_ref = $entry->{help_ref};
 	my $widget = defined($entry->{widget})
 	    ? $glade->get_widget($entry->{widget}) : undef;
-	$wm->help_connect($instance,
-			  $widget,
-			  sub {
-			      my ($widget, $instance) = @_;
-			      return if ($instance->{in_cb});
-			      local $instance->{in_cb} = 1;
-			      display_help($help_ref);
-			  });
+	WindowManager->instance()->help_connect
+	    ($instance,
+	     $widget,
+	     sub {
+		 my ($widget, $instance) = @_;
+		 return if ($instance->{in_cb});
+		 local $instance->{in_cb} = 1;
+		 display_help($help_ref);
+	     });
     }
 
 }
@@ -2212,6 +2209,48 @@ sub calculate_update_interval($;$)
     $update_interval = 1 if ($update_interval < 1);
 
     return $update_interval;
+
+}
+#
+##############################################################################
+#
+#   Routine      - busy_dialog_run
+#
+#   Description  - Makes all of the windows busy and then calls the specified
+#                  dialog's run method. When the dialog returns the window
+#                  state is returned to what it was before.
+#
+#   Data         - $item        : Either a dialog window or an instance record
+#                                 representing a dialog window.
+#                  Return Value : The value returned from the dialog's run
+#                                 method.
+#
+##############################################################################
+
+
+
+sub busy_dialog_run($)
+{
+
+    my $item = $_[0];
+
+    my $choice;
+    my $wm = WindowManager->instance();
+
+    if (isa($item, "Gtk2::Dialog"))
+    {
+	$wm->make_busy(undef, 1);
+	$choice = $wm->allow_input(sub { return $item->run(); });
+	$wm->make_busy(undef, 0);
+    }
+    else
+    {
+	$wm->make_busy($item, 1, 1);
+	$choice = $wm->allow_input(sub { return $item->{window}->run(); });
+	$wm->make_busy($item, 0);
+    }
+
+    return $choice;
 
 }
 

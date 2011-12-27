@@ -196,8 +196,6 @@ sub get_date_range($$$)
 
     my ($instance, $from_date, $to_date) = @_;
 
-    my $wm = WindowManager->instance();
-
     # If no date range was specified then return undef for both dates.
 
     if (! $instance->{date_range_checkbutton}->get_active())
@@ -234,7 +232,7 @@ sub get_date_range($$$)
 		 "close",
 		 __("The `between' dates are either\n"
 		    . "the same or the wrong way round."));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
@@ -281,7 +279,7 @@ sub get_date_range($$$)
 		 "close",
 		 __x("A duration of {months} months is too long.",
 		     months => $period));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
@@ -294,7 +292,7 @@ sub get_date_range($$$)
 		 "close",
 		 __x("A duration of {years} years is too long.",
 		     years => $period));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}

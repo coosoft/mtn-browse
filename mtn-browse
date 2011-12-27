@@ -46,11 +46,16 @@ BEGIN
 {
     use constant APPLICATION_NAME    => "mtn-browse";
     use constant APPLICATION_VERSION => 0.72;
-    use constant FILE_COMPARE_CMD    => "@INST:FILE_COMPARE_CMD@";
-    use constant HTML_VIEWER_CMD     => "@INST:HTML_VIEWER_CMD@";
-    use constant LIB_DIR             => "@INST:LIB_DIR@";
-    use constant MIME_GLOB_FILE      => "@INST:GLOBS_FILE@";
-    use constant PREFIX_DIR          => "@INST:PREFIX_DIR@";
+#    use constant FILE_COMPARE_CMD    => "@INST:FILE_COMPARE_CMD@";
+    use constant FILE_COMPARE_CMD    => "kompare";
+#    use constant HTML_VIEWER_CMD     => "@INST:HTML_VIEWER_CMD@";
+    use constant HTML_VIEWER_CMD     => "";
+#    use constant LIB_DIR             => "@INST:LIB_DIR@";
+    use constant LIB_DIR             => "/home/aecoope/code/monotone.ca/mtn-browse/lib";
+#    use constant MIME_GLOB_FILE      => "@INST:GLOBS_FILE@";
+    use constant MIME_GLOB_FILE      => "/usr/share/mime/globs";
+#    use constant PREFIX_DIR          => "@INST:PREFIX_DIR@";
+    use constant PREFIX_DIR          => "/home/aecoope/code/monotone.ca/mtn-browse";
 }
 use locale;
 use strict;
@@ -87,6 +92,7 @@ use POSIX qw(:errno_h :locale_h :sys_wait_h floor strftime);
 use Symbol qw(gensym);
 use Text::Tabs;
 use Time::Local;
+use UNIVERSAL qw(isa);
 
 # Add custom module directories to the module load search path.
 
@@ -264,7 +270,7 @@ sub view_button_clicked_cb($$);
 	     "close",
 	     __x("Your preferences cannot be loaded:\n{error_message}",
 		 error_message => $@));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	exit(1);
     }
@@ -288,7 +294,7 @@ sub view_button_clicked_cb($$);
 	     "close",
 	     __x("{error_message}\nThis is fatal, I am going to exit.",
 		 error_message => $@));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	exit(1);
     }
@@ -348,8 +354,8 @@ sub view_button_clicked_cb($$);
 		 "close",
 		 __x("Cannot open database {database_name}.",
 		     database_name => $user_preferences->{default_mtn_db}));
-		$dialog->run();
-		$dialog->destroy();
+	    busy_dialog_run($dialog);
+	    $dialog->destroy();
 	}
 
     }
@@ -544,7 +550,7 @@ sub connect_to_server_activate_cb($$)
 			  . "details are:\n<b><i>{error_message}</i></b>",
 		      error_message =>
 		      Glib::Markup::escape_text($message)));
-	     $wm->allow_input(sub { $dialog->run(); });
+	     busy_dialog_run($dialog);
 	     $dialog->destroy();
 	     die("Bad open");
 	 });
@@ -627,7 +633,7 @@ sub manage_server_bookmarks_activate_cb($$)
 		 "warning",
 		 "close",
 		 __("Your preferences could not be saved:\n") . $@);
-	    $dialog->run();
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	}
 
@@ -791,7 +797,7 @@ sub home_page_activate_cb($$)
 		     . "home page. Gnome gave:\n"
 		 . "<b><i>{gnome_error_message}</i></b>",
 		 gnome_error_message => $@));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
     }
 
@@ -1536,7 +1542,7 @@ sub view_button_clicked_cb($$)
 	     "close",
 	     __x("Cannot generate temporary file name:\n{error_message}.",
 		 error_message => $!));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -1551,7 +1557,7 @@ sub view_button_clicked_cb($$)
 	     "warning",
 	     "close",
 	     __x("{error_message}.", error_message => $!));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -1613,7 +1619,7 @@ sub view_button_clicked_cb($$)
 		 "warning",
 		 "close",
 		 __("Unknown file type, not viewing."));
-	    $dialog->run();
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
@@ -1644,7 +1650,7 @@ sub view_button_clicked_cb($$)
 				 . "<b><i>{gnome_error_message}</i></b>",
 			     mime_type           => $mime_type,
 			     gnome_error_message => $status));
-		    $dialog->run();
+		    busy_dialog_run($dialog);
 		    $dialog->destroy();
 		}
 	    }
@@ -1659,7 +1665,7 @@ sub view_button_clicked_cb($$)
 		 __x("No application is associated with\n"
 		         . "MIME type {mime_type},\nusing Vi instead.",
 		     mime_type => $mime_type));
-	    $dialog->run();
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    system("xterm -e vi " . $file_name . " &");
 	}
@@ -3707,7 +3713,6 @@ sub setup_mtn_object($$)
     my ($mtn, $parent) = @_;
 
     my $save_prefs;
-    my $wm = WindowManager->instance();
 
     # Deal with branch suspend certificate settings.
 
@@ -3727,7 +3732,7 @@ sub setup_mtn_object($$)
 		    __("Your version of Monotone does not support\n"
 		       . "suspend certificates. I will adjusted your\n"
 		       . "preferences accordingly."));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    $user_preferences->{show_suspended} = 0;
 	    $save_prefs = 1;
@@ -3763,7 +3768,7 @@ sub setup_mtn_object($$)
 		 "warning",
 		 "close",
 		 __("Your preferences could not be saved:\n") . $@);
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	}
     }
@@ -3795,7 +3800,6 @@ sub mtn_db_locked_handler($$)
     my ($mtn, $parent) = @_;
 
     my $dialog;
-    my $wm = WindowManager->instance();
 
     $dialog = Gtk2::MessageDialog->new
 	($parent,
@@ -3804,7 +3808,7 @@ sub mtn_db_locked_handler($$)
 	 "ok",
 	 __("The Monotone database is currently locked, please\n"
 	    . "dismiss this dialog when this is no longer the case."));
-    $wm->allow_input(sub { $dialog->run(); });
+    busy_dialog_run($dialog);
     $dialog->destroy();
 
     return 1;
@@ -3831,7 +3835,6 @@ sub mtn_error_handler($$)
     my ($severity, $message) = @_;
 
     my $dialog;
-    my $wm = WindowManager->instance();
 
     if ($severity == MTN_SEVERITY_WARNING)
     {
@@ -3846,9 +3849,9 @@ sub mtn_error_handler($$)
 			 . "<b><i>{error_message}</i></b>\n"
 			 . "This should not be happening!",
 		     error_message => Glib::Markup::escape_text($message)));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
-	    $wm->reset_state();
+	    WindowManager->instance()->reset_state();
 	    die($message);
 	}
     }
@@ -3863,7 +3866,7 @@ sub mtn_error_handler($$)
 		     . "<b><i>{error_message}</i></b>\n"
 		     . "This is fatal, I am going to exit.",
 		 error_message => Glib::Markup::escape_text($message)));
-	$wm->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	Gtk2->main_quit() unless (Gtk2->main_level() == 0);
 	die($message);
@@ -3929,7 +3932,7 @@ sub sigchld_handler()
 				      . "This should not be happening!\n"
 				      . "It will be restarted when needed.",
 				  error_message => $message));
-			 $wm->allow_input(sub { $dialog->run(); });
+			 busy_dialog_run($dialog);
 			 $dialog->destroy();
 			 $wm->reset_state();
 			 return 1;

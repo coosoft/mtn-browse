@@ -99,7 +99,7 @@ sub manage_tag_weightings($$)
 	$response);
 
     $instance = get_manage_tag_weightings_window($parent, $weightings);
-    $response = $instance->{window}->run();
+    $response = busy_dialog_run($instance);
     $instance->{window}->hide();
     if ($response eq "ok")
     {
@@ -228,7 +228,7 @@ sub add_tag_weighting_button_clicked_cb($$)
 	     "close",
 	     __x("`{pattern}' is an invalid\ntag name pattern.",
 		 pattern => $pattern));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -247,7 +247,7 @@ sub add_tag_weighting_button_clicked_cb($$)
 	     __x("`{pattern}' is already entered\n"
 		     . "into your tag weightings list.",
 		 pattern => $pattern));
-	$dialog->run();
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }

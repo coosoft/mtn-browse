@@ -1115,7 +1115,7 @@ sub update_advanced_find_state($$)
 			          . "gave:\n<b><i>{error_message}</i></b>",
 			      error_message =>
 			          Glib::Markup::escape_text($message)));
-		     $wm->allow_input(sub { $dialog->run(); });
+		     busy_dialog_run($dialog);
 		     $dialog->destroy();
 		     die("Bad query");
 		 });
@@ -1141,7 +1141,7 @@ sub update_advanced_find_state($$)
 			 "info",
 			 "close",
 			 __("No revisions matched your query."));
-		    $wm->allow_input(sub { $dialog->run(); });
+		    busy_dialog_run($dialog);
 		    $dialog->destroy();
 		}
 		handle_comboxentry_history

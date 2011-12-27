@@ -481,7 +481,7 @@ sub search_files_button_clicked_cb($$)
 	     "info",
 	     "close",
 	     __("No files matched your query."));
-	WindowManager::instance()->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	$instance->{appbar}->set_status(__("Nothing found"));
     }
@@ -880,7 +880,6 @@ sub save_query_from_gui_and_validate($)
 	%query,
 	$re_text,
 	$to_date);
-    my $wm = WindowManager->instance();
 
     # Do the name page.
 
@@ -941,7 +940,7 @@ sub save_query_from_gui_and_validate($)
 	     "close",
 	     __x("`{pattern}' is an invalid\nfile name pattern.",
 		 pattern => $query{file_glob}));
-	$wm->allow_input(sub { $dialog->run(); });
+	busy_dialog_run($dialog);
 	$dialog->destroy();
 	return;
     }
@@ -964,7 +963,7 @@ sub save_query_from_gui_and_validate($)
 		 "close",
 		 __x("`{pattern}' is an invalid\ncontent search pattern.",
 		     pattern => $query{contents_pattern}));
-	    $wm->allow_input(sub { $dialog->run(); });
+	    busy_dialog_run($dialog);
 	    $dialog->destroy();
 	    return;
 	}
