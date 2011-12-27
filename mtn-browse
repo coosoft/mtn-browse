@@ -2176,6 +2176,7 @@ sub get_browser_window(;$$$$$)
 	# Setup the file file viewer (with syntax highlighting).
 
 	$browser->{file_view_svbuffer} = Gtk2::SourceView::Buffer->new(undef);
+	$browser->{file_view_svbuffer}->set_check_brackets(FALSE);
 	$browser->{file_view_svbuffer}->set_max_undo_levels(0);
 	$browser->{file_view_svbuffer}->begin_not_undoable_action();
 	$browser->{file_view_svlangmgr} =
