@@ -10381,6 +10381,7 @@ and then redraw the history graph</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NONE</property>
 			      <property name="focus_on_click">False</property>
+			      <signal name="clicked" handler="zoom_in_button_clicked_cb" last_modification_time="Tue, 26 Apr 2011 11:36:58 GMT"/>
 
 			      <child>
 				<widget class="GtkImage" id="image168">
@@ -10408,6 +10409,7 @@ and then redraw the history graph</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NONE</property>
 			      <property name="focus_on_click">False</property>
+			      <signal name="clicked" handler="zoom_out_button_clicked_cb" last_modification_time="Tue, 26 Apr 2011 11:37:15 GMT"/>
 
 			      <child>
 				<widget class="GtkImage" id="image169">
@@ -10436,6 +10438,7 @@ its default setting</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NONE</property>
 			      <property name="focus_on_click">False</property>
+			      <signal name="clicked" handler="default_zoom_button_clicked_cb" last_modification_time="Fri, 29 Apr 2011 14:32:47 GMT"/>
 
 			      <child>
 				<widget class="GtkImage" id="image170">

@@ -82,6 +82,7 @@ sub display_history_graph($;$$$);
 
 # Private routines.
 
+sub default_zoom_button_clicked_cb($$);
 sub dot_input_handler_cb($$);
 sub draw_graph($);
 sub generate_ancestry_graph($$;$$$);
@@ -91,6 +92,9 @@ sub graph_reconnect_helper($$);
 sub hsv_to_rgb($$$$$$);
 sub layout_graph($);
 sub populate_revision_details($$);
+sub scale_canvas($);
+sub zoom_in_button_clicked_cb($$);
+sub zoom_out_button_clicked_cb($$);
 #
 ##############################################################################
 #
@@ -205,6 +209,90 @@ sub display_history_graph($;$$$)
 
     $instance->{appbar}->pop();
     $wm->make_busy($instance, 0);
+
+}
+#
+##############################################################################
+#
+#   Routine      - zoom_in_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the zoom in
+#                  button in the history graph window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub zoom_in_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    $instance->{scale} = $instance->{scale} * sqrt(2);
+    scale_canvas($instance);
+
+}
+#
+##############################################################################
+#
+#   Routine      - zoom_out_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the zoom
+#                  out button in the history graph window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub zoom_out_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    $instance->{scale} = $instance->{scale} / sqrt(2);
+    scale_canvas($instance);
+
+}
+#
+##############################################################################
+#
+#   Routine      - default_zoom_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the default
+#                  zoom button in the history graph window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub default_zoom_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    $instance->{scale} = 1;
+    scale_canvas($instance);
 
 }
 #
@@ -1117,12 +1205,12 @@ sub draw_graph($)
 	 0,
 	 $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
 	 $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
-
     $instance->{graph_group} =
 	Gnome2::Canvas::Item->new($instance->{graph_canvas}->root(),
 				  "Gnome2::Canvas::Group",
 				  x => CANVAS_BORDER,
 				  y => CANVAS_BORDER);
+    $instance->{node_labels} = [];
 
     $total = scalar(@{$instance->{graph_data}->{rectangles}})
 	+ scalar(@{$instance->{graph_data}->{circles}});
@@ -1176,6 +1264,7 @@ sub draw_graph($)
 	$label = Gtk2::Label->new($text);
 	$label->modify_font($instance->{fontdescription});
 	$label->show();
+	push(@{$instance->{node_labels}}, $label);
 	$widget = Gnome2::Canvas::Item->new
 	    ($node_group,
 	     "Gnome2::Canvas::Widget",
@@ -1319,6 +1408,7 @@ sub draw_graph($)
 	my $group = $instance->{graph_group};
 	$instance->{graph_group} = undef;
 	$group->destroy();
+	$instance->{node_labels} = [];
 	$instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
     }
 
@@ -1585,6 +1675,58 @@ sub populate_revision_details($$)
 #
 ##############################################################################
 #
+#   Routine      - scale_canvas
+#
+#   Description  - Adjust the scale of the canvas widgets and associated
+#                  labels.
+#
+#   Data         - $instance : The history graph window instance.
+#
+##############################################################################
+
+
+
+sub scale_canvas($)
+{
+
+    my $instance = $_[0];
+
+    my $wm = WindowManager->instance();
+
+    $wm->make_busy($instance, 1);
+    $instance->{graph_canvas}->hide();
+    $wm->update_gui();
+    $instance->{graph_canvas}->set_pixels_per_unit($instance->{scale});
+    if ((FONT_SIZE * $instance->{scale}) < 3)
+    {
+	for my $label (@{$instance->{node_labels}})
+	{
+	    $label->hide();
+	}
+    }
+    else
+    {
+	$instance->{fontdescription}->set_size
+	    (floor((FONT_SIZE * $instance->{scale} * PANGO_SCALE) + 0.5));
+	for my $label (@{$instance->{node_labels}})
+	{
+	    $label->modify_font($instance->{fontdescription});
+	    $label->show();
+	}
+    }
+    $instance->{graph_canvas}->request_redraw
+	(0,
+	 0,
+	 $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
+	 $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
+    $instance->{graph_canvas}->update_now();
+    $instance->{graph_canvas}->show();
+    $wm->make_busy($instance, 0);
+
+}
+#
+##############################################################################
+#
 #   Routine      - get_history_graph_window
 #
 #   Description  - Creates or prepares an existing history graph window for
@@ -1667,6 +1809,7 @@ sub get_history_graph_window()
 		 }
 		 $instance->{colour_db} = {};
 		 $instance->{graph_data} = undef;
+		 $instance->{node_labels} = [];
 		 $instance->{mtn} = undef;
 		 return TRUE;
 	     },
@@ -1684,15 +1827,15 @@ sub get_history_graph_window()
 		my $instance = $_[0];
 		$instance->{graph_group} = undef;
 		$instance->{graph_canvas} = undef;
+		$instance->{node_labels} = [];
 	    };
 
 	# Create the font description for displaying text on the graph. I am
-	# using a fixed width or monospaced font as I thing on balance it makes
+	# using a fixed width or monospaced font as I think on balance it makes
 	# it easier to read hex ids.
 
 	$instance->{fontdescription} = Gtk2::Pango::FontDescription->
 	    from_string($user_preferences->{fixed_font});
-	$instance->{fontdescription}->set_size(FONT_SIZE * PANGO_SCALE);
 
 	# Setup button sensitivity groups.
 
@@ -1724,6 +1867,7 @@ sub get_history_graph_window()
 	($width, $height) = $instance->{window}->get_default_size();
 	$instance->{window}->resize($width, $height);
 	$instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
+	$instance->{graph_canvas}->set_pixels_per_unit(1);
 	$instance->{graph_group}->destroy()
 	    if (defined($instance->{graph_group}));
 	foreach my $item (@{$instance->{revision_sensitive_group}})
@@ -1739,9 +1883,11 @@ sub get_history_graph_window()
     }
 
     $instance->{colour_db} = {};
-    $instance->{font_size} = FONT_SIZE;
-    $instance->{graph_group} = undef;
+    $instance->{fontdescription}->set_size(FONT_SIZE * PANGO_SCALE);
     $instance->{graph_data} = undef;
+    $instance->{graph_group} = undef;
+    $instance->{node_labels} = [];
+    $instance->{scale} = 1;
     $instance->{stop} = 0;
 
     return $instance;
