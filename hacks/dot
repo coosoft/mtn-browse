@@ -5,15 +5,21 @@ use warnings;
 
 use IO::File;
 
-my ($fh,
-    $line);
+my ($dot_fh,
+    $line,
+    $log_fh);
 
 die("IO::File->new() failed with $!")
-    unless (defined($fh = IO::File->new("dot-file.txt", "w")));
+    unless (defined($dot_fh =
+		    IO::File->new("| /opt/graphviz-2.8/bin/dot -q -y -s72")));
+die("IO::File->new() failed with $!")
+    unless (defined($log_fh = IO::File->new("dot-file.txt", "w")));
 while (defined($line = STDIN->getline()))
 {
-    $fh->print($line);
+    $dot_fh->print($line);
+    $log_fh->print($line);
 }
-$fh->close();
+$dot_fh->close();
+$log_fh->close();
 
-exit(-1);
+exit(0);
