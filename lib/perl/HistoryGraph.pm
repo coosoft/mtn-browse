@@ -51,13 +51,14 @@ no warnings qw(recursion);
 
 # Constants for the border, scale and size of items in a graph.
 
-use constant CANVAS_BORDER => 5;
-use constant DPI           => 72;
-use constant FONT_SIZE     => 8;
-use constant HEIGHT        => 28;
-use constant LINE_WIDTH    => 2;
-use constant TEXT_BORDER   => 7;
-use constant WIDTH         => 72;
+use constant CANVAS_BORDER    => 5;
+use constant DPI              => 72;
+use constant FONT_SIZE        => 8;
+use constant HEIGHT           => 28;
+use constant LINE_WIDTH       => 2;
+use constant SELECTION_BORDER => 5;
+use constant TEXT_BORDER      => 7;
+use constant WIDTH            => 72;
 
 # Constant for the number of characters displayed for a hexadecimal id.
 
@@ -73,6 +74,7 @@ use constant SELECTED_NODE => 0x04;
 
 use constant NOT_SELECTED_BORDER_COLOUR => "Gray";
 use constant SELECTED_BORDER_COLOUR     => "Black";
+use constant SELECTION_COLOUR           => "Orange";
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
@@ -82,6 +84,7 @@ sub display_history_graph($;$$$);
 
 # Private routines.
 
+sub canvas_item_event_cb($$$);
 sub default_zoom_button_clicked_cb($$);
 sub dot_input_handler_cb($$);
 sub draw_graph($);
@@ -93,6 +96,8 @@ sub hsv_to_rgb($$$$$$);
 sub layout_graph($);
 sub populate_revision_details($$);
 sub scale_canvas($);
+sub scroll_to_node($$);
+sub select_node($$);
 sub zoom_in_button_clicked_cb($$);
 sub zoom_out_button_clicked_cb($$);
 #
@@ -143,6 +148,10 @@ sub display_history_graph($;$$$)
     $instance->{appbar}->push($instance->{appbar}->get_status()->get_text());
     $wm->update_gui();
 
+    foreach my $item (@{$instance->{revision_sensitive_group}})
+    {
+	$item->set_sensitive(FALSE);
+    }
     $instance->{stop_button}->set_sensitive(TRUE);
     $wm->update_gui();
 
@@ -292,6 +301,65 @@ sub default_zoom_button_clicked_cb($$)
 
     $instance->{scale} = 1;
     scale_canvas($instance);
+
+}
+#
+##############################################################################
+#
+#   Routine      - canvas_item_event_cb
+#
+#   Description  - Callback routine called when an event it delivered to a
+#                  canvas item widget.
+#
+#   Data         - $widget      : The canvas widget object that received the
+#                                 signal.
+#                  $event       : A Gtk2::Gdk::Event object describing the
+#                                 event that has occurred.
+#                  $details     : A reference to an anonymous hash containing
+#                                 the window instance and revision id that is
+#                                 associated with this widget.
+#                  Return Value : TRUE if the event has been handled and needs
+#                                 no further handling, otherwise FALSE if the
+#                                 event should carry on through the remaining
+#                                 event handling.
+#
+##############################################################################
+
+
+
+sub canvas_item_event_cb($$$)
+{
+
+    my ($widget, $event, $details) = @_;
+
+    my $instance = $details->{instance};
+    my $revision_id = $details->{revision_id};
+
+    return FALSE if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    my $type = $event->type();
+
+    if ($type eq "button-press")
+    {
+
+	my $button = $event->button();
+
+	if ($button == 1)
+	{
+	    select_node($instance, $revision_id);
+	}
+
+	return TRUE;
+
+    }
+    elsif ($type eq "2button-press")
+    {
+	print("Double click\n");
+	return TRUE;
+    }
+
+    return FALSE;
 
 }
 #
@@ -1261,12 +1329,23 @@ sub draw_graph($)
 	 0,
 	 $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
 	 $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
-    $instance->{graph_group} =
+    $instance->{graph}->{group} =
 	Gnome2::Canvas::Item->new($instance->{graph_canvas}->root(),
 				  "Gnome2::Canvas::Group",
 				  x => CANVAS_BORDER,
 				  y => CANVAS_BORDER);
-    $instance->{node_labels} = [];
+    $instance->{graph}->{node_labels} = [];
+    $instance->{graph}->{selection_box} = Gnome2::Canvas::Item->new
+	($instance->{graph}->{group},
+	 "Gnome2::Canvas::Rect",
+	 x1            => 0,
+	 y1            => 0,
+	 x2            => 1,
+	 y2            => 1,
+	 fill_color    => "Red",
+	 outline_color => "Red",
+	 width_pixels  => LINE_WIDTH);
+    $instance->{graph}->{selection_box}->hide();
 
     $total = scalar(@{$instance->{graph_data}->{rectangles}})
 	+ scalar(@{$instance->{graph_data}->{circles}})
@@ -1286,10 +1365,15 @@ sub draw_graph($)
 	    $text,
 	    $widget);
 	my $node = $child_db->{$rectangle->{revision_id}};
-	my $node_group = Gnome2::Canvas::Item->new($instance->{graph_group},
+	my $node_group = Gnome2::Canvas::Item->new($instance->{graph}->{group},
 						   "Gnome2::Canvas::Group",
 						   x => 0,
 						   y => 0);
+
+	# Link the child database node to the relevant geometric canvas
+	# information.
+
+	$node->{canvas_item_details} = $rectangle;
 
 	# Draw the rectangle.
 
@@ -1321,7 +1405,7 @@ sub draw_graph($)
 	$label = Gtk2::Label->new($text);
 	$label->modify_font($instance->{fontdescription});
 	$label->show();
-	push(@{$instance->{node_labels}}, $label);
+	push(@{$instance->{graph}->{node_labels}}, $label);
 	$widget = Gnome2::Canvas::Item->new
 	    ($node_group,
 	     "Gnome2::Canvas::Widget",
@@ -1331,18 +1415,13 @@ sub draw_graph($)
 	     x      => $rectangle->{tl_x},
 	     y      => $rectangle->{tl_y});
 	$widget->raise_to_top();
+	$widget->show();
 
 	$node_group->signal_connect
 	    ("event",
-	     sub {
-		 my ($widget, $event, $data) = @_;
-		 if ($event->type eq "button-press")
-		 {
-		     print($data . "\n");
-		 }
-		 return TRUE;
-	     },
-	     $rectangle->{revision_id});
+	     \&canvas_item_event_cb,
+	     {instance    => $instance,
+	      revision_id => $rectangle->{revision_id}});
 
 	if (($counter % $update_interval) == 0)
 	{
@@ -1365,8 +1444,13 @@ sub draw_graph($)
 	my $widget;
 	my $node = $child_db->{$circle->{revision_id}};
 
+	# Link the child database node to the relevant geometric canvas
+	# information.
+
+	$node->{canvas_item_details} = $circle;
+
 	$widget = Gnome2::Canvas::Item->new
-	    ($instance->{graph_group},
+	    ($instance->{graph}->{group},
 	     "Gnome2::Canvas::Ellipse",
 	     x1             => $circle->{x} - $circle->{width},
 	     y1             => $circle->{y} - $circle->{height},
@@ -1377,17 +1461,13 @@ sub draw_graph($)
 				   SELECTED_BORDER_COLOUR :
 				   NOT_SELECTED_BORDER_COLOUR,
 	     width_pixels   => LINE_WIDTH);
-	$widget->signal_connect
-	    ("event",
-	     sub {
-		 my ($widget, $event, $data) = @_;
-		 if ($event->type eq "button-press")
-		 {
-		     print($data . "\n");
-		 }
-		 return TRUE;
-	     },
-	     $circle->{revision_id});
+	$widget->raise_to_top();
+	$widget->show();
+
+	$widget->signal_connect("event",
+				\&canvas_item_event_cb,
+				{instance    => $instance,
+				 revision_id => $circle->{revision_id}});
 
 	if (($counter % $update_interval) == 0)
 	{
@@ -1441,13 +1521,14 @@ sub draw_graph($)
 	$pathdef->lineto($$head[2], $$head[3]);
 	$pathdef->lineto($$head[4], $$head[5]);
 	$pathdef->closepath();
-	$bpath = Gnome2::Canvas::Item->new($instance->{graph_group},
+	$bpath = Gnome2::Canvas::Item->new($instance->{graph}->{group},
 					   "Gnome2::Canvas::Bpath",
 					   fill_color    => $colour,
 					   outline_color => $colour,
 					   width_pixels  => LINE_WIDTH);
 	$bpath->set_path_def($pathdef);
 	$bpath->lower_to_bottom();
+	$bpath->show();
 
 	if (($counter % $update_interval) == 0)
 	{
@@ -1476,20 +1557,184 @@ sub draw_graph($)
     }
 
     # Clean up the graph if the user stopped the drawing process (it will be a
-    # mess anyway).
+    # mess anyway), otherwise scroll to a suitable revision.
 
     if ($instance->{stop})
     {
-	my $group = $instance->{graph_group};
-	$instance->{graph_group} = undef;
+	my $group = $instance->{graph}->{group};
+	$instance->{graph} = {group         => undef,
+			      node_labels   => [],
+			      selection_box => undef};
 	$group->destroy();
-	$instance->{node_labels} = [];
 	$instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
+    }
+    else
+    {
+	scroll_to_node($instance,
+		       $instance->{graph_data}->{head_revisions}->[0]);
     }
 
     $instance->{appbar}->set_progress_percentage(0);
     $instance->{appbar}->set_status("");
     $wm->update_gui();
+
+}
+#
+##############################################################################
+#
+#   Routine      - select_node
+#
+#   Description  - Select the specified node in the history graph.
+#
+#   Data         - $instance       : The history graph window instance.
+#                  $revision_id    : The id of the revision that is to be
+#                                    selected.
+#
+##############################################################################
+
+
+
+sub select_node($$)
+{
+
+    my ($instance, $revision_id) = @_;
+
+    my ($branches,
+	@certs,
+	$change_log,
+	$date,
+	$item,
+	$node);
+
+    # Look up the information node for the revision id.
+
+    return unless (exists($instance->{graph_data}->{child_graph}->
+			  {$revision_id}));
+    $node = $instance->{graph_data}->{child_graph}->{$revision_id};
+    return unless (exists($node->{canvas_item_details}));
+    $item = $node->{canvas_item_details};
+
+    # Move and resize the selection rectangle depending upon whether we are
+    # dealing with a rectangular or circular node.
+
+    if ($node->{flags} & CIRCULAR_NODE)
+    {
+	$instance->{graph}->{selection_box}->set
+	    (x1 => $item->{x} - $item->{width} - SELECTION_BORDER,
+	     y1 => $item->{y} - $item->{height} - SELECTION_BORDER,
+	     x2 => $item->{x} + $item->{width} + SELECTION_BORDER,
+	     y2 => $item->{y} + $item->{height} + SELECTION_BORDER);
+    }
+    else
+    {
+	$instance->{graph}->{selection_box}->set
+	    (x1 => $item->{tl_x} - SELECTION_BORDER,
+	     y1 => $item->{tl_y} - SELECTION_BORDER,
+	     x2 => $item->{br_x} + SELECTION_BORDER,
+	     y2 => $item->{br_y} + SELECTION_BORDER);
+    }
+    $instance->{graph}->{selection_box}->lower_to_bottom();
+    $instance->{graph}->{selection_box}->show();
+
+    # Display the details about the revision in the details section at the
+    # bottom of the history graph window. We need to get the changelog but the
+    # rest is cached from before.
+
+    $instance->{mtn}->certs(\@certs, $revision_id);
+    foreach my $cert (@certs)
+    {
+	if ($cert->{name} eq "changelog")
+	{
+	    $change_log = $cert->{value};
+	    $change_log =~ s/\s+$//s;
+	    last;
+	}
+    }
+    $branches = join("\n", @{$node->{branches}});
+    $date = $node->{date};
+    $date =~ s/T/ /;
+    set_label_value($instance->{author_value_label}, $node->{author});
+    set_label_value($instance->{date_value_label}, $date);
+    set_label_value($instance->{branch_value_label}, $branches);
+    set_label_value($instance->{change_log_value_label}, $change_log);
+
+    # Enable any buttons that should be enabled once a revision has been
+    # selected.
+
+    foreach my $item (@{$instance->{revision_sensitive_group}})
+    {
+	$item->set_sensitive(TRUE);
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - scroll_to_node
+#
+#   Description  - Scroll the canvas to the specified node in the history
+#                  graph.
+#
+#   Data         - $instance       : The history graph window instance.
+#                  $revision_id    : The id of the revision that is to be
+#                                    selected.
+#
+##############################################################################
+
+
+
+sub scroll_to_node($$)
+{
+
+    my ($instance, $revision_id) = @_;
+
+    my ($height,
+	$item,
+	$node,
+	$width,
+	$x,
+	$y);
+
+    # Look up the information node for the revision id.
+
+    return unless (exists($instance->{graph_data}->{child_graph}->
+			  {$revision_id}));
+    $node = $instance->{graph_data}->{child_graph}->{$revision_id};
+    return unless (exists($node->{canvas_item_details}));
+    $item = $node->{canvas_item_details};
+
+    # Find out the centre of the node on the canvas.
+
+    if ($node->{flags} & CIRCULAR_NODE)
+    {
+	$x = $item->{x};
+	$y = $item->{y};
+    }
+    else
+    {
+	$x = $item->{tl_x} + floor(($item->{br_x} - $item->{tl_x} + 1) / 2);
+	$y = $item->{tl_y} + floor(($item->{br_y} - $item->{tl_y} + 1) / 2);
+    }
+
+    # Get the current dimensions of the canvas.
+
+    ($width, $height) =
+	($instance->{graph_canvas}->window()->get_geometry())[2, 3];
+
+    # Convert from world coordinates to canvas pixels (takes into account any
+    # scaling factors currently in effect). Don't forget to also add in the
+    # canvas borders.
+
+    $x += CANVAS_BORDER;
+    $y += CANVAS_BORDER;
+    ($x, $y) = $instance->{graph_canvas}->w2c($x, $y);
+
+    # The scroll_to() method moves the (x,y) spot to the top left hand corner
+    # so adjust it so that it is in the centre instead.
+
+    $x = max($x - floor($width / 2), 0);
+    $y = max($y - floor($height / 2), 0);
+    $instance->{graph_canvas}->scroll_to($x, $y);
 
 }
 #
@@ -1591,7 +1836,7 @@ sub get_node_colour($$)
 #   Routine      - hsv_to_rgb
 #
 #   Description  - Convert hue, saturation and value into RGB values. This
-#                  algorith was taken from:
+#                  algorithm was taken from:
 #                      http://www.cs.rit.edu/~ncs/color/t_convert.html
 #
 #   Data         - $hue        : Hue value.
@@ -1780,7 +2025,7 @@ sub scale_canvas($)
     $instance->{graph_canvas}->set_pixels_per_unit($instance->{scale});
     if ((FONT_SIZE * $instance->{scale}) < 3)
     {
-	for my $label (@{$instance->{node_labels}})
+	for my $label (@{$instance->{graph}->{node_labels}})
 	{
 	    $label->hide();
 	}
@@ -1789,7 +2034,7 @@ sub scale_canvas($)
     {
 	$instance->{fontdescription}->set_size
 	    (floor(FONT_SIZE * $instance->{scale}) * PANGO_SCALE);
-	for my $label (@{$instance->{node_labels}})
+	for my $label (@{$instance->{graph}->{node_labels}})
 	{
 	    $label->modify_font($instance->{fontdescription});
 	    $label->show();
@@ -1888,16 +2133,12 @@ sub get_history_graph_window()
 		 my ($widget, $event, $instance) = @_;
 		 return TRUE if ($instance->{in_cb});
 		 local $instance->{in_cb} = 1;
+		 my $group = $instance->{graph}->{group};
 		 $widget->hide();
-		 if (defined($instance->{graph_group}))
-		 {
-		     my $group = $instance->{graph_group};
-		     $instance->{graph_group} = undef;
-		     $group->destroy();
-		 }
+		 $instance->{graph} = undef;
+		 $group->destroy() if (defined($group));
 		 $instance->{colour_db} = {};
 		 $instance->{graph_data} = undef;
-		 $instance->{node_labels} = [];
 		 $instance->{mtn} = undef;
 		 return TRUE;
 	     },
@@ -1913,9 +2154,8 @@ sub get_history_graph_window()
 	$instance->{cleanup_handler} =
 	    sub {
 		my $instance = $_[0];
-		$instance->{graph_group} = undef;
+		$instance->{graph} = undef;
 		$instance->{graph_canvas} = undef;
-		$instance->{node_labels} = [];
 	    };
 
 	# Create the font description for displaying text on the graph. I am
@@ -1956,8 +2196,9 @@ sub get_history_graph_window()
 	$instance->{window}->resize($width, $height);
 	$instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
 	$instance->{graph_canvas}->set_pixels_per_unit(1);
-	$instance->{graph_group}->destroy()
-	    if (defined($instance->{graph_group}));
+	$instance->{graph}->{group}->destroy()
+	    if (defined($instance->{graph})
+		&& defined($instance->{graph}->{group}));
 	foreach my $item (@{$instance->{revision_sensitive_group}})
 	{
 	    $item->set_sensitive(FALSE);
@@ -1973,8 +2214,9 @@ sub get_history_graph_window()
     $instance->{colour_db} = {};
     $instance->{fontdescription}->set_size(FONT_SIZE * PANGO_SCALE);
     $instance->{graph_data} = undef;
-    $instance->{graph_group} = undef;
-    $instance->{node_labels} = [];
+    $instance->{graph} = {group         => undef,
+			  node_labels   => [],
+			  selection_box => undef};
     $instance->{scale} = 1;
     $instance->{stop} = 0;
 

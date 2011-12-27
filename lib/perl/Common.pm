@@ -804,7 +804,7 @@ sub treeview_setup_search_column_selection($@)
 		 $menu->append($menu_item);
 		 $menu_item->show();
 
-		 # Setup a callback that will set up that column for searchin
+		 # Setup a callback that will set up that column for searching
 		 # if the user should select the option.
 
 		 $menu_item->signal_connect
