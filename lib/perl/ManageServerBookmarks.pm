@@ -361,7 +361,7 @@ sub get_manage_server_bookmarks_window($$)
             set_model($instance->{servers_liststore});
 
         $tv_column = Gtk2::TreeViewColumn->new();
-        $tv_column->set_sizing("grow-only");
+        $tv_column->set_sizing("autosize");
         $renderer = Gtk2::CellRendererText->new();
         $tv_column->pack_start($renderer, TRUE);
         $tv_column->set_attributes($renderer, "text" => 0);

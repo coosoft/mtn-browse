@@ -400,7 +400,7 @@ sub get_manage_tag_weightings_window($$)
         $tv_column = Gtk2::TreeViewColumn->new();
         $tv_column->set_title(__("Tag Name Pattern"));
         $tv_column->set_resizable(FALSE);
-        $tv_column->set_sizing("grow-only");
+        $tv_column->set_sizing("autosize");
         $tv_column->set_sort_column_id(TLS_PATTERN_COLUMN);
         $renderer = Gtk2::CellRendererText->new();
         $tv_column->pack_start($renderer, TRUE);

@@ -789,7 +789,7 @@ sub get_advanced_find_window($)
         $tv_column = Gtk2::TreeViewColumn->new();
         $tv_column->set_title(__("Author"));
         $tv_column->set_resizable(TRUE);
-        $tv_column->set_sizing("grow-only");
+        $tv_column->set_sizing("autosize");
         $tv_column->set_sort_column_id(AFLS_AUTHOR_COLUMN);
         $renderer = Gtk2::CellRendererText->new();
         $tv_column->pack_start($renderer, TRUE);

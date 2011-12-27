@@ -976,7 +976,11 @@ sub get_branch_revisions($$$$$)
 
         # Get the list of revision tags.
 
-        $mtn->tags(\@tags, $branch);
+        {
+            local $pulse_widget = $appbar->get_progress()
+                if (defined($appbar));
+            $mtn->tags(\@tags, $branch);
+        }
         $appbar->set_progress_percentage(0.5) if (defined($appbar));
         WindowManager->update_gui();
 
@@ -1055,10 +1059,14 @@ sub get_branch_revisions($$$$$)
 
         if (defined($branch) && $branch ne "")
         {
+            local $pulse_widget = $appbar->get_progress()
+                if (defined($appbar));
             $mtn->select($revisions, "b:" . $branch);
         }
         else
         {
+            local $pulse_widget = $appbar->get_progress()
+                if (defined($appbar));
             $mtn->select($revisions, "i:");
         }
 

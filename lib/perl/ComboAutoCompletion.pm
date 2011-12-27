@@ -344,10 +344,12 @@ sub auto_completion_entry_key_release_event_cb($$$)
     if ($value ne $old_value)
     {
 
-        my ($busy,
+        my ($auto_completion_triggered,
+            $busy,
             $completion,
             $len,
             $success);
+        my $completion_list_displayed = $details->{togglebutton}->get_active();
         my $complete = 0;
         my $old_complete = $combo_details->{complete};
         my $wm = WindowManager->instance();
@@ -383,6 +385,7 @@ sub auto_completion_entry_key_release_event_cb($$$)
             {
                 $instance->{appbar}->clear_stack();
                 hide_tooltip_window();
+                $auto_completion_triggered = 1;
             }
             else
             {
@@ -424,22 +427,23 @@ sub auto_completion_entry_key_release_event_cb($$$)
         $combo_details->{value} = $value;
         $combo_details->{complete} = $complete;
 
-        # Has the value actually changed? Remember that what the user has
-        # entered may have been discarded due to not being valid.
+        # Has the value actually changed or the user triggered an
+        # auto-completion update by pressing the space bar? Also remember that
+        # what the user has entered may have been discarded due to not being
+        # valid.
 
-        if ($value ne $old_value)
+        if ($value ne $old_value
+            || ($completion_list_displayed && $auto_completion_triggered))
         {
 
             my @item_list;
-            my $completion_list_displayed =
-                $details->{togglebutton}->get_active();
 
-            # Yes is has so scan through the list of matches looking for a
-            # complete match. This is needed when the user is simply deleting
-            # characters from the right and we can't use the autocompletion
-            # object to determine completion (as it may do this by adding
-            # unique text onto the end of the user's input). Also update any
-            # visible completions window.
+            # Yes so scan through the list of matches looking for a complete
+            # match. This is needed when the user is simply deleting characters
+            # from the right and we can't use the autocompletion object to
+            # determine completion (as it may do this by adding unique text
+            # onto the end of the user's input). Also update any visible
+            # completions window.
 
             $wm->make_busy($instance, 1);
             $busy = 1;
@@ -527,7 +531,11 @@ sub completions_treeselection_changed_cb($$)
         my $move_to_end = $completions->{details}->{move_to_end};
         my $old_value = $combo_details->{value};
 
-        # Get the selected entry.
+        # Get the selected entry. Please note that we specifically don't update
+        # the combo_details' filter field here as selections from a completions
+        # list do not update that list (this is like the old ComboBoxEntry
+        # behaviour and is more useful to the user than if we did update the
+        # list).
 
         ($model, $iter) = $widget->get_selected();
         $combo_details->{value} = $model->get($iter, 0);

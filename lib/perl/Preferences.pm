@@ -1129,7 +1129,7 @@ sub get_preferences_window($$)
         $tv_column = Gtk2::TreeViewColumn->new();
         $tv_column->set_title(__("Helper Application"));
         $tv_column->set_resizable(TRUE);
-        $tv_column->set_sizing("grow-only");
+        $tv_column->set_sizing("autosize");
         $tv_column->set_sort_column_id(MTLS_HELPER_COLUMN);
         $renderer = Gtk2::CellRendererText->new();
         $tv_column->pack_start($renderer, TRUE);
@@ -1198,7 +1198,7 @@ sub get_preferences_window($$)
             set_model($instance->{file_name_patterns_liststore});
 
         $tv_column = Gtk2::TreeViewColumn->new();
-        $tv_column->set_sizing("grow-only");
+        $tv_column->set_sizing("autosize");
         $renderer = Gtk2::CellRendererText->new();
         $tv_column->pack_start($renderer, TRUE);
         $tv_column->set_attributes($renderer, "text" => 0);
