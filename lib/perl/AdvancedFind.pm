@@ -342,8 +342,7 @@ sub populate_button_clicked_cb($$)
         ($advanced_find->{term_combobox}->get_active_iter(), 0);
     $arg = $advanced_find->{argument_entry}->get_text();
     $time_val = strftime(MTN_TIME_STRING,
-                         localtime($advanced_find->{date_dateedit}->
-                                   get_time()));
+                         gmtime($advanced_find->{date_dateedit}->get_time()));
     $to_insert = "";
     if ($selector eq __("Author"))
     {
@@ -478,6 +477,7 @@ sub term_combobox_changed_cb($$)
 
     my ($arg,
         $date,
+        $logical,
         $pos,
         $selector,
         $time_val,
@@ -489,12 +489,13 @@ sub term_combobox_changed_cb($$)
     $selector = $advanced_find->{term_combobox}->get_model()->get
         ($advanced_find->{term_combobox}->get_active_iter(), 0);
     $date = __("Date");
-    if ($selector =~ m/^${date} .*$/)
+    $logical = __("Logical");
+    if ($selector =~ m/^$date .*$/)
     {
         $advanced_find->{argument_entry}->set_sensitive(FALSE);
         $advanced_find->{date_dateedit}->set_sensitive(TRUE);
     }
-    elsif ($selector eq __("Logical And"))
+    elsif ($selector =~ m/^$logical .*$/)
     {
         $advanced_find->{argument_entry}->set_sensitive(FALSE);
         $advanced_find->{date_dateedit}->set_sensitive(FALSE);
@@ -1211,8 +1212,8 @@ sub update_advanced_find_state($$)
                     }
                     elsif ($cert->{name} eq "date")
                     {
-                        $date = $cert->{value};
-                        $date =~ s/T/ /;
+                        $date = mtn_time_string_to_locale_time_string
+                            ($cert->{value});
                     }
                 }
                 ++ $branch_hits{""} if (! $found);

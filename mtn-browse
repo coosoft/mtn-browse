@@ -1179,8 +1179,8 @@ sub history_graph_button_clicked_cb($$)
     if (scalar(@revision_ids) > 0)
     {
         my (@certs,
-            @from_local_time,
-            @to_local_time);
+            @from_gm_time,
+            @to_gm_time);
         $browser->{mtn}->certs(\@certs, $revision_ids[0]);
         foreach my $cert (@certs)
         {
@@ -1190,12 +1190,12 @@ sub history_graph_button_clicked_cb($$)
                 last;
             }
         }
-        @from_local_time = @to_local_time =
-            localtime(mtn_time_string_to_time($from_date));
-        adjust_time(\@from_local_time, -2, DURATION_MONTHS);
-        $from_date = strftime(MTN_TIME_STRING, @from_local_time);
-        adjust_time(\@to_local_time, 2, DURATION_MONTHS);
-        $to_date = strftime(MTN_TIME_STRING, @to_local_time);
+        @from_gm_time = @to_gm_time =
+            gmtime(mtn_time_string_to_time($from_date));
+        adjust_time(\@from_gm_time, -2, DURATION_MONTHS);
+        $from_date = strftime(MTN_TIME_STRING, @from_gm_time);
+        adjust_time(\@to_gm_time, 2, DURATION_MONTHS);
+        $to_date = strftime(MTN_TIME_STRING, @to_gm_time);
     }
 
     # Now graph it. If the user explicitly specified the revision then we give
@@ -3059,8 +3059,8 @@ sub update_browser_state($$)
                     }
                     elsif ($cert->{name} eq "date")
                     {
-                        $date = $cert->{value};
-                        $date =~ s/T/ /;
+                        $date = mtn_time_string_to_locale_time_string
+                            ($cert->{value});
                     }
                 }
                 set_label_value($browser->{date_value_label}, $date);
@@ -3185,8 +3185,8 @@ sub update_browser_state($$)
                                           $item->{manifest_entry});
                 }
                 $author = $item->{manifest_entry}->{author};
-                $last_update = $item->{manifest_entry}->{last_update};
-                $last_update =~ s/T/ /;
+                $last_update = mtn_time_string_to_locale_time_string
+                    ($item->{manifest_entry}->{last_update});
             }
             else
             {
@@ -3301,8 +3301,8 @@ sub update_browser_state($$)
                                           $revision_ids[0],
                                           $manifest_entry);
                 }
-                $last_update = $manifest_entry->{last_update};
-                $last_update =~ s/T/ /;
+                $last_update = mtn_time_string_to_locale_time_string
+                    ($manifest_entry->{last_update});
                 set_label_value($browser->{file_name_value_label},
                                 $manifest_entry->{name});
                 set_label_value($browser->{file_author_value_label},

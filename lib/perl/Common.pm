@@ -88,6 +88,7 @@ sub get_revision_ids($$;$);
 sub glade_signal_autoconnect($$);
 sub handle_comboxentry_history($$;$);
 sub hex_dump($);
+sub mtn_time_string_to_locale_time_string($);
 sub mtn_time_string_to_time($);
 sub open_database($$$);
 sub program_valid($;$);
@@ -2053,11 +2054,11 @@ sub build_help_ref_to_url_map()
 #
 #   Routine      - adjust_time
 #
-#   Description  - This routine adjusts the specified localtime() style time
-#                  by the specified time period.
+#   Description  - This routine adjusts the specified gmtime()/localtime()
+#                  style time by the specified time period.
 #
-#   Data         - $time_value : A reference to the localtime() style list
-#                                that is to be adjusted.
+#   Data         - $time_value : A reference to the gmtime()/localtime() style
+#                                list that is to be adjusted.
 #                  $period     : The time period to add or subtract.
 #                  $units      : The units that the time period is expressed
 #                                in.
@@ -2073,9 +2074,9 @@ sub adjust_time($$$)
 
     my $time;
 
-    # Please note that values from localtime() etc start from 0. Also the
-    # apparently needless:
-    #     @time_value = localtime(timelocal(@time_value[0 .. 5))
+    # Please note that values from gmtime()/localtime() etc start from 0. Also
+    # the apparently needless:
+    #     @time_value = gmtime(timegm(@time_value[0 .. 5))
     # is so that the wday, yday and isdst fields are correctly recalculated.
 
     if ($units == DURATION_MONTHS)
@@ -2114,16 +2115,16 @@ sub adjust_time($$$)
             }
         }
         @$time_value[4, 5] = ($month, $year);
-        $time = timelocal(@$time_value[0 .. 5]);
+        $time = timegm(@$time_value[0 .. 5]);
     }
     elsif ($units == DURATION_YEARS)
     {
         @$time_value[5] += $period;
-        $time = timelocal(@$time_value[0 .. 5]);
+        $time = timegm(@$time_value[0 .. 5]);
     }
     else
     {
-        $time = timelocal(@$time_value[0 .. 5]);
+        $time = timegm(@$time_value[0 .. 5]);
         if ($units == DURATION_MINUTES)
         {
             $time += $period * 60;
@@ -2140,7 +2141,37 @@ sub adjust_time($$$)
 
     # Return the adjusted time back to the caller.
 
-    @$time_value = localtime($time);
+    @$time_value = gmtime($time);
+
+}
+#
+##############################################################################
+#
+#   Routine      - mtn_time_string_to_locale_time_string
+#
+#   Description  - This routine converts a Monotone time string into a locale
+#                  specific time string.
+#
+#   Data         - $time_string : The Monotone date/time string that is to be
+#                                 converted.
+#                  Return Value : The converted locale specific date/time
+#                                 string.
+#
+##############################################################################
+
+
+
+sub mtn_time_string_to_locale_time_string($)
+{
+
+    my $time_string = $_[0];
+
+    my $time;
+
+    return strftime("%x %X", localtime($time))
+        if (defined($time = mtn_time_string_to_time($time_string)));
+
+    return;
 
 }
 #
@@ -2179,12 +2210,15 @@ sub mtn_time_string_to_time($)
             ($1, $2, $3, $4, $5, $6);
         $month -= 1;
         $year -= 1900;
-        return timelocal($seconds,
-                         $minutes,
-                         $hours,
-                         $day_of_month,
-                         $month,
-                         $year);
+
+        # Remember that Monotone and its stdio interface works in GMT.
+
+        return timegm($seconds,
+                      $minutes,
+                      $hours,
+                      $day_of_month,
+                      $month,
+                      $year);
 
     }
 

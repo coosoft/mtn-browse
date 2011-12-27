@@ -212,14 +212,15 @@ sub get_date_range($$$)
         my ($older_date,
             $younger_date);
 
-        # Simple `from - to' style date range.
+        # Simple `from - to' style date range. Remember that Monotone and its
+        # stdio interface works in GMT.
 
         $older_date = strftime(MTN_TIME_STRING,
-                               localtime($instance->{older_date_dateedit}->
-                                         get_time()));
+                               gmtime($instance->{older_date_dateedit}->
+                                      get_time()));
         $younger_date = strftime(MTN_TIME_STRING,
-                                 localtime($instance->{younger_date_dateedit}->
-                                           get_time()));
+                                 gmtime($instance->{younger_date_dateedit}->
+                                        get_time()));
 
         # Check that any date range is the right way around.
 
@@ -267,7 +268,7 @@ sub get_date_range($$$)
 
         # Check that the duration period is not too large.
 
-        @time_val = localtime();
+        @time_val = gmtime();
         ($month, $year) = (@time_val)[4, 5];
         if ($period_units == DURATION_MONTHS
             && $period > ((($year - 70) * 12) + $month))

@@ -538,8 +538,8 @@ sub results_treeselection_changed_cb($$)
             $author = $manifest_entry->{author};
             $file_id = $manifest_entry->{file_id};
             $last_changed_revision = $manifest_entry->{last_changed_revision};
-            $last_update = $manifest_entry->{last_update};
-            $last_update =~ s/T/ /;
+            $last_update = mtn_time_string_to_locale_time_string
+                ($manifest_entry->{last_update});
         }
     }
     else

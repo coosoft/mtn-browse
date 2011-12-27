@@ -232,7 +232,8 @@ sub generate_revision_report($$$$;$)
 
             if ($cert->{name} eq "date")
             {
-                $cert->{value} =~ s/T/ /;
+                $cert->{value} =
+                    mtn_time_string_to_locale_time_string($cert->{value});
             }
 
             # Otherwise if the cert value contains newline characters then

@@ -93,9 +93,9 @@ my $window_type = "history_graph_window";
 # Default values for certain graphing parameters that are not specified by the
 # caller but are changeable via the change history graph window.
 
-my ($colour_by_author,
-    $draw_left_to_right,
-    $show_all_propagate_nodes);
+my $colour_by_author = 0;
+my $draw_left_to_right = 0;
+my $show_all_propagate_nodes = 0;
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
@@ -251,12 +251,27 @@ sub change_history_graph_button_clicked_cb($$)
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
+    my $old_colour_by_author =
+        $instance->{graph_data}->{parameters}->{colour_by_author};
+
     if (change_history_graph_parameters($instance,
                                         $instance->{graph_data}->{parameters}))
     {
+
+        # Reset the colour database cache as we are changing what we colour
+        # nodes by. This is primarily done so as to stop the key textview from
+        # getting cluttered with old colour codes.
+
+        $instance->{colour_db} = {}
+            if ($instance->{graph_data}->{parameters}->{colour_by_author}
+                != $old_colour_by_author);
+
+        # Now graph it.
+
         $instance->{graph_data}->{parameters}->{revision_id} =
             $instance->{selected_revision_id};
         generate_history_graph($instance);
+
     }
 
 }
@@ -2409,8 +2424,7 @@ sub select_node($$)
         }
     }
     $branches = join("\n", @{$node->{branches}});
-    $date = $node->{date};
-    $date =~ s/T/ /;
+    $date = mtn_time_string_to_locale_time_string($node->{date});
     set_label_value($instance->{author_value_label}, $node->{author});
     set_label_value($instance->{date_value_label}, $date);
     set_label_value($instance->{branch_value_label}, $branches);
