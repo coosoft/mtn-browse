@@ -66,29 +66,50 @@ use constant HEX_ID_LENGTH => 8;
 
 # Constants representing the graph node flags that can be set.
 
-use constant CIRCULAR_NODE => 0x01;
-use constant NO_PARENTS    => 0x02;
-use constant SELECTED_NODE => 0x04;
+use constant CIRCULAR_NODE  => 0x01;
+use constant NO_PARENTS     => 0x02;
+use constant SELECTED_NODE  => 0x04;
+use constant SUSPENDED_NODE => 0x08;
 
 # Constants representing certain colours.
 
 use constant NOT_SELECTED_BORDER_COLOUR => "Gray";
 use constant SELECTED_BORDER_COLOUR     => "Black";
-use constant SELECTION_COLOUR           => "Orange";
+use constant SELECTION_COLOUR           => "Tomato";
+use constant SUSPENDED_BORDER_COLOUR    => "DeepSkyBlue";
+
+# Constants for the columns within the branches liststore widget.
+
+use constant BLS_COLUMN_TYPES    => ("Glib::Boolean",
+				     "Glib::String");
+use constant BLS_SELECTED_COLUMN => 0;
+use constant BLS_BRANCH_COLUMN   => 1;
+
+# Default values for certain graphing parameters that are not specified by the
+# caller but are changeable via the change history graph window.
+
+my ($colour_by_author,
+    $draw_left_to_right,
+    $show_all_propagate_nodes);
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
 # Public routines.
 
-sub display_history_graph($;$$$$$);
+sub display_history_graph($;$$$$);
 
 # Private routines.
 
 sub canvas_item_event_cb($$$);
+sub change_history_graph_button_clicked_cb($$);
+sub change_history_graph_parameters($$);
 sub default_zoom_button_clicked_cb($$);
+sub destroy_history_graph($);
 sub dot_input_handler_cb($$);
 sub draw_graph($);
 sub generate_ancestry_graph($);
+sub generate_history_graph($);
+sub get_change_history_graph_window($);
 sub get_history_graph_window();
 sub get_node_colour($$);
 sub get_node_tag($$);
@@ -100,9 +121,12 @@ sub graph_revision_change_log_button_clicked_cb($$);
 sub hsv_to_rgb($$$$$$);
 sub layout_graph($);
 sub populate_revision_details($$);
+sub reset_history_graph_instance($);
 sub scale_canvas($);
 sub scroll_to_node($$);
 sub select_node($$);
+sub select_pattern_button_clicked_cb($$);
+sub tick_untick_branches_button_clicked_cb($$);
 sub zoom_in_button_clicked_cb($$);
 sub zoom_out_button_clicked_cb($$);
 #
@@ -133,11 +157,6 @@ sub zoom_out_button_clicked_cb($$);
 #                                              parameter can be undef or an
 #                                              empty string if no such age
 #                                              restriction is required.
-#                  $show_all_propagate_nodes : True if al propagation nodes
-#                                              are to be shown in the graph,
-#                                              otherwise false if only parent
-#                                              propagate nodes are to be
-#                                              shown.
 #                  $revision_id              : The id of the revision that is
 #                                              to be selected and shown when
 #                                              the history graph is drawn.
@@ -149,104 +168,73 @@ sub zoom_out_button_clicked_cb($$);
 
 
 
-sub display_history_graph($;$$$$$)
+sub display_history_graph($;$$$$)
 {
 
     my ($mtn,
 	$branches,
 	$from_date,
 	$to_date,
-	$show_all_propagate_nodes,
 	$revision_id)
 	= @_;
 
-    my ($counter,
-	$instance,
-	@revision_ids);
-    my $wm = WindowManager->instance();
+    my $instance;
 
     $instance = get_history_graph_window();
     local $instance->{in_cb} = 1;
 
     $instance->{mtn} = $mtn;
-    $instance->{graph_data}->{parameters}->{branches} = $branches;
-    $instance->{graph_data}->{parameters}->{from_date} = $from_date;
-    $instance->{graph_data}->{parameters}->{to_date} = $to_date;
+    $instance->{graph_data}->{parameters}->{branches} =
+	defined($branches) ? $branches : [];
+    $instance->{graph_data}->{parameters}->{from_date} =
+	defined($from_date) ? $from_date : "";
+    $instance->{graph_data}->{parameters}->{to_date} =
+	defined($to_date) ? $to_date : "";
+    $instance->{graph_data}->{parameters}->{draw_left_to_right} =
+	$draw_left_to_right;
     $instance->{graph_data}->{parameters}->{show_all_propagate_nodes} =
 	$show_all_propagate_nodes;
+    $instance->{graph_data}->{parameters}->{colour_by_author} =
+	$colour_by_author;
     $instance->{graph_data}->{parameters}->{revision_id} = $revision_id;
+    $instance->{graph_data}->{parameters}->{new} = 1;
     $instance->{window}->show_all();
     $instance->{window}->present();
 
-    $wm->make_busy($instance, 1);
-    $instance->{appbar}->push($instance->{appbar}->get_status()->get_text());
-    $wm->update_gui();
+    generate_history_graph($instance);
 
-    $instance->{stop_button}->set_sensitive(TRUE);
-    $wm->update_gui();
+}
+#
+##############################################################################
+#
+#   Routine      - change_history_graph_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the change
+#                  history graph button in the history graph window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
 
-    # Get the list of file change revisions. Remember to include the current
-    # revision in the history.
 
-    generate_ancestry_graph($instance);
 
-    # Populate all of the graphed nodes with essential revision information.
+sub change_history_graph_button_clicked_cb($$)
+{
 
-    if (! $instance->{stop})
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    if (change_history_graph_parameters($instance,
+					$instance->{graph_data}->{parameters}))
     {
-	$instance->{appbar}->set_progress_percentage(0);
-	$instance->{appbar}->set_status(__("Getting revision information"));
-	$wm->update_gui();
-	$counter = 1;
-	@revision_ids = keys(%{$instance->{graph_data}->{child_graph}});
-	foreach my $revision_id (@revision_ids)
-	{
-	    populate_revision_details($instance, $revision_id);
-	    if (($counter % 100) == 0)
-	    {
-		$instance->{appbar}->set_progress_percentage
-		    ($counter / scalar(@revision_ids));
-		$wm->update_gui();
-	    }
-	    ++ $counter;
-
-	    # Stop if the user wants to.
-
-	    last if ($instance->{stop});
-	}
-	$instance->{appbar}->set_progress_percentage(1);
-	$wm->update_gui();
+	$instance->{graph_data}->{parameters}->{revision_id} =
+	    $instance->{selected_revision_id};
+	generate_history_graph($instance);
     }
-
-    # Get dot to lay out the history graph.
-
-    if (! $instance->{stop})
-    {
-	$instance->{appbar}->set_progress_percentage(0);
-	$instance->{appbar}->set_status(__("Laying out graph with dot"));
-	$wm->update_gui();
-	layout_graph($instance);
-    }
-
-    # Now draw it in our canvas.
-
-    draw_graph($instance) unless ($instance->{stop});
-
-    # Cleanup any data if we were asked to stop.
-
-    if ($instance->{stop})
-    {
-	$instance->{colour_db} = {};
-	$instance->{graph_data} = undef;
-    }
-
-    $instance->{stop_button}->set_sensitive(FALSE);
-    $instance->{stop} = 0;
-    $instance->{appbar}->set_progress_percentage(0);
-    $wm->update_gui();
-
-    $instance->{appbar}->pop();
-    $wm->make_busy($instance, 0);
 
 }
 #
@@ -342,7 +330,7 @@ sub default_zoom_button_clicked_cb($$)
 #                  go to selected revision button in the history graph window.
 #
 #   Data         - $widget   : The widget object that received the signal.
-#                  $instance : The browser instance that is associated with
+#                  $instance : The window instance that is associated with
 #                              this widget.
 #
 ##############################################################################
@@ -369,7 +357,7 @@ sub go_to_selected_revision_button_clicked_cb($$)
 #                  advanced find button in the history graph window.
 #
 #   Data         - $widget   : The widget object that received the signal.
-#                  $instance : The browser instance that is associated with
+#                  $instance : The window instance that is associated with
 #                              this widget.
 #
 ##############################################################################
@@ -395,9 +383,7 @@ sub graph_advanced_find_button_clicked_cb($$)
 	 \$revision_id,
 	 \@dummy,
 	 sub {
-
 	     my ($parent, $revision_id, $instance) = @_;
-
 	     if (! exists($instance->{graph_data}->{child_graph}->
 			  {$revision_id}))
 	     {
@@ -414,9 +400,7 @@ sub graph_advanced_find_button_clicked_cb($$)
 		 $dialog->destroy();
 		 return;
 	     }
-
 	     return 1;
-
 	 },
 	 $instance))
     {
@@ -497,7 +481,7 @@ sub graph_revision_change_log_button_clicked_cb($$)
 #   Routine      - canvas_item_event_cb
 #
 #   Description  - Callback routine called when an event it delivered to a
-#                  canvas item widget.
+#                  canvas item widget in the history graph window.
 #
 #   Data         - $widget      : The canvas widget object that received the
 #                                 signal.
@@ -680,8 +664,6 @@ sub canvas_item_event_cb($$$)
 		 [$node->{branches}->[0]],
 		 $instance->{graph_data}->{parameters}->{from_date},
 		 $instance->{graph_data}->{parameters}->{to_date},
-		 $instance->{graph_data}->{parameters}->
-		     {show_all_propagate_nodes},
 		 $instance->{under_mouse_revision_id});
 	}
 
@@ -690,6 +672,138 @@ sub canvas_item_event_cb($$$)
     }
 
     return FALSE;
+
+}
+#
+##############################################################################
+#
+#   Routine      - generate_history_graph
+#
+#   Description  - Display a history graph according to the current parameters
+#                  in the history graph window.
+#
+#   Data         - $instance : The history graph window instance.
+#
+##############################################################################
+
+
+
+sub generate_history_graph($)
+{
+
+    my $instance = $_[0];
+
+    my ($counter,
+	@revision_ids);
+    my $wm = WindowManager->instance();
+
+    $wm->make_busy($instance, 1);
+    $instance->{appbar}->push($instance->{appbar}->get_status()->get_text());
+    $wm->update_gui();
+
+    destroy_history_graph($instance);
+    $instance->{stop_button}->set_sensitive(TRUE);
+    $wm->update_gui();
+
+    # Get the list of file change revisions. Remember to include the current
+    # revision in the history.
+
+    generate_ancestry_graph($instance);
+
+    # Populate all of the graphed nodes with essential revision information.
+
+    if (! $instance->{stop})
+    {
+	my (%branch_set,
+	    @branches);
+	$instance->{appbar}->set_progress_percentage(0);
+	$instance->{appbar}->set_status(__("Getting revision information"));
+	$wm->update_gui();
+	$instance->{mtn}->branches(\@branches);
+	for my $branch (@branches)
+	{
+	    $branch_set{$branch} = undef;
+	}
+	@branches = ();
+	$counter = 1;
+	@revision_ids = keys(%{$instance->{graph_data}->{child_graph}});
+	foreach my $revision_id (@revision_ids)
+	{
+	    my $node = $instance->{graph_data}->{child_graph}->{$revision_id};
+	    populate_revision_details($instance, $revision_id);
+	    foreach my $branch (@{$node->{branches}})
+	    {
+		$node->{flags} |= SUSPENDED_NODE
+		    unless (exists($branch_set{$branch}));
+	    }
+	    if (($counter % 100) == 0)
+	    {
+		$instance->{appbar}->set_progress_percentage
+		    ($counter / scalar(@revision_ids));
+		$wm->update_gui();
+	    }
+	    ++ $counter;
+
+	    # Stop if the user wants to.
+
+	    last if ($instance->{stop});
+	}
+	$instance->{appbar}->set_progress_percentage(1);
+	$wm->update_gui();
+    }
+
+    # Get dot to lay out the history graph.
+
+    if (! $instance->{stop})
+    {
+	$instance->{appbar}->set_progress_percentage(0);
+	$instance->{appbar}->set_status(__("Laying out graph with dot"));
+	$wm->update_gui();
+	layout_graph($instance);
+    }
+
+    # Now draw it in our canvas.
+
+    draw_graph($instance) unless ($instance->{stop});
+
+    # Clean up the graph and any associated data if the user stopped the
+    # drawing process but without loosing any settings (the graph will be a
+    # mess anyway), otherwise scroll to a suitable revision.
+
+    if ($instance->{stop})
+    {
+	my $parameters = $instance->{graph_data}->{parameters};
+	$instance->{graph_data}->{parameters} = undef;
+	reset_history_graph_instance($instance);
+	$instance->{graph_data}->{parameters} = $parameters;
+    }
+    else
+    {
+	$instance->{graph_advanced_find_button}->set_sensitive(TRUE);
+	if (defined($instance->{graph_data}->{parameters}->{revision_id})
+	    && exists($instance->{graph_data}->{child_graph}->
+		      {$instance->{graph_data}->{parameters}->{revision_id}}))
+	{
+	    scroll_to_node($instance,
+			   $instance->{graph_data}->{parameters}->
+			       {revision_id});
+	    select_node($instance,
+			$instance->{graph_data}->{parameters}->{revision_id});
+	}
+	elsif (scalar(@{$instance->{graph_data}->{head_revisions}}) > 0)
+	{
+	    scroll_to_node($instance,
+			   $instance->{graph_data}->{head_revisions}->[0]);
+	}
+    }
+
+    $instance->{stop_button}->set_sensitive(FALSE);
+    $instance->{stop} = 0;
+    $instance->{appbar}->set_progress_percentage(0);
+    $wm->update_gui();
+
+    $instance->{appbar}->pop();
+    $wm->make_busy($instance, 0);
 
 }
 #
@@ -735,15 +849,16 @@ sub generate_ancestry_graph($)
     # First build up revision hit lists based upon the selection criteria. This
     # will be then used when scanning the graph to weed out unwanted revisions.
 
-    if (defined($parameters->{from_date}) && $parameters->{from_date} ne "")
+    if ($parameters->{from_date} ne "")
     {
 	$date_range_selector = "l:" . $parameters->{from_date};
+	$date_selector = 1;
     }
     else
     {
 	$date_range_selector = "";
     }
-    if (defined($parameters->{to_date}) && $parameters->{to_date} ne "")
+    if ($parameters->{to_date} ne "")
     {
 	if ($date_range_selector eq "")
 	{
@@ -753,6 +868,7 @@ sub generate_ancestry_graph($)
 	{
 	    $date_range_selector .= "/e:" . $parameters->{to_date};
 	}
+	$date_selector = 1;
     }
 
     # Remember that this is a user generated query and so may contain invalid
@@ -779,29 +895,82 @@ sub generate_ancestry_graph($)
     eval
     {
 
-	# Do the branches hit list.
+	my $nr_selections;
 
-	if (defined($parameters->{branches})
-	    && scalar(@{$parameters->{branches}}) > 0)
+	# Do the branches hit list (using the or operator and one selection
+	# operation if we can). Please note that this rather convoluted code is
+	# due to a small bug in Monotone 1.0 where
+	# `(b:branch1|b:branch2)/l:2008-01-01' and `(b:branch1|b:branch2)' are
+	# invalid but `b:branch1|b:branch2' and
+	# `l:2008-01-01/(b:branch1|b:branch2)' are not.
+
+	$instance->{appbar}->set_progress_percentage(0);
+	$wm->update_gui();
+	$nr_selections =
+	    (($instance->{mtn}->supports(MTN_SELECTOR_OR_OPERATOR))
+	         ? 1 : scalar(@{$parameters->{branches}}))
+	    + (($date_range_selector ne "") ? 1 : 0);
+	$update_interval = calculate_update_interval($nr_selections, 40);
+	if (scalar(@{$parameters->{branches}}) > 0)
 	{
+
+	    my @revision_ids;
 	    my $date_range = ($date_range_selector ne "")
-		? ("/" . $date_range_selector) : "";
-	    foreach my $branch (@{$parameters->{branches}})
+		? ($date_range_selector . "/") : "";
+
+	    $branch_selector = 1;
+	    if ($instance->{mtn}->supports(MTN_SELECTOR_OR_OPERATOR))
 	    {
-		my @revision_ids;
-		$instance->{mtn}->select(\@revision_ids,
-					 "b:" . $branch . $date_range);
+		my $selector;
+		if ($date_range eq "")
+		{
+		    $selector = "b:" . join("|b:", @{$parameters->{branches}});
+		}
+		else
+		{
+		    $selector = $date_range . "(b:"
+			. join("|b:", @{$parameters->{branches}}) . ")";
+		}
+		$instance->{mtn}->select(\@revision_ids, $selector);
 		foreach my $revision_id (@revision_ids)
 		{
 		    $branches_set{$revision_id} = undef;
 		}
+		$instance->{appbar}->set_progress_percentage
+		    (1 / $nr_selections);
 	    }
+	    else
+	    {
+		$counter = 1;
+		foreach my $branch (@{$parameters->{branches}})
+		{
+		    $instance->{mtn}->select(\@revision_ids,
+					     $date_range . "b:" . $branch);
+		    foreach my $revision_id (@revision_ids)
+		    {
+			$branches_set{$revision_id} = undef;
+		    }
+
+		    if (($counter % $update_interval) == 0)
+		    {
+			$instance->{appbar}->set_progress_percentage
+			    ($counter / $nr_selections);
+			$wm->update_gui();
+		    }
+		    ++ $counter;
+
+		    # Stop if the user wants to.
+
+		    last if ($instance->{stop});
+		}
+	    }
+
 	}
 	$wm->update_gui();
 
 	# Now do the date hit list.
 
-	if ($date_range_selector ne "")
+	if (! $instance->{stop} && $date_range_selector ne "")
 	{
 	    my @revision_ids;
 	    $instance->{mtn}->select(\@revision_ids, $date_range_selector);
@@ -810,13 +979,15 @@ sub generate_ancestry_graph($)
 		$date_set{$revision_id} = undef;
 	    }
 	}
+	$instance->{appbar}->set_progress_percentage(1);
 	$wm->update_gui();
 
+	%branches_set = %date_set = () if ($instance->{stop});
+
     };
+    $instance->{stop} = 1 if ($@);
     CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
 						 \&mtn_error_handler);
-    $branch_selector = 1 if (scalar(keys(%branches_set)) > 0);
-    $date_selector = 1 if (scalar(keys(%date_set)) > 0);
 
     # Set the selected_set variable to point to which ever selector set should
     # be used to determine whether a revision exactly matches the caller's
@@ -838,7 +1009,7 @@ sub generate_ancestry_graph($)
 
     # Get the revision graph from Monotone.
 
-    $instance->{mtn}->graph(\@graph);
+    $instance->{mtn}->graph(\@graph) unless ($instance->{stop});
 
     $wm->update_gui();
 
@@ -1002,7 +1173,7 @@ sub generate_ancestry_graph($)
 		    parent_db         => \%parent_db,
 		    parents           => [],
 		    processed_set     => {},
-		    aggressive_search => undef};
+		    aggressive_search => 0};
 	$instance->{appbar}->set_progress_percentage(0);
 	$wm->update_gui();
 	$update_interval = calculate_update_interval(\@head_revisions);
@@ -1173,7 +1344,7 @@ sub graph_reconnect_helper($$)
 	    {
 		if (exists($context->{selected_set}->{$parent_id}))
 		{
-		    $aggressive_search = undef;
+		    $aggressive_search = 0;
 		    last;
 		}
 	    }
@@ -1182,13 +1353,15 @@ sub graph_reconnect_helper($$)
 	# Otherwise if the current node is a propagate node (i.e. in the graph
 	# database but not selected, e.g. an off-branch parent of an on-branch
 	# node) then see what we can join together. Remember that the parents
-	# of parent propagate nodes weren't even looked at until now.
+	# of propagate nodes weren't even looked at until now.
 
 	elsif (exists($context->{graph_db}->{$revision_id}))
 	{
 
 	    my (@graphed_parents,
 		@selected_parents);
+
+	    $aggressive_search = $context->{aggressive_search};
 
 	    # First scan the immediate parents for any that are graphed. If we
 	    # find selected parents then join those up, if not then try joining
@@ -1288,9 +1461,11 @@ sub graph_reconnect_helper($$)
 
 	}
 
-	# Temporarily switch on aggressive search mode if necessary.
+	# If necessary update the aggressive search mode state, saving the old
+	# value on the stack.
 
-	local $context->{aggressive_search} = 1 if ($aggressive_search);
+	local $context->{aggressive_search} = $aggressive_search
+	    unless ($context->{aggressive_search} == $aggressive_search);
 
 	# Now process the graphed parents.
 
@@ -1510,8 +1685,10 @@ sub dot_input_handler_cb($$)
     # Pre-amble.
 
     $fh_in->print("digraph \"mtn-browse\"\n"
-		  . "{\n"
-		  . "  graph [ranksep=\"0.25\"];\n"
+		  . "{\n");
+    $fh_in->print("  graph [rankdir=LR];\n")
+	if ($instance->{graph_data}->{parameters}->{draw_left_to_right});
+    $fh_in->print("  graph [ranksep=\"0.25\"];\n"
 		  . "  node [label=\"\"];\n");
 
     # Rectangular non-merge nodes, possibly changing the width for tagged nodes
@@ -1688,11 +1865,24 @@ sub draw_graph($)
 						   "Gnome2::Canvas::Group",
 						   x => 0,
 						   y => 0);
+	my $outline_colour = SELECTED_BORDER_COLOUR;
 
 	# Link the child database node to the relevant geometric canvas
 	# information.
 
 	$node->{canvas_item_details} = $rectangle;
+
+	# Decide on the colour depending on whether the node is suspended and
+	# then if it is not selected.
+
+	if ($node->{flags} & SUSPENDED_NODE)
+	{
+	    $outline_colour = SUSPENDED_BORDER_COLOUR;
+	}
+	elsif (! ($node->{flags} & SELECTED_NODE))
+	{
+	    $outline_colour = NOT_SELECTED_BORDER_COLOUR;
+	}
 
 	# Draw the rectangle.
 
@@ -1704,9 +1894,7 @@ sub draw_graph($)
 	     x2             => $rectangle->{br_x},
 	     y2             => $rectangle->{br_y},
 	     fill_color_gdk => get_node_colour ($instance, $node),
-	     outline_color  => ($node->{flags} & SELECTED_NODE) ?
-				   SELECTED_BORDER_COLOUR :
-				   NOT_SELECTED_BORDER_COLOUR,
+	     outline_color  => $outline_colour,
 	     width_pixels   => LINE_WIDTH);
 
 	# Now the text, use a revision's tag and failing that use the first
@@ -1762,11 +1950,26 @@ sub draw_graph($)
 
 	my $widget;
 	my $node = $child_db->{$circle->{revision_id}};
+	my $outline_colour = SELECTED_BORDER_COLOUR;
 
 	# Link the child database node to the relevant geometric canvas
 	# information.
 
 	$node->{canvas_item_details} = $circle;
+
+	# Decide on the colour depending on whether the node is suspended and
+	# then if it is not selected.
+
+	if ($node->{flags} & SUSPENDED_NODE)
+	{
+	    $outline_colour = SUSPENDED_BORDER_COLOUR;
+	}
+	elsif (! ($node->{flags} & SELECTED_NODE))
+	{
+	    $outline_colour = NOT_SELECTED_BORDER_COLOUR;
+	}
+
+	# Draw the circle.
 
 	$widget = Gnome2::Canvas::Item->new
 	    ($instance->{graph}->{group},
@@ -1776,9 +1979,7 @@ sub draw_graph($)
 	     x2             => $circle->{x} + $circle->{width},
 	     y2             => $circle->{y} + $circle->{height},
 	     fill_color_gdk => get_node_colour($instance, $node),
-	     outline_color  => ($node->{flags} & SELECTED_NODE) ?
-				   SELECTED_BORDER_COLOUR :
-				   NOT_SELECTED_BORDER_COLOUR,
+	     outline_color  => $outline_colour,
 	     width_pixels   => LINE_WIDTH);
 	$widget->raise_to_top();
 	$widget->show();
@@ -1873,36 +2074,6 @@ sub draw_graph($)
 	 $instance->{graph_scrolledwindow}->get_vadjustment())
     {
 	$adjustment->step_increment($adjustment->page_increment() / 8);
-    }
-
-    # Clean up the graph if the user stopped the drawing process (it will be a
-    # mess anyway), otherwise scroll to a suitable revision.
-
-    if ($instance->{stop})
-    {
-	my $group = $instance->{graph}->{group};
-	$instance->{graph} = {group         => undef,
-			      node_labels   => [],
-			      selection_box => undef};
-	$group->destroy();
-	$instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
-    }
-    else
-    {
-	$instance->{graph_advanced_find_button}->set_sensitive(TRUE);
-	if (defined($instance->{graph_data}->{parameters}->{revision_id}))
-	{
-	    scroll_to_node($instance,
-			   $instance->{graph_data}->{parameters}->
-			       {revision_id});
-	    select_node($instance,
-			$instance->{graph_data}->{parameters}->{revision_id});
-	}
-	elsif (scalar(@{$instance->{graph_data}->{head_revisions}}) > 0)
-	{
-	    scroll_to_node($instance,
-			   $instance->{graph_data}->{head_revisions}->[0]);
-	}
     }
 
     $instance->{appbar}->set_progress_percentage(0);
@@ -2166,7 +2337,17 @@ sub get_node_colour($$)
     my ($colour,
 	$hash_values);
 
-    $hash_values = $node->{branches};
+    # Decide what to base the colour on depending upon the user's preferences
+    # (either branch or author).
+
+    if ($instance->{graph_data}->{parameters}->{colour_by_author})
+    {
+	$hash_values = [$node->{author}];
+    }
+    else
+    {
+	$hash_values = $node->{branches};
+    }
 
     # First look for an existing colour for any of the branches.
 
@@ -2447,10 +2628,7 @@ sub get_node_tag($$)
 sub get_history_graph_window()
 {
 
-    my ($height,
-	$instance,
-	$renderer,
-	$width);
+    my $instance;
     my $window_type = "history_graph_window";
     my $wm = WindowManager->instance();
 
@@ -2504,12 +2682,8 @@ sub get_history_graph_window()
 		 my ($widget, $event, $instance) = @_;
 		 return TRUE if ($instance->{in_cb});
 		 local $instance->{in_cb} = 1;
-		 my $group = $instance->{graph}->{group};
 		 $widget->hide();
-		 $instance->{graph} = undef;
-		 $group->destroy() if (defined($group));
-		 $instance->{colour_db} = {};
-		 $instance->{graph_data} = undef;
+		 reset_history_graph_instance($instance);
 		 $instance->{mtn} = undef;
 		 return TRUE;
 	     },
@@ -2563,11 +2737,15 @@ sub get_history_graph_window()
     }
     else
     {
+
+	my ($height,
+	    $width);
+
 	$instance->{in_cb} = 0;
 	local $instance->{in_cb} = 1;
 	($width, $height) = $instance->{window}->get_default_size();
 	$instance->{window}->resize($width, $height);
-	$instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
+	$instance->{stop_button}->set_sensitive(FALSE);
 	$instance->{graph_canvas}->set_pixels_per_unit(1);
 	$instance->{graph}->{group}->destroy()
 	    if (defined($instance->{graph})
@@ -2583,18 +2761,605 @@ sub get_history_graph_window()
 	set_label_value($instance->{change_log_value_label}, "");
 	$instance->{appbar}->set_progress_percentage(0);
 	$instance->{appbar}->clear_stack();
+
     }
 
-    $instance->{colour_db} = {};
+    local $instance->{in_cb} = 1;
+
     $instance->{fontdescription}->set_size(FONT_SIZE * PANGO_SCALE);
-    $instance->{graph_data} = undef;
-    $instance->{graph} = {group         => undef,
-			  node_labels   => [],
-			  selection_box => undef};
     $instance->{scale} = 1;
     $instance->{stop} = 0;
     $instance->{selected_revision_id} = undef;
     $instance->{under_mouse_revision_id} = undef;
+    reset_history_graph_instance($instance);
+
+    return $instance;
+
+}
+#
+##############################################################################
+#
+#   Routine      - reset_history_graph_instance
+#
+#   Description  - Resets the specified instance to a known empty state.
+#
+#   Data         - $instance : The history graph window instance.
+#
+##############################################################################
+
+
+
+sub reset_history_graph_instance($)
+{
+
+    my $instance = $_[0];
+
+    destroy_history_graph($instance);
+    $instance->{colour_db} = {};
+    $instance->{graph_data} = 
+	{parameters     =>
+	     {new                      => 0,
+	      branches                 => [],
+	      from_date                => "",
+	      to_date                  => "",
+	      draw_left_to_right       => $draw_left_to_right,
+	      show_all_propagate_nodes => $show_all_propagate_nodes,
+	      colour_by_author         => $colour_by_author,
+	      revision_id              => undef},
+	 child_graph    => {},
+	 head_revisions => [],
+	 arrows         => [],
+	 circles        => [],
+	 rectangles     => [],
+	 max_x          => 0,
+	 max_y          => 0};
+
+}
+#
+##############################################################################
+#
+#   Routine      - destroy_history_graph
+#
+#   Description  - Destroys all of the history graph canvas widget items.
+#
+#   Data         - $instance : The history graph window instance.
+#
+##############################################################################
+
+
+
+sub destroy_history_graph($)
+{
+
+    my $instance = $_[0];
+
+    my $group = $instance->{graph}->{group};
+
+    $instance->{graph} = {group         => undef,
+			  node_labels   => [],
+			  selection_box => undef};
+    $group->destroy() if defined($group);
+    $instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
+
+}
+#
+##############################################################################
+#
+#   Routine      - change_history_graph_parameters
+#
+#   Description  - Allows the user to change the history graphing parameters
+#                  via a change history graph dialog window.
+#
+#   Data         - $parent_instance : The history graph window instance that
+#                                     requested the new history graph
+#                                     parameters.
+#                  $parameters      : The parameters record containing the
+#                                     current history graphing parameters that
+#                                     are to be updated by the user.
+#                  Return Value     : True if the user has submitted new
+#                                     parameters otherwise false.
+#
+##############################################################################
+
+
+
+sub change_history_graph_parameters($$)
+{
+
+    my ($parent_instance, $parameters) = @_;
+
+    my ($from_date,
+	$instance,
+	$ret_val,
+	$to_date);
+    my $wm = WindowManager->instance();
+
+    $instance = get_change_history_graph_window($parent_instance);
+
+    # Update the window's internal state.
+
+    {
+
+	my (@branches,
+	    %selected_branches);
+
+	local $instance->{in_cb} = 1;
+
+	# Load in the complete list of branches, selecting any currently in the
+	# parameters.
+
+	foreach my $branch (@{$parameters->{branches}})
+	{
+	    $selected_branches{$branch} = undef;
+	}
+	$instance->{mtn}->branches(\@branches);
+	$instance->{branches_liststore}->clear();
+	foreach my $branch (@branches)
+	{
+	    $instance->{branches_liststore}->
+		set($instance->{branches_liststore}->append(),
+		    BLS_SELECTED_COLUMN,
+		        exists($selected_branches{$branch}) ? TRUE : FALSE,
+		    BLS_BRANCH_COLUMN, $branch);
+	}
+
+	# Also load in any dates specified by the caller (but don't do this
+	# after the first time the user changes the parameters - otherwise his
+	# settings will keep getting reset which he will find annoying).
+
+	if ($parameters->{new} && $parameters->{from_date} ne "")
+	{
+	    my ($from_date,
+		$to_date);
+	    $from_date = mtn_time_string_to_time($parameters->{from_date});
+	    $to_date = ($parameters->{to_date} ne "")
+		? mtn_time_string_to_time($parameters->{to_date}) : time();
+	    set_date_range($instance, $from_date, $to_date)
+		if (defined($from_date) && defined($to_date));
+	    $parameters->{new} = 0;
+	}
+
+    }
+
+    # Handle all events until the dialog is dismissed with valid values.
+
+    $wm->make_busy($instance, 1, 1);
+    while (! $instance->{done})
+    {
+	while (! $instance->{done})
+	{
+	    Gtk2->main_iteration();
+	}
+	if ($instance->{changed})
+	{
+	    local $instance->{in_cb} = 1;
+	    $instance->{done} = $instance->{changed} =
+		get_date_range($instance, \$from_date, \$to_date);
+	}
+    }
+    $wm->make_busy($instance, 0);
+    local $instance->{in_cb} = 1;
+    $instance->{window}->hide();
+
+    # Deal with the result.
+
+    if ($instance->{changed})
+    {
+
+	my ($branch_list,
+	    @certs_list,
+	    $found);
+
+	# Get the selected branches.
+
+	$parameters->{branches} = [];
+	$instance->{branches_liststore}->foreach
+	    (sub {
+		 my ($widget, $path, $iter) = @_;
+		 my ($selected, $branch) =
+		     $instance->{branches_liststore}->get($iter);
+		 push(@{$parameters->{branches}}, $branch) if ($selected);
+		 return FALSE;
+	     });
+
+	# Get any date range, making sure that the dates are either valid or an
+	# empty string.
+
+	$parameters->{from_date} = defined($from_date) ? $from_date : "";
+	$parameters->{to_date} = defined($to_date) ? $to_date : "";
+
+	# Get the settings.
+
+	$parameters->{draw_left_to_right} = $draw_left_to_right =
+	    $instance->{draw_graph_left_to_right_checkbutton}->get_active()
+	    ? 1 : 0;
+	$parameters->{show_all_propagate_nodes} = $show_all_propagate_nodes =
+	    $instance->{show_all_propagate_revisions_checkbutton}->get_active()
+	    ? 1 : 0;
+	$parameters->{colour_by_author} = $colour_by_author =
+	    $instance->{colour_by_author_radiobutton}->get_active() ? 1 : 0;
+
+	# Leave the revision id parameter alone.
+
+	$ret_val = 1;
+
+    }
+
+    $instance->{mtn} = undef;
+    $instance->{branches_liststore}->clear();
+
+    return $ret_val;
+
+}
+#
+##############################################################################
+#
+#   Routine      - select_pattern_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the select
+#                  pattern button in the change history graph window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub select_pattern_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    my ($case_sensitive,
+	$expr,
+	$scroll_to_path,
+	$search_term,
+	$selection,
+	$use_regexp);
+    my $wm = WindowManager->instance();
+
+    # Get the search parameters.
+
+    $search_term =
+	$instance->{branch_pattern_comboboxentry}->child()->get_text();
+    $case_sensitive = $instance->{case_sensitive_checkbutton}->get_active();
+    $use_regexp = $instance->{regular_expression_checkbutton}->get_active();
+
+    # Precompile the regular expression based upon the search term. When the
+    # user himself is using regular expressions then check for errors.
+
+    if ($use_regexp)
+    {
+	eval
+	{
+	    if ($case_sensitive)
+	    {
+		$expr = qr/$search_term/;
+	    }
+	    else
+	    {
+		$expr = qr/$search_term/i;
+	    }
+	};
+	if ($@)
+	{
+	    my $dialog = Gtk2::MessageDialog->new
+		($instance->{window},
+		 ["modal"],
+		 "warning",
+		 "close",
+		 __x("`{pattern}' is an invalid\nbranch search pattern.",
+		     pattern => $search_term));
+	    $wm->allow_input(sub { $dialog->run(); });
+	    $dialog->destroy();
+	    return;
+	}
+    }
+    else
+    {
+	if ($case_sensitive)
+	{
+	    $expr = qr/\Q$search_term\E/;
+	}
+	else
+	{
+	    $expr = qr/\Q$search_term\E/i;
+	}
+    }
+
+    # Store the search term in the history.
+
+    handle_comboxentry_history($instance->{branch_pattern_comboboxentry},
+			       "change_history_graph_branch_patterns",
+			       $search_term);
+
+    # Go through all the branches in the list store, selecting those that
+    # match and then scroll to the first match.
+
+    $selection = $instance->{branches_treeview}->get_selection();
+    $instance->{branches_liststore}->foreach
+	(sub {
+	     my ($widget, $path, $iter) = @_;
+	     if ($widget->get($iter, BLS_BRANCH_COLUMN) =~ m/$expr/)
+	     {
+		 $selection->select_iter($iter);
+		 $scroll_to_path =
+		     $instance->{branches_liststore}->get_path($iter)
+		     unless (defined($scroll_to_path));
+	     }
+	     return FALSE;
+	 });
+    if (defined($scroll_to_path))
+    {
+	$instance->{branches_treeview}->scroll_to_cell($scroll_to_path,
+						       undef,
+						       TRUE);
+    }
+    else
+    {
+	my $dialog;
+	$dialog = Gtk2::MessageDialog->new
+	    ($instance->{window},
+	     ["modal"],
+	     "info",
+	     "close",
+	     __x("Could not find\n`{search_term}'.",
+		 search_term => $search_term));
+	$wm->allow_input(sub { $dialog->run(); });
+	$dialog->destroy();
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - tick_untick_branches_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on either the
+#                  tick or untick branches buttons in the change history graph
+#                  window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub tick_untick_branches_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    my $set = ($instance->{tick_branches_button} == $widget) ? TRUE: FALSE;
+
+    $instance->{branches_treeview}->get_selection()->selected_foreach
+	(sub {
+	     my ($model, $path, $iter) = @_;
+	     $model->set($iter, BLS_SELECTED_COLUMN, $set);
+	 });
+
+}
+#
+##############################################################################
+#
+#   Routine      - get_change_history_graph_window
+#
+#   Description  - Creates or prepares an existing change history graph dialog
+#                  window for use.
+#
+#   Data         - $parent_instance : The history graph window instance that
+#                                     requested the change history graph
+#                                     window.
+#                  Return Value     : A reference to the newly created or
+#                                     unused change history graph instance
+#                                     record.
+#
+##############################################################################
+
+
+
+sub get_change_history_graph_window($)
+{
+
+    my $parent_instance = $_[0];
+
+    my $instance;
+    my $window_type = "change_history_graph_window";
+    my $wm = WindowManager->instance();
+
+    # Create a new change history graph window if an unused one wasn't found,
+    # otherwise reuse an existing unused one.
+
+    if (! defined($instance = $wm->find_unused($window_type)))
+    {
+
+	my ($image,
+	    $renderer,
+	    $tv_column);
+
+	$instance = {};
+	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
+						 $window_type,
+						 APPLICATION_NAME);
+
+	# Flag to stop recursive calling of callbacks.
+
+	$instance->{in_cb} = 0;
+	local $instance->{in_cb} = 1;
+
+	# Connect Glade registered signal handlers.
+
+	glade_signal_autoconnect($instance->{glade}, $instance);
+
+	# Get the widgets that we are interested in.
+
+	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	foreach my $widget ("branch_pattern_comboboxentry",
+			    "tick_branches_button",
+			    "case_sensitive_checkbutton",
+			    "regular_expression_checkbutton",
+			    "branches_treeview",
+			    "date_range_checkbutton",
+			    "between_range_radiobutton",
+			    "older_date_dateedit",
+			    "and_label",
+			    "younger_date_dateedit",
+			    "during_range_radiobutton",
+			    "time_spinbutton",
+			    "time_units_combobox",
+			    "draw_graph_left_to_right_checkbutton",
+			    "show_all_propagate_revisions_checkbutton",
+			    "colour_by_branch_radiobutton",
+			    "colour_by_author_radiobutton")
+	{
+	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
+	}
+
+	# Setup the change history graph callbacks.
+
+	$instance->{window}->signal_connect
+	    ("delete_event",
+	     sub { $_[2]->{done} = 1 unless ($_[2]->{in_cb}); return TRUE; },
+	     $instance);
+	$instance->{glade}->get_widget("cancel_button")->signal_connect
+	    ("clicked",
+	     sub { $_[1]->{done} = 1 unless ($_[1]->{in_cb}); },
+	     $instance);
+	$instance->{glade}->get_widget("ok_button")->signal_connect
+	    ("clicked",
+	     sub { $_[1]->{done} = $_[1]->{changed} = 1
+		       unless ($_[1]->{in_cb}); },
+	     $instance);
+
+	# Setup the combobox.
+
+	$instance->{branch_pattern_comboboxentry}->
+	    set_model(Gtk2::ListStore->new("Glib::String"));
+	$instance->{branch_pattern_comboboxentry}->set_text_column(0);
+
+	# Setup the branches list browser.
+
+	$instance->{branches_liststore} =
+	    Gtk2::ListStore->new(BLS_COLUMN_TYPES);
+	$instance->{branches_treeview}->
+	    set_model($instance->{branches_liststore});
+	$instance->{branches_treeview}->get_selection()->set_mode("multiple");
+
+	$tv_column = Gtk2::TreeViewColumn->new();
+	$image = Gtk2::Image->new_from_stock("gtk-yes", "menu");
+	$image->show_all();
+	$tv_column->set_widget($image);
+	$tv_column->set_resizable(FALSE);
+	$tv_column->set_sort_column_id(BLS_SELECTED_COLUMN);
+	$renderer = Gtk2::CellRendererToggle->new();
+	$renderer->set(activatable => TRUE);
+	$renderer->signal_connect
+	    ("toggled",
+	     sub {
+		 my ($widget, $path, $instance) = @_;
+		 return if ($instance->{in_cb});
+		 local $instance->{in_cb} = 1;
+		 $instance->{branches_liststore}->
+		     set($instance->{branches_liststore}->
+			     get_iter_from_string($path),
+			 BLS_SELECTED_COLUMN, ! $widget->get_active());
+	     },
+	     $instance);
+	$tv_column->pack_start($renderer, TRUE);
+	$tv_column->set_attributes($renderer, "active" => BLS_SELECTED_COLUMN);
+	$instance->{branches_treeview}->append_column($tv_column);
+
+	$tv_column = Gtk2::TreeViewColumn->new();
+	$tv_column->set_title(__("Branch"));
+	$tv_column->set_resizable(TRUE);
+	$tv_column->set_sizing("fixed");
+	$tv_column->set_sort_column_id(BLS_BRANCH_COLUMN);
+	$renderer = Gtk2::CellRendererText->new();
+	$tv_column->pack_start($renderer, TRUE);
+	$tv_column->set_attributes($renderer, "text" => BLS_BRANCH_COLUMN);
+	$instance->{branches_treeview}->append_column($tv_column);
+
+	$instance->{branches_treeview}->set_search_column(BLS_BRANCH_COLUMN);
+	$instance->{branches_treeview}->
+	    set_search_equal_func(\&treeview_column_searcher);
+
+	# Setup the date range widgets.
+
+	setup_date_range_widgets($instance);
+
+	# Reparent the advanced find window to the specified window.
+
+	$instance->{window}->set_transient_for($parent_instance->{window});
+
+	# Display the window.
+
+	$instance->{window}->show_all();
+	$instance->{window}->present();
+
+	# Register the window for management and set up the help callbacks.
+
+	$wm->manage($instance, $window_type, $instance->{window});
+	register_help_callbacks
+	    ($instance,
+	     {widget   => "graph_button_vbox",
+	      help_ref => __("mtnb-lachc-history-buttons")},
+	     {widget   => undef,
+	      help_ref => __("mtnb-lachc-the-revision-and-file-history-"
+			     . "windows")});
+
+    }
+    else
+    {
+
+	my ($height,
+	    $width);
+
+	$instance->{in_cb} = 0;
+	local $instance->{in_cb} = 1;
+
+	# Reset the change history graph dialog's state.
+
+	($width, $height) = $instance->{window}->get_default_size();
+	$instance->{window}->resize($width, $height);
+	$instance->{window}->set_transient_for($parent_instance->{window});
+	$instance->{branches_liststore}->clear();
+	$instance->{branches_liststore} =
+	    Gtk2::ListStore->new(BLS_COLUMN_TYPES);
+	$instance->{branches_treeview}->
+	    set_model($instance->{branches_liststore});
+	$instance->{branches_treeview}->set_search_column(BLS_BRANCH_COLUMN);
+	$instance->{window}->show_all();
+	$instance->{window}->present();
+
+    }
+
+    local $instance->{in_cb} = 1;
+
+    $instance->{changed} = 0;
+    $instance->{done} = 0;
+    $instance->{stop} = 0;
+    $instance->{mtn} = $parent_instance->{mtn};
+
+    # Load in the comboboxentry history.
+
+    handle_comboxentry_history($instance->{branch_pattern_comboboxentry},
+			       "change_history_graph_branch_patterns");
+
+    # Make sure that the branch pattern has the focus and not the cancel
+    # button.
+
+    $instance->{branch_pattern_comboboxentry}->child()->grab_focus();
+    $instance->{branch_pattern_comboboxentry}->child()->set_position(-1);
 
     return $instance;
 

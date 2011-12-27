@@ -165,7 +165,6 @@ sub advanced_find($$$;$$)
     # Handle all events until the dialog is dismissed.
 
     $wm->make_busy($advanced_find, 1, 1);
-    $advanced_find->{done} = 0;
     while (! $advanced_find->{done})
     {
 	while (! $advanced_find->{done})
@@ -174,12 +173,12 @@ sub advanced_find($$$;$$)
 	}
 	if ($advanced_find->{selected} && defined($check_cb))
 	{
-	    $advanced_find->{done} =
+	    local $advanced_find->{in_cb} = 1;
+	    $advanced_find->{done} = $advanced_find->{selected} =
 		&$check_cb($advanced_find->{window},
 			   $advanced_find->{revisions_treeview_details}->
 			       {value},
 			   $client_data);
-	    $advanced_find->{selected} = 0 unless ($advanced_find->{done});
 	}
     }
     $wm->make_busy($advanced_find, 0);
@@ -258,9 +257,6 @@ sub simple_query_radiobutton_toggled_cb($$)
 
     return if ($advanced_find->{in_cb});
     local $advanced_find->{in_cb} = 1;
-
-    my ($len,
-	$value);
 
     # Simply enable the relevant find widgets depending upon whether simple or
     # advanced mode is selected.

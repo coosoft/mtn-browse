@@ -54,6 +54,14 @@ use warnings;
 
 # ***** GLOBAL DATA DECLARATIONS *****
 
+# Constants used to represent units for periods of time.
+
+use constant DURATION_MINUTES => 0;
+use constant DURATION_HOURS   => 1;
+use constant DURATION_DAYS    => 2;
+use constant DURATION_MONTHS  => 3;
+use constant DURATION_YEARS   => 4;
+
 # Constants used to represent the different groups of widgets.
 
 use constant BRANCH           => 0x01;
@@ -134,6 +142,11 @@ our %EXPORT_TAGS = (constants => [qw(ALL_CHANGED
 				     DIRECTORY_CHANGED
 				     DIRECTORY_VIEW
 				     DISPLAY_OF_FILE
+				     DURATION_DAYS
+				     DURATION_HOURS
+				     DURATION_MINUTES
+				     DURATION_MONTHS
+				     DURATION_YEARS
 				     FILE_CHANGED
 				     NEW_FIND
 				     REVISION

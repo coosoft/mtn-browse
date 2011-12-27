@@ -191,8 +191,7 @@ sub preferences($)
     my $browser = $_[0];
 
     my ($instance,
-	$preferences,
-	$valid);
+	$preferences);
     my $wm = WindowManager->instance();
 
     # Load in the user's preferences.
@@ -219,37 +218,23 @@ sub preferences($)
 
     $instance = get_preferences_window($browser->{window}, $preferences);
 
-    # Allow the user to change their preferences, validating anything that is
-    # saved.
+    # Handle all events until the dialog is dismissed with valid preferences.
 
     $wm->make_busy($instance, 1, 1);
-    do
+    while (! $instance->{done})
     {
-
-	# Handle all events until the dialog is dismissed.
-
-	$instance->{done} = 0;
-	$instance->{preferences_to_be_saved} = 0;
 	while (! $instance->{done})
 	{
 	    Gtk2->main_iteration();
 	}
-
-	# Validate any changes.
-
 	if ($instance->{preferences_to_be_saved})
 	{
 	    local $instance->{in_cb} = 1;
 	    save_preferences_from_gui($instance);
-	    $valid = validate_preferences($instance);
+	    $instance->{done} = $instance->{preferences_to_be_saved} =
+		validate_preferences($instance);
 	}
-	else
-	{
-	    $valid = 1;
-	}
-
     }
-    while (! $valid);
     $wm->make_busy($instance, 0);
     local $instance->{in_cb} = 1;
     $instance->{window}->hide();

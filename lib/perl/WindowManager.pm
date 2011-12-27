@@ -466,7 +466,7 @@ sub make_busy($$$;$)
 		foreach my $gdk_window (@{$win_instance->{gdk_windows}})
 		{
 		    if ($gdk_window->is_visible()
-			&& (! defined ($exclude_window)
+			&& (! defined($exclude_window)
 			    || (defined($exclude_window)
 				&& $exclude_window->window() != $gdk_window)))
 		    {

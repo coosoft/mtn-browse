@@ -71,6 +71,7 @@ my %help_ref_to_url_map;
 
 # Public routines.
 
+sub adjust_time($$$);
 sub cache_extra_file_info($$$);
 sub calculate_update_interval($;$);
 sub colour_to_string($);
@@ -86,6 +87,7 @@ sub get_revision_ids($$;$);
 sub glade_signal_autoconnect($$);
 sub handle_comboxentry_history($$;$);
 sub hex_dump($);
+sub mtn_time_string_to_time($);
 sub open_database($$$);
 sub program_valid($;$);
 sub register_help_callbacks($@);
@@ -2007,6 +2009,133 @@ sub build_help_ref_to_url_map()
 	}
     }
     $dir->close();
+
+    return;
+
+}
+#
+##############################################################################
+#
+#   Routine      - adjust_time
+#
+#   Description  - This routine adjusts the specified localtime() style time
+#                  by subtracting the specified time period from it.
+#
+#   Data         - $time_value : A reference to the localtime() style list
+#                                that is to be adjusted.
+#                  $period     : The time period to subtract.
+#                  $units      : The units that the time period is expressed
+#                                in.
+#
+##############################################################################
+
+
+
+sub adjust_time($$$)
+{
+
+    my ($time_value, $period, $units) = @_;
+
+    my $time;
+
+    # Please note that values from localtime() etc start from 0. Also the
+    # apparent needless:
+    #     @time_value = localtime(timelocal(@time_value[0 .. 5))
+    # is so that the wday, yday and isdst fields are correctly recalculated.
+
+    if ($units == DURATION_MONTHS)
+    {
+	my ($month,
+	    $year);
+	($month, $year) = @$time_value[4, 5];
+	if ($period > 12)
+	{
+	    $year -= floor($period / 12);
+	    $period %= 12;
+	}
+	if ($period > $month)
+	{
+	    -- $year;
+	    $month = 12 - ($period - $month);
+	}
+	else
+	{
+	    $month -= $period;
+	}
+	@$time_value[4, 5] = ($month, $year);
+	$time = timelocal(@$time_value[0 .. 5]);
+    }
+    elsif ($units == DURATION_YEARS)
+    {
+	@$time_value[5] -= $period;
+	$time = timelocal(@$time_value[0 .. 5]);
+    }
+    else
+    {
+	$time = timelocal(@$time_value[0 .. 5]);
+	if ($units == DURATION_MINUTES)
+	{
+	    $time -= $period * 60;
+	}
+	elsif ($units == DURATION_HOURS)
+	{
+	    $time -= $period * 60 * 60;
+	}
+	elsif ($units == DURATION_DAYS)
+	{
+	    $time -= $period * 60 * 60 * 24;
+	}
+    }
+
+    # Return the adjusted time back to the caller.
+
+    @$time_value = localtime($time);
+
+}
+#
+##############################################################################
+#
+#   Routine      - mtn_time_string_to_time
+#
+#   Description  - This routine converts a Monotone time string into a time_t
+#                  value as returned from time().
+#
+#   Data         - $time_string : The Monotone date/time string that is to be
+#                                 converted.
+#                  Return Value : A time() style time code on success,
+#                                 otherwise undef on failure.
+#
+##############################################################################
+
+
+
+sub mtn_time_string_to_time($)
+{
+
+    my $time_string = $_[0];
+
+    if ($time_string =~ m/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/)
+    {
+
+	my ($day_of_month,
+	    $hours,
+	    $minutes,
+	    $month,
+	    $seconds,
+	    $year);
+
+	($year, $month, $day_of_month, $hours, $minutes, $seconds) =
+	    ($1, $2, $3, $4, $5, $6);
+	$month -= 1;
+	$year -= 1900;
+	return timelocal($seconds,
+			 $minutes,
+			 $hours,
+			 $day_of_month,
+			 $month,
+			 $year);
+
+    }
 
     return;
 
