@@ -91,6 +91,8 @@ sub draw_graph($);
 sub generate_ancestry_graph($$;$$$);
 sub get_history_graph_window();
 sub get_node_colour($$);
+sub get_node_tag($$);
+sub go_to_selected_revision_button_clicked_cb($$);
 sub graph_advanced_find_button_clicked_cb($$);
 sub graph_reconnect_helper($$);
 sub graph_revision_change_history_button_clicked_cb($$);
@@ -305,6 +307,33 @@ sub default_zoom_button_clicked_cb($$)
 #
 ##############################################################################
 #
+#   Routine      - go_to_selected_revision_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the
+#                  go to selected revision button in the history graph window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The browser instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub go_to_selected_revision_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    scroll_to_node($instance, $instance->{selected_revision_id});
+
+}
+#
+##############################################################################
+#
 #   Routine      - graph_advanced_find_button_clicked_cb
 #
 #   Description  - Callback routine called when the user clicks on the
@@ -337,7 +366,9 @@ sub graph_advanced_find_button_clicked_cb($$)
 	 \$revision_id,
 	 \@dummy,
 	 sub {
+
 	     my ($parent, $revision_id, $instance) = @_;
+
 	     if (! exists($instance->{graph_data}->{child_graph}->
 			  {$revision_id}))
 	     {
@@ -354,7 +385,9 @@ sub graph_advanced_find_button_clicked_cb($$)
 		 $dialog->destroy();
 		 return;
 	     }
+
 	     return 1;
+
 	 },
 	 $instance))
     {
@@ -392,17 +425,10 @@ sub graph_revision_change_history_button_clicked_cb($$)
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my $tag;
-    my $node = $instance->{graph_data}->{child_graph}->
-        {$instance->{selected_revision_id}};
-
-    if (scalar(@{$node->{tags}}) > 0)
-    {
-	$tag = $node->{tags}->[0];
-    }
-    display_revision_change_history($instance->{mtn},
-				    $tag,
-				    $instance->{selected_revision_id});
+    display_revision_change_history
+	($instance->{mtn},
+	 get_node_tag($instance, $instance->{selected_revision_id}),
+	 $instance->{selected_revision_id});
 
 }
 #
@@ -429,18 +455,11 @@ sub graph_revision_change_log_button_clicked_cb($$)
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my $tag;
-    my $node = $instance->{graph_data}->{child_graph}->
-        {$instance->{selected_revision_id}};
-
-    if (scalar(@{$node->{tags}}) > 0)
-    {
-	$tag = $node->{tags}->[0];
-    }
-    display_change_log($instance->{mtn},
-		       $instance->{selected_revision_id},
-		       "",
-		       $tag);
+    display_change_log
+	($instance->{mtn},
+	 $instance->{selected_revision_id},
+	 "",
+	 get_node_tag($instance, $instance->{selected_revision_id}));
 
 }
 #
@@ -480,6 +499,8 @@ sub canvas_item_event_cb($$$)
 
     my $type = $event->type();
 
+    $instance->{under_mouse_revision_id} = $revision_id;
+
     if ($type eq "button-press")
     {
 
@@ -489,6 +510,127 @@ sub canvas_item_event_cb($$$)
 	{
 	    select_node($instance, $revision_id);
 	    return TRUE;
+	}
+	elsif ($button == 3)
+	{
+
+	    my ($menu,
+		$menu_item);
+
+	    # Create a popup menu with assorted the search option in it.
+
+	    $menu = Gtk2::Menu->new();
+
+	    $menu_item =
+		Gtk2::MenuItem->new(__("_Copy Revision Id To The Clipboard"));
+	    $menu->append($menu_item);
+	    $menu_item->signal_connect
+		("activate",
+		 sub {
+		     my ($widget, $instance) = @_;
+		     my $clipboard = Gtk2::Clipboard->
+			 get(Gtk2::Gdk->SELECTION_PRIMARY());
+		     $clipboard->
+			 set_text($instance->{under_mouse_revision_id});
+		 },
+		 $instance);
+	    $menu_item->show();
+
+	    $menu_item =
+		Gtk2::MenuItem->new(__("_Go To Selected Revision"));
+	    $menu->append($menu_item);
+	    if (defined($instance->{selected_revision_id}))
+	    {
+		$menu_item->signal_connect
+		    ("activate",
+		     sub {
+			 my ($widget, $instance) = @_;
+			 scroll_to_node($instance,
+					$instance->{selected_revision_id});
+		     },
+		     $instance);
+	    }
+	    else
+	    {
+		$menu_item->set_sensitive(FALSE);
+	    }
+	    $menu_item->show();
+
+	    $menu_item = Gtk2::SeparatorMenuItem->new();
+	    $menu_item->show();
+	    $menu->append($menu_item);
+
+	    $menu_item = Gtk2::MenuItem->new(__("Display Change _Log"));
+	    $menu->append($menu_item);
+	    $menu_item->signal_connect
+		("activate",
+		 sub {
+		     my ($widget, $instance) = @_;
+		     display_change_log
+			 ($instance->{mtn},
+			  $instance->{under_mouse_revision_id},
+			  "",
+			  get_node_tag($instance,
+				       $instance->{under_mouse_revision_id}));
+		 },
+		 $instance);
+	    $menu_item->show();
+
+	    $menu_item = Gtk2::MenuItem->new(__("Display _Revision History"));
+	    $menu->append($menu_item);
+	    $menu_item->signal_connect
+		("activate",
+		 sub {
+		     my ($widget, $instance) = @_;
+		     display_revision_change_history
+			 ($instance->{mtn},
+			  get_node_tag($instance,
+				       $instance->{under_mouse_revision_id}),
+			  $instance->{under_mouse_revision_id});
+		 },
+		 $instance);
+	    $menu_item->show();
+
+	    $menu_item = Gtk2::SeparatorMenuItem->new();
+	    $menu_item->show();
+	    $menu->append($menu_item);
+
+	    $menu_item = Gtk2::MenuItem->new
+		(__("Compare Revision _With Selected"));
+	    $menu->append($menu_item);
+	    if (defined($instance->{selected_revision_id})
+		&& defined($instance->{under_mouse_revision_id})
+		&& $instance->{selected_revision_id}
+		    ne $instance->{under_mouse_revision_id})
+	    {
+		$menu_item->signal_connect
+		    ("activate",
+		     sub {
+			 my ($widget, $instance) = @_;
+			 my @revision_ids;
+			 $instance->{mtn}->toposort
+			     (\@revision_ids,
+			      $instance->{selected_revision_id},
+			      $instance->{under_mouse_revision_id});
+			 display_revision_comparison($instance->{mtn},
+						     $revision_ids[0],
+						     $revision_ids[1],
+						     undef);
+		     },
+		     $instance);
+	    }
+	    else
+	    {
+		$menu_item->set_sensitive(FALSE);
+	    }
+	    $menu_item->show();
+
+	    # Display the popup menu.
+
+	    $menu->popup(undef, undef, undef, undef, $button, $event->time());
+
+	    return TRUE;
+
 	}
 
     }
@@ -1358,11 +1500,12 @@ sub dot_input_handler_cb($$)
     {
 	if (! ($child_db->{$revision_id}->{flags} & CIRCULAR_NODE))
 	{
+	    my $tag;
 	    my $width = WIDTH;
 	    $fh_in->print("  \"" . $revision_id . "\"");
-	    if (scalar(@{$child_db->{$revision_id}->{tags}}) > 0)
+	    if (defined($tag = get_node_tag($instance, $revision_id)))
 	    {
-		$layout->set_text($child_db->{$revision_id}->{tags}->[0]);
+		$layout->set_text($tag);
 		$width = max(WIDTH,
 			     ($layout->get_pixel_size())[0]
 			         + (TEXT_BORDER * 6));
@@ -1473,6 +1616,7 @@ sub draw_graph($)
 				  "Gnome2::Canvas::Group",
 				  x => CANVAS_BORDER,
 				  y => CANVAS_BORDER);
+
     $instance->{graph}->{node_labels} = [];
     $instance->{graph}->{selection_box} = Gnome2::Canvas::Item->new
 	($instance->{graph}->{group},
@@ -1510,6 +1654,7 @@ sub draw_graph($)
     {
 
 	my ($label,
+	    $tag,
 	    $text,
 	    $widget);
 	my $node = $child_db->{$rectangle->{revision_id}};
@@ -1542,9 +1687,9 @@ sub draw_graph($)
 	# eight characters of its hex id. Also use a Gtk2::Label as the
 	# Gnome2::Canvas::Text widget just takes too long to render.
 
-	if (scalar(@{$node->{tags}}) > 0)
+	if (defined($tag = get_node_tag($instance, $rectangle->{revision_id})))
 	{
-	    $text = $node->{tags}->[0];
+	    $text = $tag;
 	}
 	else
 	{
@@ -1735,9 +1880,9 @@ sub draw_graph($)
 #
 #   Description  - Select the specified node in the history graph.
 #
-#   Data         - $instance       : The history graph window instance.
-#                  $revision_id    : The id of the revision that is to be
-#                                    selected.
+#   Data         - $instance    : The history graph window instance.
+#                  $revision_id : The id of the revision that is to be
+#                                 selected.
 #
 ##############################################################################
 
@@ -1828,9 +1973,9 @@ sub select_node($$)
 #   Description  - Scroll the canvas to the specified node in the history
 #                  graph.
 #
-#   Data         - $instance       : The history graph window instance.
-#                  $revision_id    : The id of the revision that is to be
-#                                    selected.
+#   Data         - $instance    : The history graph window instance.
+#                  $revision_id : The id of the revision that is to be
+#                                 selected.
 #
 ##############################################################################
 
@@ -2216,6 +2361,40 @@ sub populate_revision_details($$)
 #
 ##############################################################################
 #
+#   Routine      - get_node_tag
+#
+#   Description  - Return a tag associated with the specified node in the
+#                  history graph.
+#
+#   Data         - $instance    : The history graph window instance.
+#                  $revision_id : The id of the revision that is to have one
+#                                 of its tags returned.
+#                  Return Value : Either one of the tags associated with the
+#                                 specified node or undef if the node has no
+#                                 tags.
+#
+##############################################################################
+
+
+
+sub get_node_tag($$)
+{
+
+    my ($instance, $revision_id) = @_;
+
+    my $node = $instance->{graph_data}->{child_graph}->{$revision_id};
+
+    if (scalar(@{$node->{tags}}) > 0)
+    {
+	return $node->{tags}->[0];
+    }
+
+    return;
+
+}
+#
+##############################################################################
+#
 #   Routine      - get_history_graph_window
 #
 #   Description  - Creates or prepares an existing history graph window for
@@ -2323,7 +2502,8 @@ sub get_history_graph_window()
 	# Setup button sensitivity groups.
 
 	$instance->{revision_sensitivity_group} = [];
-	foreach my $item ("graph_revision_change_history",
+	foreach my $item ("go_to_selected_revision",
+			  "graph_revision_change_history",
 			  "graph_revision_change_log")
 	{
 	    push(@{$instance->{revision_sensitive_group}},

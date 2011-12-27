@@ -10491,6 +10491,35 @@ within the current history graph</property>
 			  </child>
 
 			  <child>
+			    <widget class="GtkButton" id="go_to_selected_revision_button">
+			      <property name="visible">True</property>
+			      <property name="sensitive">False</property>
+			      <property name="tooltip" translatable="yes">Go to the currently selected revision</property>
+			      <property name="can_focus">True</property>
+			      <property name="relief">GTK_RELIEF_NONE</property>
+			      <property name="focus_on_click">False</property>
+			      <signal name="clicked" handler="go_to_selected_revision_button_clicked_cb" last_modification_time="Fri, 06 May 2011 16:52:44 GMT"/>
+
+			      <child>
+				<widget class="GtkImage" id="image184">
+				  <property name="visible">True</property>
+				  <property name="stock">gtk-jump-to</property>
+				  <property name="icon_size">4</property>
+				  <property name="xalign">0.5</property>
+				  <property name="yalign">0.5</property>
+				  <property name="xpad">0</property>
+				  <property name="ypad">0</property>
+				</widget>
+			      </child>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
+			    </packing>
+			  </child>
+
+			  <child>
 			    <widget class="GtkButton" id="graph_revision_change_history_button">
 			      <property name="visible">True</property>
 			      <property name="sensitive">False</property>
