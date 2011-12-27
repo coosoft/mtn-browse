@@ -105,6 +105,7 @@ sub display_history_graph($;$$$$);
 
 # Private routines.
 
+sub branch_filter_button_clicked_cb($$);
 sub browse_revision_button_clicked_cb($$);
 sub canvas_item_event_cb($$$);
 sub change_history_graph_button_clicked_cb($$);
@@ -127,13 +128,13 @@ sub graph_revision_change_history_button_clicked_cb($$);
 sub graph_revision_change_log_button_clicked_cb($$);
 sub hsv_to_rgb($$$$$$);
 sub layout_graph($);
+sub load_branch_liststore($;$);
 sub populate_revision_details($$);
 sub reset_history_graph_instance($);
 sub reset_history_graph_window($);
 sub scale_canvas($);
 sub scroll_to_node($$);
 sub select_node($$);
-sub select_pattern_button_clicked_cb($$);
 sub tag_weightings_button_clicked_cb($$);
 sub tick_untick_branches_button_clicked_cb($$);
 sub zoom_in_button_clicked_cb($$);
@@ -3181,28 +3182,14 @@ sub change_history_graph_parameters($$)
 
     {
 
-        my (@branches,
-            %selected_branches);
-
         local $instance->{in_cb} = 1;
 
-        # Load in the complete list of branches, selecting any currently in the
-        # parameters.
+        # Load the branch liststore with branches that are either selected or
+        # match the current branch filter.
 
-        foreach my $branch (@{$parameters->{branches}})
-        {
-            $selected_branches{$branch} = undef;
-        }
-        $instance->{mtn}->branches(\@branches);
-        $instance->{branches_liststore}->clear();
-        foreach my $branch (@branches)
-        {
-            $instance->{branches_liststore}->
-                set($instance->{branches_liststore}->append(),
-                    BLS_SELECTED_COLUMN,
-                        exists($selected_branches{$branch}) ? TRUE : FALSE,
-                    BLS_BRANCH_COLUMN, $branch);
-        }
+        $instance->{branch_list} = [];
+        $instance->{mtn}->branches($instance->{branch_list});
+        load_branch_liststore($instance, $parameters->{branches});
 
         # Also load in any dates specified by the caller (but don't do this
         # after the first time the user changes the parameters - otherwise his
@@ -3289,6 +3276,7 @@ sub change_history_graph_parameters($$)
     }
 
     $instance->{mtn} = undef;
+    $instance->{branch_list} = [];
     $instance->{branches_liststore}->clear();
 
     return $ret_val;
@@ -3297,10 +3285,10 @@ sub change_history_graph_parameters($$)
 #
 ##############################################################################
 #
-#   Routine      - select_pattern_button_clicked_cb
+#   Routine      - branch_filter_button_clicked_cb
 #
-#   Description  - Callback routine called when the user clicks on the select
-#                  pattern button in the change history graph window.
+#   Description  - Callback routine called when the user clicks on the branch
+#                  filter button in the change history graph window.
 #
 #   Data         - $widget   : The widget object that received the signal.
 #                  $instance : The window instance that is associated with
@@ -3310,7 +3298,7 @@ sub change_history_graph_parameters($$)
 
 
 
-sub select_pattern_button_clicked_cb($$)
+sub branch_filter_button_clicked_cb($$)
 {
 
     my ($widget, $instance) = @_;
@@ -3320,15 +3308,13 @@ sub select_pattern_button_clicked_cb($$)
 
     my ($case_sensitive,
         $expr,
-        $scroll_to_path,
         $search_term,
-        $selection,
         $use_regexp);
 
     # Get the search parameters.
 
     $search_term =
-        $instance->{branch_pattern_comboboxentry}->child()->get_text();
+        $instance->{branch_filter_comboboxentry}->child()->get_text();
     $case_sensitive = $instance->{case_sensitive_checkbutton}->get_active();
     $use_regexp = $instance->{regular_expression_checkbutton}->get_active();
 
@@ -3373,48 +3359,19 @@ sub select_pattern_button_clicked_cb($$)
             $expr = qr/\Q$search_term\E/i;
         }
     }
+    $instance->{branch_filter_search_term} = $search_term;
+    $instance->{branch_filter_re} = $expr;
 
     # Store the search term in the history.
 
-    handle_comboxentry_history($instance->{branch_pattern_comboboxentry},
-                               "change_history_graph_branch_patterns",
+    handle_comboxentry_history($instance->{branch_filter_comboboxentry},
+                               "change_history_graph_branch_filters",
                                $search_term);
 
-    # Go through all the branches in the list store, selecting those that
-    # match and then scroll to the first match.
+    # Reload the branch liststore with branches that are either selected or
+    # match the current branch filter.
 
-    $selection = $instance->{branches_treeview}->get_selection();
-    $instance->{branches_liststore}->foreach
-        (sub {
-             my ($widget, $path, $iter) = @_;
-             if ($widget->get($iter, BLS_BRANCH_COLUMN) =~ m/$expr/)
-             {
-                 $selection->select_iter($iter);
-                 $scroll_to_path =
-                     $instance->{branches_liststore}->get_path($iter)
-                     unless (defined($scroll_to_path));
-             }
-             return FALSE;
-         });
-    if (defined($scroll_to_path))
-    {
-        $instance->{branches_treeview}->scroll_to_cell($scroll_to_path,
-                                                       undef,
-                                                       TRUE);
-    }
-    else
-    {
-        my $dialog;
-        $dialog = Gtk2::MessageDialog->new
-            ($instance->{window},
-             ["modal"],
-             "info",
-             "close",
-             __x("Could not find\n`{search_term}'.",
-                 search_term => $search_term));
-        busy_dialog_run($dialog);
-        $dialog->destroy();
-    }
+    load_branch_liststore($instance);
 
 }
 #
@@ -3477,6 +3434,77 @@ sub tick_untick_branches_button_clicked_cb($$)
 #
 ##############################################################################
 #
+#   Routine      - load_branch_liststore
+#
+#   Description  - Load the branch liststore with branches that are either
+#                  selected or match the current branch filter.
+#
+#   Data         - $instance          : The history graph window instance.
+#                  $selected_branches : A reference to a list of currently
+#                                       selected branches. This is optional.
+#
+##############################################################################
+
+
+
+sub load_branch_liststore($;$)
+{
+
+    my ($instance, $selected_branches) = @_;
+
+    my (%selected_set);
+
+    # Generate a selected branch set either from the list we were given or from
+    # the liststore.
+
+    if (defined($selected_branches))
+    {
+        foreach my $branch (@$selected_branches)
+        {
+            $selected_set{$branch} = undef;
+        }
+    }
+    else
+    {
+        $instance->{branches_liststore}->foreach
+            (sub {
+                 my ($widget, $path, $iter) = @_;
+                 my ($selected, $branch) =
+                     $instance->{branches_liststore}->get($iter);
+                 $selected_set{$branch} = undef if ($selected);
+                 return FALSE;
+             });
+    }
+
+    # Load the liststore with selected branches and those that match the
+    # current branch filter pattern.
+
+    $instance->{branches_liststore}->clear();
+    foreach my $branch (@{$instance->{branch_list}})
+    {
+        if (exists($selected_set{$branch}))
+        {
+            $instance->{branches_liststore}->
+                set($instance->{branches_liststore}->append(),
+                    BLS_SELECTED_COLUMN, TRUE,
+                    BLS_BRANCH_COLUMN, $branch);
+        }
+        elsif ($branch =~ m/$instance->{branch_filter_re}/)
+        {
+            $instance->{branches_liststore}->
+                set($instance->{branches_liststore}->append(),
+                    BLS_SELECTED_COLUMN, FALSE,
+                    BLS_BRANCH_COLUMN, $branch);
+        }
+    }
+
+    $instance->{branches_treeview}->scroll_to_point(0, 0)
+        if ($instance->{branches_treeview}->realized());
+
+}
+#
+##############################################################################
+#
 #   Routine      - get_change_history_graph_window
 #
 #   Description  - Creates or prepares an existing change history graph dialog
@@ -3530,7 +3558,7 @@ sub get_change_history_graph_window($)
         # Get the widgets that we are interested in.
 
         $instance->{window} = $glade->get_widget($change_window_type);
-        foreach my $widget ("branch_pattern_comboboxentry",
+        foreach my $widget ("branch_filter_comboboxentry",
                             "tick_branches_button",
                             "case_sensitive_checkbutton",
                             "regular_expression_checkbutton",
@@ -3569,9 +3597,9 @@ sub get_change_history_graph_window($)
 
         # Setup the combobox.
 
-        $instance->{branch_pattern_comboboxentry}->
+        $instance->{branch_filter_comboboxentry}->
             set_model(Gtk2::ListStore->new("Glib::String"));
-        $instance->{branch_pattern_comboboxentry}->set_text_column(0);
+        $instance->{branch_filter_comboboxentry}->set_text_column(0);
 
         # Setup the branches list browser.
 
@@ -3622,6 +3650,11 @@ sub get_change_history_graph_window($)
         # Setup the date range widgets.
 
         setup_date_range_widgets($instance);
+
+        # Setup the default branch filter.
+
+        $instance->{branch_filter_search_term} = "";
+        $instance->{branch_filter_re} = qr/\Q\E/;
 
         # Reparent the change history graph window to the specified window.
 
@@ -3679,14 +3712,17 @@ sub get_change_history_graph_window($)
 
     # Load in the comboboxentry history.
 
-    handle_comboxentry_history($instance->{branch_pattern_comboboxentry},
-                               "change_history_graph_branch_patterns");
+    handle_comboxentry_history($instance->{branch_filter_comboboxentry},
+                               "change_history_graph_branch_filters");
 
-    # Make sure that the branch pattern has the focus and not the cancel
-    # button.
+    # Make sure that the branch pattern has the successfully executed filter
+    # pattern in it (makes it consistent with the associated RE) and that it
+    # has the focus instead of the cancel button.
 
-    $instance->{branch_pattern_comboboxentry}->child()->grab_focus();
-    $instance->{branch_pattern_comboboxentry}->child()->set_position(-1);
+    $instance->{branch_filter_comboboxentry}->child()->
+        set_text($instance->{branch_filter_search_term});
+    $instance->{branch_filter_comboboxentry}->child()->grab_focus();
+    $instance->{branch_filter_comboboxentry}->child()->set_position(-1);
 
     return $instance;
 

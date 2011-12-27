@@ -11322,24 +11322,25 @@ file was last changed</property>
 		      <property name="spacing">5</property>
 
 		      <child>
-			<widget class="GtkHBox" id="branch_pattern_hbox">
+			<widget class="GtkHBox" id="branch_filter_hbox">
 			  <property name="visible">True</property>
 			  <property name="homogeneous">False</property>
 			  <property name="spacing">5</property>
 
 			  <child>
-			    <widget class="GtkEventBox" id="branch_pattern_label_eventbox">
+			    <widget class="GtkEventBox" id="branch_filter_label_eventbox">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Branch pattern to match against branch names for
-the purposes of selecting them or deselecting them,
-an empty pattern matches all branches</property>
+			      <property name="tooltip" translatable="yes">Enter a branch filter pattern that is used
+to filter out unwanted unselected branches
+from the list below, an empty filter does
+not exclude anything</property>
 			      <property name="visible_window">True</property>
 			      <property name="above_child">False</property>
 
 			      <child>
-				<widget class="GtkLabel" id="branch_pattern_label">
+				<widget class="GtkLabel" id="branch_filter_label">
 				  <property name="visible">True</property>
-				  <property name="label" translatable="yes">Branch pattern:</property>
+				  <property name="label" translatable="yes">Unselected branch filter:</property>
 				  <property name="use_underline">False</property>
 				  <property name="use_markup">False</property>
 				  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -11360,7 +11361,7 @@ an empty pattern matches all branches</property>
 			  </child>
 
 			  <child>
-			    <widget class="GtkTable" id="branch_pattern_table">
+			    <widget class="GtkTable" id="branch_filter_table">
 			      <property name="visible">True</property>
 			      <property name="n_rows">1</property>
 			      <property name="n_columns">1</property>
@@ -11369,7 +11370,7 @@ an empty pattern matches all branches</property>
 			      <property name="column_spacing">0</property>
 
 			      <child>
-				<widget class="GtkComboBoxEntry" id="branch_pattern_comboboxentry">
+				<widget class="GtkComboBoxEntry" id="branch_filter_comboboxentry">
 				  <property name="visible">True</property>
 				</widget>
 				<packing>
@@ -11395,14 +11396,14 @@ an empty pattern matches all branches</property>
 			      <property name="spacing">0</property>
 
 			      <child>
-				<widget class="GtkButton" id="select_pattern_button">
+				<widget class="GtkButton" id="branch_filter_button">
 				  <property name="visible">True</property>
-				  <property name="tooltip" translatable="yes">Select those branches that
-match the branch pattern</property>
+				  <property name="tooltip" translatable="yes">Filter out those unselected branches
+that do not match the branch filter</property>
 				  <property name="can_focus">True</property>
 				  <property name="relief">GTK_RELIEF_NONE</property>
 				  <property name="focus_on_click">False</property>
-				  <signal name="clicked" handler="select_pattern_button_clicked_cb" last_modification_time="Sat, 14 May 2011 17:04:09 GMT"/>
+				  <signal name="clicked" handler="branch_filter_button_clicked_cb" last_modification_time="Sat, 16 Jul 2011 16:44:07 GMT"/>
 
 				  <child>
 				    <widget class="GtkImage" id="image187">
