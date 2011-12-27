@@ -459,8 +459,8 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
 #
 #   Description  - Creates or prepares an existing tooltip window for use.
 #
-#   Data         - $parent       : The parent window widget for the multiple
-#                                  revisions dialog window.
+#   Data         - $parent       : The parent window widget for the tooltip
+#                                  window.
 #                  $message      : The tooltip that is to be displayed.
 #                  $x            : The x coordinate for where the tooltip
 #                                  window is to be placed.

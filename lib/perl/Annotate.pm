@@ -377,7 +377,7 @@ sub annotation_textview_populate_popup_cb($$$)
     $separator->show();
     $menu->append($separator);
 
-    $menu_item = Gtk2::MenuItem->new(__("_Browse Revision"));
+    $menu_item = Gtk2::MenuItem->new(__("_Browse File"));
     if (! defined($revision_part))
     {
         $menu_item->set_sensitive(FALSE);
@@ -390,7 +390,10 @@ sub annotation_textview_populate_popup_cb($$$)
              {instance         => $instance,
               cb               => sub {
                                       my ($instance, $revision_id) = @_;
-                                      my @certs;
+                                      my (@certs,
+                                          $dir,
+                                          $file,
+                                          $old_file_name);
                                       my $branch = "";
                                       $instance->{mtn}->certs(\@certs,
                                                               $revision_id);
@@ -404,9 +407,19 @@ sub annotation_textview_populate_popup_cb($$$)
                                               $branch = $cert->{value};
                                           }
                                       }
+                                      $instance->{mtn}->get_corresponding_path
+                                          (\$old_file_name,
+                                           $instance->{revision_id},
+                                           $instance->{file_name},
+                                           $revision_id);
+                                      $dir = dirname($old_file_name);
+                                      $dir = "" if ($dir eq ".");
+                                      $file = basename($old_file_name);
                                       get_browser_window($instance->{mtn},
                                                          $branch,
-                                                         $revision_id);
+                                                         $revision_id,
+                                                         $dir,
+                                                         $file);
                                   },
               progress_message => __("Displaying revision in a new browser"),
               revision_part    => $revision_part});

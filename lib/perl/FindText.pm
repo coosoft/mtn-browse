@@ -202,7 +202,7 @@ sub enable_find_text($$)
 sub hide_find_text($)
 {
 
-    my ($text_view, $disable) = @_;
+    my $text_view = $_[0];
 
     my $instance;
 
