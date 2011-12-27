@@ -59,7 +59,8 @@ use constant WIDTH         => 72;
 # Constants representing the graph node flags that can be set.
 
 use constant MERGE_NODE    => 0x01;
-use constant SELECTED_NODE => 0x02;
+use constant NO_PARENTS    => 0x02;
+use constant SELECTED_NODE => 0x04;
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
@@ -199,6 +200,7 @@ sub build_ancestry_graph($$;$$$)
        @graph,
        %graph_db,
        @head_revisions,
+       %nr_of_parents,
        $selected_set);
     my $wm = WindowManager->instance();
 
@@ -356,8 +358,6 @@ sub build_ancestry_graph($$;$$$)
 	if ($selected)
 	{
 
-	    my $nr_parents = 0;
-
 	    # File the revision. Remember it may already exist as it might be a
 	    # parent of a revision that has already been processed.
 
@@ -392,15 +392,8 @@ sub build_ancestry_graph($$;$$$)
 			    {children => [$entry->{revision_id}],
 			     flags    => 0};
 		    }
-		    ++ $nr_parents;
 		}
 	    }
-
-	    # If this node is going to have more than one parent in the graph
-	    # then mark it as a merge node.
-
-	    $graph_db{$entry->{revision_id}}->{flags} |= MERGE_NODE
-		if ($nr_parents > 1);
 
 	    # If this node was actually selected then mark it as such.
 
@@ -463,7 +456,7 @@ sub build_ancestry_graph($$;$$$)
 		    parent_db         => \%parent_db,
 		    parents           => [],
 		    processed_set     => {},
-		    aggressive_scan   => undef};
+		    aggressive_search => undef};
 	foreach my $head_id (@head_revisions)
 	{
 	    $context->{outside_selection} = undef;
@@ -473,6 +466,45 @@ sub build_ancestry_graph($$;$$$)
 	    return if ($instance->{stop});
 	}
     }
+
+    # Create a hash indexed by revision id that gives the number of parents for
+    # that revision.
+
+    foreach my $revision_id (keys(%graph_db))
+    {
+	foreach my $child_id (@{$graph_db{$revision_id}->{children}})
+	{
+	    if (exists($nr_of_parents{$child_id}))
+	    {
+		++ $nr_of_parents{$child_id};
+	    }
+	    else
+	    {
+		$nr_of_parents{$child_id} = 1;
+	    }
+	}
+    }
+
+    # Now use this hash to mark up nodes that either have no parents or
+    # multiple ones (i.e. merge nodes).
+
+    foreach my $revision_id (keys(%graph_db))
+    {
+	my $nr_parents = 0;
+	if (exists($nr_of_parents{$revision_id}))
+	{
+	    $nr_parents = $nr_of_parents{$revision_id};
+	}
+	if ($nr_parents == 0)
+	{
+	    $graph_db{$revision_id}->{flags} |= NO_PARENTS;
+	}
+	elsif ($nr_parents > 1)
+	{
+	    $graph_db{$revision_id}->{flags} |= MERGE_NODE;
+	}
+    }
+    %nr_of_parents = ();
 
     # Update the list of head revisions.
 
@@ -549,24 +581,23 @@ sub graph_reconnect_helper($$)
     else
     {
 
-	my ($aggressive_scan,
+	my ($aggressive_search,
 	    $found_new_ancestors);
-	my $nr_parents = 0;
 
 	# No we weren't off selection.
 
 	# If the current node is selected then check to see if there are any
-	# selected parents. If not then we need to go into an aggressive scan
+	# selected parents. If not then we need to go into an aggressive search
 	# mode where we do our best to find a graphed ancestor for it.
 
 	if (exists($context->{selected_set}->{$revision_id}))
 	{
-	    $aggressive_scan = 1;
+	    $aggressive_search = 1;
 	    foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
 	    {
 		if (exists($context->{selected_set}->{$parent_id}))
 		{
-		    $aggressive_scan = undef;
+		    $aggressive_search = undef;
 		    last;
 		}
 	    }
@@ -574,19 +605,56 @@ sub graph_reconnect_helper($$)
 
 	# Otherwise if the current node is a propagate node (i.e. in the graph
 	# database but not selected, e.g. an off-branch parent of an on-branch
-	# node) then we may need to either do an aggressive scan to join two
-	# separate graphs together or see if it has any selected parents that
-	# need joining up (as these wouldn't have even been looked at before).
+	# node) then see what we can join together. Remember that the parents
+	# of parent propagate nodes weren't even looked at until now.
 
 	elsif (exists($context->{graph_db}->{$revision_id}))
 	{
 
-	    # Aggressive scan?
+	    my (@graphed_parents,
+		@selected_parents);
 
-	    if ($context->{aggressive_scan})
+	    # First scan the immediate parents for any that are graphed. If we
+	    # find selected parents then join those up, if not then try joining
+	    # up any graphed parents and if that fails and we are in aggressive
+	    # search mode (i.e. desparate to find any graphed ancestor) then
+	    # start up each parent path searching for any ancestor before
+	    # finally giving up.
+
+	    foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
+	    {
+		if (exists($context->{selected_set}->{$parent_id}))
+		{
+		    push(@selected_parents, $parent_id);
+		    $found_new_ancestors = 1;
+		}
+		elsif (exists($context->{graph_db}->{$parent_id}))
+		{
+		    push(@graphed_parents, $parent_id);
+		    $found_new_ancestors = 1;
+		}
+	    }
+
+	    # Selected parents take precedence.
+
+	    if (scalar(@selected_parents) > 0)
+	    {
+		push(@{$context->{parents}}, @selected_parents);
+	    }
+
+	    # Then graphed ones.
+
+	    elsif (scalar(@graphed_parents) > 0)
+	    {
+		push(@{$context->{parents}}, @graphed_parents);
+	    }
+
+	    # Nothing found so far, do we need to do an aggressive search?
+
+	    elsif ($context->{aggressive_search})
 	    {
 
-		# Ok do our best to find selected ancestors.
+		# Ok getting desperate, start a recursive search.
 
 		# Stash the current hit list away and use a blank one as we are
 		# going outside our selected set of revisions (we don't want to
@@ -596,35 +664,18 @@ sub graph_reconnect_helper($$)
 
 		local $context->{processed_set} = {};
 
-		# Search up each ungraphed parent node.
+		# Search up each parent node.
 
 		local $context->{outside_selection};
 		foreach my $parent_id
 		    (@{$context->{parent_db}->{$revision_id}})
 		{
-		    if (! exists($context->{processed_set}->{$parent_id})
-			&& ! exists($context->{graph_db}->{$parent_id}))
+		    if (! exists($context->{processed_set}->{$parent_id}))
 		    {
-			$found_new_ancestors = $context->{outside_selection} =
-			    1
+			$found_new_ancestors =
+			    $context->{outside_selection} = 1
 			    unless ($context->{outside_selection});
 			graph_reconnect_helper($context, $parent_id);
-		    }
-		}
-
-	    }
-	    else
-	    {
-
-		# Non-aggressive scan so just join up any graphed parents.
-
-		foreach my $parent_id
-		    (@{$context->{parent_db}->{$revision_id}})
-		{
-		    if (exists($context->{graph_db}->{$parent_id}))
-		    {
-			$found_new_ancestors = 1;
-			push(@{$context->{parents}}, $parent_id);
 		    }
 		}
 
@@ -654,7 +705,6 @@ sub graph_reconnect_helper($$)
 		    {
 			push(@{$context->{graph_db}->{$parent_id}->{children}},
 			     $revision_id);
-			++ $nr_parents;
 		    }
 		}
 		$context->{parents} = [];
@@ -662,11 +712,11 @@ sub graph_reconnect_helper($$)
 
 	}
 
-	# Temporarily switch on aggressive scan mode if necessary.
+	# Temporarily switch on aggressive search mode if necessary.
 
-	local $context->{aggressive_scan} = 1 if ($aggressive_scan);
+	local $context->{aggressive_search} = 1 if ($aggressive_search);
 
-	# Ok so now process the graphed parents.
+	# Now process the graphed parents.
 
 	foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
 	{
@@ -674,22 +724,6 @@ sub graph_reconnect_helper($$)
 		&& exists($context->{graph_db}->{$parent_id}))
 	    {
 		graph_reconnect_helper($context, $parent_id);
-		++ $nr_parents;
-	    }
-	}
-
-	# Update the merge node attribute if we have now have multiple
-	# `parents'.
-
-	if ($found_new_ancestors)
-	{
-	    if ($nr_parents > 1)
-	    {
-		$context->{graph_db}->{$revision_id}->{flags} |= MERGE_NODE;
-	    }
-	    else
-	    {
-		$context->{graph_db}->{$revision_id}->{flags} &= ~ MERGE_NODE;
 	    }
 	}
 
@@ -817,7 +851,7 @@ sub layout_graph($)
     # in the graph database.
 
     $child_db = $instance->{graph_data}->{child_graph};
-    $instance->{mtn}->toposort(\@revision_ids, keys(%$child_db));
+    @revision_ids = keys(%$child_db);
 
     # Now write out the dot graph to the dot subprocess. We don't need to worry
     # about reading and writing at the same time as dot needs the complete
@@ -827,54 +861,72 @@ sub layout_graph($)
 
     $fh_in->print("digraph \"mtn-browse\"\n"
 		  . "{\n"
-		  . "  graph [ranksep=\"0.25\"] ;\n"
-		  . "  node [label=\"\"] ;\n");
+		  . "  graph [ranksep=\"0.25\"];\n"
+		  . "  node [label=\"\"];\n");
 
     # Rectangular non-merge nodes.
 
-    $fh_in->printf("  node [shape=box, width = %f, height = %f] ;\n",
+    $fh_in->printf("  node [shape=box, width = %f, height = %f];\n",
 		   WIDTH / DPI,
 		   HEIGHT / DPI);
     foreach my $revision_id (@revision_ids)
     {
 	if (! ($child_db->{$revision_id}->{flags} & MERGE_NODE))
 	{
-	    $fh_in->print("  \"" . $revision_id . "\" ;\n");
+	    $fh_in->print("  \"" . $revision_id . "\";\n");
 	}
     }
 
     # Circular merge nodes.
 
-    $fh_in->printf("  node [shape=circle, width = %f, height = %f] ;\n",
+    $fh_in->printf("  node [shape=circle, width = %f, height = %f];\n",
 		   HEIGHT / DPI,
 		   HEIGHT / DPI);
     foreach my $revision_id (@revision_ids)
     {
 	if ($child_db->{$revision_id}->{flags} & MERGE_NODE)
 	{
-	    $fh_in->print("  \"" . $revision_id . "\" ;\n");
+	    $fh_in->print("  \"" . $revision_id . "\";\n");
 	}
     }
 
-    # Head nodes.
+    # Head nodes. These need to be grouped together.
 
     $fh_in->print("  subgraph heads\n"
 		  . "  {\n"
-		  . "    rank = sink ;\n");
+		  . "    rank = sink;\n");
     foreach my $revision_id (@{$instance->{graph_data}->{head_revisions}})
     {
-	$fh_in->print("    \"" . $revision_id . "\" ;\n");
+	$fh_in->print("    \"" . $revision_id . "\";\n");
     }
     $fh_in->print("  }\n");
 
-    # Hierarchy.
+    # Lines. Use the weight attribute on lines that go between a selected node
+    # and an unselected one, with the unselected one having no
+    # parents/children. The higher the weighting the shorter and straighter the
+    # lines are. This has the effect of making sure that edge propagation nodes
+    # are closely clustered around their selected relations.
 
     foreach my $revision_id (@revision_ids)
     {
+	my $selected = $child_db->{$revision_id}->{flags} & SELECTED_NODE;
+	my $no_parents = $child_db->{$revision_id}->{flags} & NO_PARENTS;
 	foreach my $child_id (@{$child_db->{$revision_id}->{children}})
 	{
+	    my $child_selected =
+		$child_db->{$child_id}->{flags} & SELECTED_NODE;
 	    $fh_in->print("  \"" . $revision_id . "\" -> \"" . $child_id
-			  . "\" ;\n");
+			  . "\"");
+	    if ((! $selected && $child_selected && $no_parents)
+		|| ($selected && ! $child_selected
+		    && scalar(@{$child_db->{$child_id}->{children}}) == 0))
+	    {
+		$fh_in->print(" [weight = 4];\n");
+	    }
+	    else
+	    {
+		$fh_in->print(";\n");
+	    }
 	}
     }
 
@@ -1263,6 +1315,11 @@ sub draw_graph($)
 	$bpath->set_path_def($pathdef);
 	$bpath->lower_to_bottom();
     }
+
+    printf("Boxes = %d\nCircles = %d\nLines = %d\n",
+	   scalar(@{$instance->{graph_data}->{rectangles}}),
+	   scalar(@{$instance->{graph_data}->{circles}}),
+	   scalar(@{$instance->{graph_data}->{arrows}}));
 
 }
 #
