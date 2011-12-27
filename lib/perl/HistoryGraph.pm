@@ -119,13 +119,6 @@ sub display_history_graph($;$$$)
     $wm->update_gui();
     build_ancestry_graph($instance, 1, $branches, $from_date, $to_date);
 
-    print(scalar(keys(%{$instance->{graph_data}->{child_graph}})) . "\n");
-    print(scalar(@{$instance->{graph_data}->{head_revisions}}) . "\n");
-    foreach my $rev (@{$instance->{graph_data}->{head_revisions}})
-    {
-	print($rev . "\n");
-    }
-
     # get_revision_history_helper($instance, $revision_id);
 
     $instance->{stop_button}->set_sensitive(FALSE);
@@ -399,7 +392,6 @@ sub build_ancestry_graph($$;$$$)
 	    push(@head_revisions, $revision_id);
 	}
     }
-    print(scalar(@head_revisions) . "\n");
 
     # If we have more than one head revision and we have restricted the graph
     # to a number of branches then we better make sure that as many head and
@@ -445,23 +437,10 @@ sub build_ancestry_graph($$;$$$)
 	    $context->{outside_selection} = undef;
 	    $context->{parents} = [];
 	    graph_reconnect_helper($context, $head_id);
-	    print(".");
-	    STDOUT->flush();
 	}
-	print("\n");
     }
 
     # Update the list of head revisions.
-
-    @head_revisions = ();
-    foreach my $revision_id (keys(%graph_db))
-    {
-	if (scalar(@{$graph_db{$revision_id}->{children}}) == 0)
-	{
-	    push(@head_revisions, $revision_id);
-	}
-    }
-    print(scalar(@head_revisions) . "\n");
 
     @head_revisions = ();
     foreach my $revision_id (keys(%graph_db))
