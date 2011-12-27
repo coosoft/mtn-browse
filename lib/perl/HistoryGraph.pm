@@ -1996,7 +1996,7 @@ sub dot_input_handler_cb($$)
 
     $text_item->destroy();
 
-    # Reset our locale back to local one again.
+    # Reset our locale back to the local one again.
 
     setlocale(LC_ALL, "");
 
