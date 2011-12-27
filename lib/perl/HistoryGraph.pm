@@ -91,6 +91,7 @@ sub draw_graph($);
 sub generate_ancestry_graph($$;$$$);
 sub get_history_graph_window();
 sub get_node_colour($$);
+sub graph_advanced_find_button_clicked_cb($$);
 sub graph_reconnect_helper($$);
 sub graph_revision_change_history_button_clicked_cb($$);
 sub graph_revision_change_log_button_clicked_cb($$);
@@ -304,14 +305,80 @@ sub default_zoom_button_clicked_cb($$)
 #
 ##############################################################################
 #
+#   Routine      - graph_advanced_find_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the
+#                  advanced find button in the history graph window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The browser instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub graph_advanced_find_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    my (@dummy,
+	$revision_id);
+
+    # Let the user choose the revision (we aren't interested in the branch
+    # name(s)). Only allow the user to select graphed revisions.
+
+    if (advanced_find
+	($instance,
+	 \$revision_id,
+	 \@dummy,
+	 sub {
+	     my ($parent, $revision_id, $instance) = @_;
+	     if (! exists($instance->{graph_data}->{child_graph}->
+			  {$revision_id}))
+	     {
+		 my $dialog = Gtk2::MessageDialog->new
+		     ($parent,
+		      ["modal"],
+		      "info",
+		      "close",
+		      __x("Revision `{revision_id}'\n"
+			      . "cannot be found within the current history "
+			      . "graph.\nPlease select another revision.",
+			  revision_id => $revision_id));
+		 $dialog->run();
+		 $dialog->destroy();
+		 return;
+	     }
+	     return 1;
+	 },
+	 $instance))
+    {
+
+	# The user has selected a graphed revision so select it and make sure
+	# it is visible.
+
+	scroll_to_node($instance, $revision_id);
+	select_node($instance, $revision_id);
+
+    }
+
+}
+#
+##############################################################################
+#
 #   Routine      - graph_revision_change_history_button_clicked_cb
 #
 #   Description  - Callback routine called when the user clicks on the
 #                  revision change history button in the history graph window.
 #
-#   Data         - $widget  : The widget object that received the signal.
-#                  $browser : The window instance that is associated with
-#                             this widget.
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
 #
 ##############################################################################
 
@@ -346,9 +413,9 @@ sub graph_revision_change_history_button_clicked_cb($$)
 #   Description  - Callback routine called when the user clicks on the
 #                  revision change log button in the history graph window.
 #
-#   Data         - $widget  : The widget object that received the signal.
-#                  $browser : The window instance that is associated with
-#                             this widget.
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
 #
 ##############################################################################
 
@@ -421,10 +488,8 @@ sub canvas_item_event_cb($$$)
 	if ($button == 1)
 	{
 	    select_node($instance, $revision_id);
-	    $instance->{selected_revision_id} = $revision_id;
+	    return TRUE;
 	}
-
-	return TRUE;
 
     }
     elsif ($type eq "2button-press")
@@ -1750,6 +1815,10 @@ sub select_node($$)
 	$item->set_sensitive(TRUE);
     }
 
+    # Make a note of what revision has been selected.
+
+    $instance->{selected_revision_id} = $revision_id;
+
 }
 #
 ##############################################################################
@@ -1819,6 +1888,74 @@ sub scroll_to_node($$)
     $x = max($x - floor($width / 2), 0);
     $y = max($y - floor($height / 2), 0);
     $instance->{graph_canvas}->scroll_to($x, $y);
+
+}
+#
+##############################################################################
+#
+#   Routine      - scale_canvas
+#
+#   Description  - Adjust the scale of the canvas widgets and associated
+#                  labels.
+#
+#   Data         - $instance : The history graph window instance.
+#
+##############################################################################
+
+
+
+sub scale_canvas($)
+{
+
+    my $instance = $_[0];
+
+    my $wm = WindowManager->instance();
+
+    # Hide the canvas during the zoom operation, it can be a bit messy.
+
+    $wm->make_busy($instance, 1);
+    $instance->{graph_canvas}->hide();
+    $wm->update_gui();
+
+    # Adjust the canvas zoom factor, also resize the fonts on all the text
+    # labels (hiding them when the text gets too small to be of any use).
+
+    $instance->{graph_canvas}->set_pixels_per_unit($instance->{scale});
+    if ((FONT_SIZE * $instance->{scale}) < 3)
+    {
+	for my $label (@{$instance->{graph}->{node_labels}})
+	{
+	    $label->hide();
+	}
+    }
+    else
+    {
+	$instance->{fontdescription}->set_size
+	    (floor(FONT_SIZE * $instance->{scale}) * PANGO_SCALE);
+	for my $label (@{$instance->{graph}->{node_labels}})
+	{
+	    $label->modify_font($instance->{fontdescription});
+	    $label->show();
+	}
+    }
+
+    # If we have something to redraw then do so, resized text looks
+    # blocky/pixelated but a redraw sorts this out.
+
+    if (defined($instance->{graph}->{group}))
+    {
+	$instance->{graph_canvas}->request_redraw
+	    (0,
+	     0,
+	     $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
+	     $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
+    }
+
+    # Make sure the canvas is up to date and then show it again.
+
+    $instance->{graph_canvas}->update_now();
+    $instance->{graph_canvas}->show();
+    $wm->make_busy($instance, 0);
 
 }
 #
@@ -2074,71 +2211,6 @@ sub populate_revision_details($$)
     $node->{date} = $date;
     $node->{tags} = \@tags;
     $node->{flags} &= ~CIRCULAR_NODE if (scalar(@tags) > 0);
-
-}
-#
-##############################################################################
-#
-#   Routine      - scale_canvas
-#
-#   Description  - Adjust the scale of the canvas widgets and associated
-#                  labels.
-#
-#   Data         - $instance : The history graph window instance.
-#
-##############################################################################
-
-
-
-sub scale_canvas($)
-{
-
-    my $instance = $_[0];
-
-    my $wm = WindowManager->instance();
-
-    # Hide the canvas during the zoom operation, it can be a bit messy.
-
-    $wm->make_busy($instance, 1);
-    $instance->{graph_canvas}->hide();
-    $wm->update_gui();
-
-    # Adjust the canvas zoom factor, also resize the fonts on all the text
-    # labels (hiding them when the text gets too small to be of any use).
-
-    $instance->{graph_canvas}->set_pixels_per_unit($instance->{scale});
-    if ((FONT_SIZE * $instance->{scale}) < 3)
-    {
-	for my $label (@{$instance->{graph}->{node_labels}})
-	{
-	    $label->hide();
-	}
-    }
-    else
-    {
-	$instance->{fontdescription}->set_size
-	    (floor(FONT_SIZE * $instance->{scale}) * PANGO_SCALE);
-	for my $label (@{$instance->{graph}->{node_labels}})
-	{
-	    $label->modify_font($instance->{fontdescription});
-	    $label->show();
-	}
-    }
-
-    # Redraw the canvas, resized text looks blocky/pixelated but a redraw sorts
-    # this out.
-
-    $instance->{graph_canvas}->request_redraw
-	(0,
-	 0,
-	 $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
-	 $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
-
-    # Make sure the canvas is up to date and then show it again.
-
-    $instance->{graph_canvas}->update_now();
-    $instance->{graph_canvas}->show();
-    $wm->make_busy($instance, 0);
 
 }
 #

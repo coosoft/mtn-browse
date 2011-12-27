@@ -63,7 +63,7 @@ use constant AFLS_AUTHOR_COLUMN      => 3;
 
 # Public routines.
 
-sub advanced_find($$$);
+sub advanced_find($$$;$$);
 
 # Private routines.
 
@@ -83,30 +83,47 @@ sub update_advanced_find_state($$);
 #   Description  - Displays the advanced find dialog window and then gets the
 #                  user to select the revision they want.
 #
-#   Data         - $browser     : The browser instance that started the
-#                                 advanced find.
-#                  $revision_id : A reference to a variable that is to contain
-#                                 the selected revision id.
-#                  $branches    : A reference to a list that is to contain the
-#                                 list of branches that the selected revision
-#                                 is on.
-#                  Return Value : True if a revision has been selected,
-#                                 otherwise false.
+#   Data         - $parent_instance : The browser instance that started the
+#                                     advanced find.
+#                  $revision_id     : A reference to a variable that is to
+#                                     contain the selected revision id.
+#                  $branches        : A reference to a list that is to contain
+#                                     the list of branches that the selected
+#                                     revision is on.
+#                  $check_cb        : A reference to a call-back routine that
+#                                     is called to check any selected result
+#                                     before dismissing the advanced find
+#                                     dialog window. This call-back routine is
+#                                     passed the parent window for any dialogs
+#                                     that are to be displayed, the revision
+#                                     id that has been selected and what ever
+#                                     was passed for $client_data. The return
+#                                     value from this call-back routine is a
+#                                     boolean that is true if the revision id
+#                                     is ok, otherwise false if the user
+#                                     should choose another revision. This
+#                                     argument is optional.
+#                  $client_data     : A value that is passed to the call back
+#                                     routine specified in $check_cb. This
+#                                     argument is optional.
+#                  Return Value     : True if a revision has been selected,
+#                                     otherwise false.
 #
 ##############################################################################
 
 
 
-sub advanced_find($$$)
+sub advanced_find($$$;$$)
 {
 
-    my ($browser, $revision_id, $branches) = @_;
+    my ($parent_instance, $revision_id, $branches, $check_cb, $client_data) =
+	@_;
 
     my ($advanced_find,
 	$ret_val);
     my $wm = WindowManager->instance();
 
-    $advanced_find = get_advanced_find_window($browser);
+    $advanced_find = get_advanced_find_window($parent_instance);
 
     # Update the window's internal state.
 
@@ -116,22 +133,23 @@ sub advanced_find($$$)
 
 	# Update it with any preset values if they exist.
 
-	if (exists($browser->{branch_combo_details}))
+	if (exists($parent_instance->{branch_combo_details}))
 	{
 	    $advanced_find->{branch_combo_details}->{preset} = 1;
 	    $advanced_find->{branch_combo_details}->{complete} =
-		$browser->{branch_combo_details}->{complete};
+		$parent_instance->{branch_combo_details}->{complete};
 	    $advanced_find->{branch_combo_details}->{value} =
-		$browser->{branch_combo_details}->{value};
+		$parent_instance->{branch_combo_details}->{value};
 
 	    $advanced_find->{revision_combo_details}->{preset} = 1;
 	    $advanced_find->{revision_combo_details}->{complete} =
-		$browser->{revision_combo_details}->{complete};
+		$parent_instance->{revision_combo_details}->{complete};
 	    $advanced_find->{revision_combo_details}->{value} =
-		$browser->{revision_combo_details}->{value};
+		$parent_instance->{revision_combo_details}->{value};
 
 	    $advanced_find->{tagged_checkbutton}->
-		set_active($browser->{tagged_checkbutton}->get_active());
+		set_active($parent_instance->{tagged_checkbutton}->
+			   get_active());
 	}
 	else
 	{
@@ -150,7 +168,19 @@ sub advanced_find($$$)
     $advanced_find->{done} = 0;
     while (! $advanced_find->{done})
     {
-	Gtk2->main_iteration();
+	while (! $advanced_find->{done})
+	{
+	    Gtk2->main_iteration();
+	}
+	if ($advanced_find->{selected} && defined($check_cb))
+	{
+	    $advanced_find->{done} =
+		&$check_cb($advanced_find->{window},
+			   $advanced_find->{revisions_treeview_details}->
+			       {value},
+			   $client_data);
+	    $advanced_find->{selected} = 0 unless ($advanced_find->{done});
+	}
     }
     $wm->make_busy($advanced_find, 0);
     local $advanced_find->{in_cb} = 1;
@@ -586,10 +616,10 @@ sub revisions_treeview_row_activated_cb($$$$)
 #   Description  - Creates or prepares an existing advanced find dialog window
 #                  for use.
 #
-#   Data         - $browser     : The browser instance that started the
-#                                 advanced find.
-#                  Return Value : A reference to the newly created or unused
-#                                 advanced find instance record.
+#   Data         - $parent_instance : The browser instance that started the
+#                                     advanced find.
+#                  Return Value     : A reference to the newly created or
+#                                     unused advanced find instance record.
 #
 ##############################################################################
 
@@ -598,7 +628,7 @@ sub revisions_treeview_row_activated_cb($$$$)
 sub get_advanced_find_window($)
 {
 
-    my $browser = $_[0];
+    my $parent_instance = $_[0];
 
     my $instance;
     my $window_type = "advanced_find_window";
@@ -619,7 +649,7 @@ sub get_advanced_find_window($)
 	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
 						 $window_type,
 						 APPLICATION_NAME);
-	$instance->{mtn} = $browser->{mtn};
+	$instance->{mtn} = $parent_instance->{mtn};
 
 	# Flag to stop recursive calling of callbacks.
 
@@ -789,7 +819,7 @@ sub get_advanced_find_window($)
 
 	# Reparent the advanced find window to the specified browser.
 
-	$instance->{window}->set_transient_for($browser->{window});
+	$instance->{window}->set_transient_for($parent_instance->{window});
 
 	# Display the window.
 
@@ -836,11 +866,11 @@ sub get_advanced_find_window($)
 
 	# Reset the advanced find dialog's state.
 
-	$instance->{mtn} = $browser->{mtn};
+	$instance->{mtn} = $parent_instance->{mtn};
 	($width, $height) = $instance->{window}->get_default_size();
 	$instance->{window}->resize($width, $height);
 	$instance->{revisions_hpaned}->set_position(300);
-	$instance->{window}->set_transient_for($browser->{window});
+	$instance->{window}->set_transient_for($parent_instance->{window});
 	$instance->{stop_button}->set_sensitive(FALSE);
 	$instance->{branch_combo_details}->{preset} = 0;
 	$instance->{revision_combo_details}->{preset} = 0;
