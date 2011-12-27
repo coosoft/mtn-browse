@@ -425,13 +425,26 @@ sub program_is_valid($);
         if (! defined($dir = IO::Dir->new("lib/perl")));
     while (defined($file = $dir->read()))
     {
-        my $install = 1;
-        $install = 0 if ($file eq "HistoryGraph.pm" && $use_labels_in_graph);
-        $install = 0
-            if ($file eq "HistoryGraph-with-labels.pm"
-                && ! $use_labels_in_graph);
-        $installer->install("lib/perl/$file",  "${lib_dest_dir}/perl/$file")
-            if ($file =~ m/.*\.pm$/ && $install);
+        if ($file =~ m/^HistoryGraph(?:-with-labels)?.pm/)
+        {
+            if ($use_labels_in_graph)
+            {
+                $installer->install("lib/perl/$file",
+                                    "${lib_dest_dir}/perl/HistoryGraph.pm")
+                    if ($file eq "HistoryGraph-with-labels.pm");
+            }
+            else
+            {
+                $installer->install("lib/perl/$file",
+                                    "${lib_dest_dir}/perl/$file")
+                    if ($file eq "HistoryGraph.pm");
+            }
+        }
+        elsif ($file =~ m/.*\.pm$/)
+        {
+            $installer->install("lib/perl/$file",
+                                "${lib_dest_dir}/perl/$file");
+        }
     }
     $dir->close();
     if ($use_dists_mas_lib)
@@ -743,15 +756,15 @@ the one that comes with mtn-browse.
 Select whether to use Gtk2::Labels in history graphs instead of Gnome2::Canvas
 text items. Gnome2::Canvas text items can be much slower but will always work
 whereas Gtk2::Labels are much faster but may not work correctly depending upon
-the combintion of libraries installed on your system. The fault usually
+the combination of libraries installed on your system. The fault usually
 manifests itself as labels not being rendered in very tall graphs. This can be
 tested by using the test database at:
 
     https://code.monotone.ca/p/mtn-browse/source/tree/
         h:net.venge.monotone.contrib.mtn-browse.test.long-graph/
 
-Graph the entire branch's history and scroll to the bottom and check that the
-text in the boxes is displayed.
+Graph the entire branch's history and scroll to the bottom and check that text
+is displayed correctly in box.
 
 The default is to use Gnome2::Canvas text items.
 
