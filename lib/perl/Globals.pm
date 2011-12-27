@@ -118,6 +118,11 @@ our $user_preferences;
 
 our $mime_match_table;
 
+# Regular expression used to escape certain characters in strings that are
+# passed directly to Monotone via Monotone::AutomateStdio.
+
+our $select_escape_re = qr/([\/|\\])/;
+
 # Whether Monotone warnings should be suppressed or not.
 
 our $suppress_mtn_warnings;
@@ -149,6 +154,7 @@ our %EXPORT_TAGS = (constants => [qw(ALL_CHANGED
 				     $mime_match_table
 				     $mono_font
 				     $mtn_key
+				     $select_escape_re
 				     $suppress_mtn_warnings
 				     $tmp_dir
 				     $tooltips

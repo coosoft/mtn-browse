@@ -918,6 +918,17 @@ sub get_branch_revisions($$$$$)
 
     @$revisions = ();
 
+    # If we have a branch name then escape any special selection characters in
+    # it before we use it.
+
+    if (defined($branch) && $branch ne "")
+    {
+	$branch =~ s/$select_escape_re/\\$1/g;
+    }
+
+    # Now get the revisions matching the branch name, either as tags or as
+    # revision ids depending upon what the caller has asked for.
+
     if ($tags)
     {
 
@@ -1005,9 +1016,14 @@ sub get_branch_revisions($$$$$)
 	# Get the list of revision ids, if no branch is specified then get all
 	# of the revisions within the database.
 
-	$mtn->select($revisions,
-		     ((defined($branch) && $branch ne "") ? "b:" : "i:")
-		         . $branch);
+	if (defined($branch) && $branch ne "")
+	{
+	    $mtn->select($revisions, "b:" . $branch);
+	}
+	else
+	{
+	    $mtn->select($revisions, "i:");
+	}
 
 	# Does it need truncating?
 
@@ -1098,10 +1114,17 @@ sub get_revision_ids($$;$)
     return unless ($instance->{revision_combo_details}->{complete});
     if ($instance->{tagged_checkbutton}->get_active())
     {
+	my $escaped_value;
 	my $query = "";
-	$query = "b:" . $instance->{branch_combo_details}->{value} . "/"
-	    if ($instance->{branch_combo_details}->{complete});
-	$query .= "t:" . $instance->{revision_combo_details}->{value};
+	if ($instance->{branch_combo_details}->{complete})
+	{
+	    $escaped_value = $instance->{branch_combo_details}->{value};
+	    $escaped_value =~ s/$select_escape_re/\\$1/g;
+	    $query = "b:" . $escaped_value . "/";
+	}
+	$escaped_value = $instance->{revision_combo_details}->{value};
+	$escaped_value =~ s/$select_escape_re/\\$1/g;
+	$query .= "t:" . $escaped_value;
 	$instance->{mtn}->select($revision_ids, $query);
 	$$tag = $instance->{revision_combo_details}->{value}
 	    if (defined($tag));

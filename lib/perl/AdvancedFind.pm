@@ -412,6 +412,7 @@ sub populate_button_clicked_cb($$)
     {
 	$to_insert = "pick(" . (($arg eq "") ? __("<Selector>") : $arg) . ")";
     }
+    $to_insert =~ s/$select_escape_re/\\$1/g;
 
     $pos =
 	$advanced_find->{search_term_comboboxentry}->child()->get_position();
