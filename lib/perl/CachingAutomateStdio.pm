@@ -103,13 +103,13 @@ sub branches($$)
     # the database has been reopened, then refresh the cache.
 
     if (! exists($this->{cached_branch_list})
-	|| ! exists($this->{cached_mtn_pid})
-	|| $this->{cached_mtn_pid} == 0
-	|| $this->{cached_mtn_pid} != $this->get_pid())
+        || ! exists($this->{cached_mtn_pid})
+        || $this->{cached_mtn_pid} == 0
+        || $this->{cached_mtn_pid} != $this->get_pid())
     {
-	$this->{cached_branch_list} = [];
-	$ret_val = $this->SUPER::branches($this->{cached_branch_list});
-	$this->{cached_mtn_pid} = $this->get_pid();
+        $this->{cached_branch_list} = [];
+        $ret_val = $this->SUPER::branches($this->{cached_branch_list});
+        $this->{cached_mtn_pid} = $this->get_pid();
     }
     @$list = @{$this->{cached_branch_list}};
 

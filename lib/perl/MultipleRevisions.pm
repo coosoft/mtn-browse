@@ -86,7 +86,7 @@ sub multiple_revisions_selection($$$@)
     my ($parent, $message, $selected_revision, @revision_ids) = @_;
 
     my ($instance,
-	$response);
+        $response);
 
     $instance = get_multiple_revisions_window($parent);
     local $instance->{in_cb} = 1;
@@ -98,7 +98,7 @@ sub multiple_revisions_selection($$$@)
     $instance->{revisions_combobox}->get_model()->clear();
     foreach my $revision_id (@revision_ids)
     {
-	$instance->{revisions_combobox}->append_text($revision_id);
+        $instance->{revisions_combobox}->append_text($revision_id);
     }
     $instance->{revisions_combobox}->set_active(0);
 
@@ -113,14 +113,14 @@ sub multiple_revisions_selection($$$@)
     $response = "advanced-find" if ($response eq "0");
     if ($response eq "ok")
     {
-	my $iter;
-	$iter = $instance->{revisions_combobox}->get_active_iter();
-	$$selected_revision =
-	    $instance->{revisions_combobox}->get_model()->get($iter, 0);
+        my $iter;
+        $iter = $instance->{revisions_combobox}->get_active_iter();
+        $$selected_revision =
+            $instance->{revisions_combobox}->get_model()->get($iter, 0);
     }
     else
     {
-	$$selected_revision = undef;
+        $$selected_revision = undef;
     }
 
     return $response;
@@ -149,7 +149,7 @@ sub get_multiple_revisions_window($)
     my $parent = $_[0];
 
     my ($glade,
-	$instance);
+        $instance);
     my $window_type = "multiple_revisions_window";
     my $wm = WindowManager->instance();
 
@@ -159,42 +159,42 @@ sub get_multiple_revisions_window($)
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my $renderer;
+        my $renderer;
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("message_label", "revisions_combobox")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("message_label", "revisions_combobox")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup the revisions combobox.
+        # Setup the revisions combobox.
 
-	$instance->{revisions_combobox}->
-	    set_model(Gtk2::ListStore->new("Glib::String"));
-	$renderer = Gtk2::CellRendererText->new();
-	$instance->{revisions_combobox}->pack_start($renderer, TRUE);
-	$instance->{revisions_combobox}->add_attribute($renderer, "text" => 0);
+        $instance->{revisions_combobox}->
+            set_model(Gtk2::ListStore->new("Glib::String"));
+        $renderer = Gtk2::CellRendererText->new();
+        $instance->{revisions_combobox}->pack_start($renderer, TRUE);
+        $instance->{revisions_combobox}->add_attribute($renderer, "text" => 0);
 
     }
     else
     {
-	$instance->{in_cb} = 0;
+        $instance->{in_cb} = 0;
     }
 
     local $instance->{in_cb} = 1;
@@ -208,7 +208,7 @@ sub get_multiple_revisions_window($)
     # If necessary, register the window for management.
 
     $wm->manage($instance, $window_type, $instance->{window})
-	if (defined($glade));
+        if (defined($glade));
 
     return $instance;
 

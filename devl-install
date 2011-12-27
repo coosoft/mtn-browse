@@ -69,12 +69,12 @@ use IO::File;
 {
 
     my ($globs_file,
-	$infile,
-	$input,
-	$lib_dir,
-	$mas_dir,
-	$outfile,
-	$prefix_dir);
+        $infile,
+        $input,
+        $lib_dir,
+        $mas_dir,
+        $outfile,
+        $prefix_dir);
 
     print("Linux development in-place installer for mtn-browse\n\n");
 
@@ -82,80 +82,80 @@ use IO::File;
     $prefix_dir = getcwd();
     while (1)
     {
-	print("Where is your MIME globs file? [" . $globs_file . "]: ");
-	chomp($input = <STDIN>);
-	($input) = ($input =~ m/^\s*(.*)\s*$/);
-	if ($input ne "")
-	{
-	    if (! -f $input)
-	    {
-		print("Error: File `" . $input . "' is unreadable.\n");
-		next;
-	    }
-	    $globs_file = $input;
-	}
+        print("Where is your MIME globs file? [" . $globs_file . "]: ");
+        chomp($input = <STDIN>);
+        ($input) = ($input =~ m/^\s*(.*)\s*$/);
+        if ($input ne "")
+        {
+            if (! -f $input)
+            {
+                print("Error: File `" . $input . "' is unreadable.\n");
+                next;
+            }
+            $globs_file = $input;
+        }
 
-	print("Where is your mtn-browse workspace? [" . $prefix_dir . "]: ");
-	chomp($input = <STDIN>);
-	($input) = ($input =~ m/^\s*(.*)\s*$/);
-	if ($input ne "")
-	{
-	    if (-e $input && (! -d $input || ! -w $input))
-	    {
-		print("Error: Directory `" . $input . "' is unwritable or not "
-		      . "a directory.\n");
-		next;
-	    }
-	    $prefix_dir = $input;
-	}
+        print("Where is your mtn-browse workspace? [" . $prefix_dir . "]: ");
+        chomp($input = <STDIN>);
+        ($input) = ($input =~ m/^\s*(.*)\s*$/);
+        if ($input ne "")
+        {
+            if (-e $input && (! -d $input || ! -w $input))
+            {
+                print("Error: Directory `" . $input . "' is unwritable or not "
+                      . "a directory.\n");
+                next;
+            }
+            $prefix_dir = $input;
+        }
 
-	$lib_dir = $prefix_dir . "/lib";
+        $lib_dir = $prefix_dir . "/lib";
 
-	$mas_dir = dirname(getcwd()) . "/automate-stdio/lib/Monotone";
-	print("Where is the Monotone::AutomateStdio (MAS) library? ["
-	      . $mas_dir . "]: ");
-	chomp($input = <STDIN>);
-	($input) = ($input =~ m/^\s*(.*)\s*$/);
-	if ($input ne "")
-	{
-	    if (-e $input && (! -d $input || ! -w $input))
-	    {
-		print("Error: Directory `" . $input . "' is unwritable or not "
-		      . "a directory.\n");
-		next;
-	    }
-	    $mas_dir = $input;
-	}
+        $mas_dir = dirname(getcwd()) . "/automate-stdio/lib/Monotone";
+        print("Where is the Monotone::AutomateStdio (MAS) library? ["
+              . $mas_dir . "]: ");
+        chomp($input = <STDIN>);
+        ($input) = ($input =~ m/^\s*(.*)\s*$/);
+        if ($input ne "")
+        {
+            if (-e $input && (! -d $input || ! -w $input))
+            {
+                print("Error: Directory `" . $input . "' is unwritable or not "
+                      . "a directory.\n");
+                next;
+            }
+            $mas_dir = $input;
+        }
 
-	print("\nInstallation options are:\n");
-	print("GLOBS_FILE = " . $globs_file . "\n");
-	print("PREFIX_DIR = " . $prefix_dir . "\n");
-	print("LIB_DIR    = " . $lib_dir . "\n");
-	print("MAS DIR    = " . $mas_dir . "\n");
-	print("\nAccept these? [N]: ");
-	chomp($input = <STDIN>);
-	if ($input =~ m/^\s*[yY]\s*$/)
-	{
-	    last;
-	}
+        print("\nInstallation options are:\n");
+        print("GLOBS_FILE = " . $globs_file . "\n");
+        print("PREFIX_DIR = " . $prefix_dir . "\n");
+        print("LIB_DIR    = " . $lib_dir . "\n");
+        print("MAS DIR    = " . $mas_dir . "\n");
+        print("\nAccept these? [N]: ");
+        chomp($input = <STDIN>);
+        if ($input =~ m/^\s*[yY]\s*$/)
+        {
+            last;
+        }
     }
 
     # Install `executable'.
 
     die("IO::File failed with $!")
-	if (! defined($infile = IO::File->new("mtn-browse", "r")));
+        if (! defined($infile = IO::File->new("mtn-browse", "r")));
     die("IO::File failed with $!")
-	if (! defined($outfile = IO::File->new("mtn-browse.out", "w")));
+        if (! defined($outfile = IO::File->new("mtn-browse.out", "w")));
     while (defined($input = $infile->getline()))
     {
-	my $orig = $input;
-	$input =~ s/\@INST:FILE_COMPARE_CMD\@/kompare/g;
-	$input =~ s/\@INST:HTML_VIEWER_CMD\@//g;
-	$input =~ s/\@INST:LIB_DIR\@/$lib_dir/g;
-	$input =~ s/\@INST:GLOBS_FILE\@/$globs_file/g;
-	$input =~ s/\@INST:PREFIX_DIR\@/$prefix_dir/g;
-	$outfile->print("#" . $orig) if ($orig ne $input);
-	$outfile->print($input);
+        my $orig = $input;
+        $input =~ s/\@INST:FILE_COMPARE_CMD\@/kompare/g;
+        $input =~ s/\@INST:HTML_VIEWER_CMD\@//g;
+        $input =~ s/\@INST:LIB_DIR\@/$lib_dir/g;
+        $input =~ s/\@INST:GLOBS_FILE\@/$globs_file/g;
+        $input =~ s/\@INST:PREFIX_DIR\@/$prefix_dir/g;
+        $outfile->print("#" . $orig) if ($orig ne $input);
+        $outfile->print($input);
     }
     $infile->close();
     $outfile->close();
@@ -167,9 +167,9 @@ use IO::File;
     # Link in Glade and the pixmaps.
 
     system("mkdir -p share/mtn-browse ; "
-	   . "ln -s `pwd`/lib/ui share/mtn-browse/glade ; "
-	   . "cd ${lib_dir}/ui ; "
-	   . "ln -s pixmaps/*.png .");
+           . "ln -s `pwd`/lib/ui share/mtn-browse/glade ; "
+           . "cd ${lib_dir}/ui ; "
+           . "ln -s pixmaps/*.png .");
 
     # Link in Monotone::AutomateStdio.
 
@@ -178,7 +178,7 @@ use IO::File;
     # Link in the help files.
 
     system("mkdir -p share/gnome/help/mtn-browse ; "
-	   . "ln -s `pwd`/locale/help/C share/gnome/help/mtn-browse/.");
+           . "ln -s `pwd`/locale/help/C share/gnome/help/mtn-browse/.");
 
     exit(0);
 

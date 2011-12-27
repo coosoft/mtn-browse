@@ -91,58 +91,58 @@ sub activate_auto_completion($$)
     my ($comboboxentry, $instance) = @_;
 
     my ($change_state,
-	$combo_details,
-	$details,
-	$move_to_end,
-	$name);
+        $combo_details,
+        $details,
+        $move_to_end,
+        $name);
 
     # Sort out the precise details depending upon which comboboxentry widget
     # has been passed.
 
     if ($comboboxentry == $instance->{branch_comboboxentry})
     {
-	$change_state = BRANCH_CHANGED;
-	$combo_details = $instance->{branch_combo_details};
-	$move_to_end = 1;
-	$name = __("branch");
+        $change_state = BRANCH_CHANGED;
+        $combo_details = $instance->{branch_combo_details};
+        $move_to_end = 1;
+        $name = __("branch");
     }
     elsif ($comboboxentry == $instance->{revision_comboboxentry})
     {
-	$change_state = REVISION_CHANGED;
-	$combo_details = $instance->{revision_combo_details};
-	$name = __("revision");
+        $change_state = REVISION_CHANGED;
+        $combo_details = $instance->{revision_combo_details};
+        $name = __("revision");
     }
     elsif ($comboboxentry == $instance->{directory_comboboxentry})
     {
-	$change_state = DIRECTORY_CHANGED;
-	$combo_details = $instance->{directory_combo_details};
-	$move_to_end = 1;
-	$name = __("directory");
+        $change_state = DIRECTORY_CHANGED;
+        $combo_details = $instance->{directory_combo_details};
+        $move_to_end = 1;
+        $name = __("directory");
     }
     else
     {
-	return;
+        return;
     }
 
     # Set up all the required callbacks.
 
     $details = {instance      => $instance,
-		change_state  => $change_state,
-		combo_details => $combo_details,
-		move_to_end   => $move_to_end,
-		name          => $name};
+                change_state  => $change_state,
+                combo_details => $combo_details,
+                move_to_end   => $move_to_end,
+                name          => $name};
     $comboboxentry->signal_connect("changed",
-				   \&auto_completion_comboboxentry_changed_cb,
-				   $details);
+                                   \&auto_completion_comboboxentry_changed_cb,
+                                   $details);
     $comboboxentry->signal_connect
-	("key_release_event",
-	 \&auto_completion_comboboxentry_key_release_event_cb,
-	 $details);
+        ("key_release_event",
+         \&auto_completion_comboboxentry_key_release_event_cb,
+         $details);
     $comboboxentry->child()->signal_connect("focus_out_event",
-					    sub {
-						hide_tooltip_window();
-						return FALSE;
-					    });
+                                            sub {
+                                                hide_tooltip_window();
+                                                return FALSE;
+                                            });
 
 }
 #
@@ -216,16 +216,16 @@ sub auto_completion_comboboxentry_changed_cb($$)
     $value = $widget->child()->get_text();
     foreach my $item (@{$combo_details->{list}})
     {
-	if ($value eq $item)
-	{
-	    $combo_details->{value} = $value;
-	    $combo_details->{complete} = 1;
-	    $instance->{appbar}->clear_stack();
-	    hide_tooltip_window();
-	    $widget->child()->set_position(-1) if ($move_to_end);
-	    &{$instance->{update_handler}}($instance, $change_state);
-	    last;
-	}
+        if ($value eq $item)
+        {
+            $combo_details->{value} = $value;
+            $combo_details->{complete} = 1;
+            $instance->{appbar}->clear_stack();
+            hide_tooltip_window();
+            $widget->child()->set_position(-1) if ($move_to_end);
+            &{$instance->{update_handler}}($instance, $change_state);
+            last;
+        }
     }
 
 }
@@ -275,177 +275,177 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
     if ($value ne $old_value)
     {
 
-	my ($busy,
-	    $completion,
-	    $len,
-	    $success);
-	my $change_state = $details->{change_state};
-	my $complete = 0;
-	my $name = $details->{name};
-	my $old_complete = $combo_details->{complete};
-	my $wm = WindowManager->instance();
+        my ($busy,
+            $completion,
+            $len,
+            $success);
+        my $change_state = $details->{change_state};
+        my $complete = 0;
+        my $name = $details->{name};
+        my $old_complete = $combo_details->{complete};
+        my $wm = WindowManager->instance();
 
-	# Don't auto-complete if the user is simply deleting from the extreme
-	# right.
+        # Don't auto-complete if the user is simply deleting from the extreme
+        # right.
 
-	$len = length($value);
-	if ($len >= length($old_value)
-	    || $value ne substr($old_value, 0, $len))
-	{
+        $len = length($value);
+        if ($len >= length($old_value)
+            || $value ne substr($old_value, 0, $len))
+        {
 
-	    # Initialise a new auto-completion object with a new list of terms
-	    # if it hasn't been done so already.
+            # Initialise a new auto-completion object with a new list of terms
+            # if it hasn't been done so already.
 
-	    $combo_details->{completion} =
-		Completion->new($combo_details->{list})
-		if (! defined($combo_details->{completion}));
+            $combo_details->{completion} =
+                Completion->new($combo_details->{list})
+                if (! defined($combo_details->{completion}));
 
-	    # Try auto-completing with what we have got, if that fails then try
-	    # stripping off any trailing white space before trying again (this
-	    # means the user can use the spacebar to trigger auto-completion in
-	    # a similar fashion to bash's use of <Tab>).
+            # Try auto-completing with what we have got, if that fails then try
+            # stripping off any trailing white space before trying again (this
+            # means the user can use the spacebar to trigger auto-completion in
+            # a similar fashion to bash's use of <Tab>).
 
-	    if (! ($success = $combo_details->{completion}->
-		       get_completion($value, \$completion, \$complete)))
-	    {
-		$value =~ s/\s+$//;
-		$success = $combo_details->{completion}->
-		       get_completion($value, \$completion, \$complete);
-	    }
-	    if ($success)
-	    {
-		$instance->{appbar}->clear_stack();
-		hide_tooltip_window();
-	    }
-	    else
-	    {
+            if (! ($success = $combo_details->{completion}->
+                       get_completion($value, \$completion, \$complete)))
+            {
+                $value =~ s/\s+$//;
+                $success = $combo_details->{completion}->
+                       get_completion($value, \$completion, \$complete);
+            }
+            if ($success)
+            {
+                $instance->{appbar}->clear_stack();
+                hide_tooltip_window();
+            }
+            else
+            {
 
-		my $message;
+                my $message;
 
-		# Tell the user what is wrong via the status bar.
+                # Tell the user what is wrong via the status bar.
 
-		$message = __x("Invalid {name} name `{value}'",
-			       name  => $name,
-			       value => $value);
-		$instance->{appbar}->set_status($message);
+                $message = __x("Invalid {name} name `{value}'",
+                               name  => $name,
+                               value => $value);
+                $instance->{appbar}->set_status($message);
 
-		# Also via a tooltip as well if so desired (need to position it
-		# to be just below the comboboxentry widget).
+                # Also via a tooltip as well if so desired (need to position it
+                # to be just below the comboboxentry widget).
 
-		if ($user_preferences->{completion_tooltips})
-		{
-		    my ($height,
-			$root_x,
-			$root_y,
-			$x,
-			$y);
-		    ($x, $y) =
-			$widget->translate_coordinates($instance->{window},
-						       0,
-						       0);
-		    $height = ($widget->child()->window()->get_geometry())[3];
-		    ($root_x, $root_y) =
-			$instance->{window}->window()->get_origin();
-		    $x += $root_x - 10;
-		    $y += $height + $root_y + 5;
-		    get_tooltip_window($instance->{window}, $message, $x, $y);
-		}
+                if ($user_preferences->{completion_tooltips})
+                {
+                    my ($height,
+                        $root_x,
+                        $root_y,
+                        $x,
+                        $y);
+                    ($x, $y) =
+                        $widget->translate_coordinates($instance->{window},
+                                                       0,
+                                                       0);
+                    $height = ($widget->child()->window()->get_geometry())[3];
+                    ($root_x, $root_y) =
+                        $instance->{window}->window()->get_origin();
+                    $x += $root_x - 10;
+                    $y += $height + $root_y + 5;
+                    get_tooltip_window($instance->{window}, $message, $x, $y);
+                }
 
-	    }
+            }
 
-	    $value = $completion;
-	    $len = length($value);
-	    $entry->set_text($value);
-	    $entry->set_position(-1);
+            $value = $completion;
+            $len = length($value);
+            $entry->set_text($value);
+            $entry->set_position(-1);
 
-	}
-	else
-	{
-	    $instance->{appbar}->clear_stack();
-	    hide_tooltip_window();
-	}
-	$combo_details->{value} = $value;
-	$combo_details->{complete} = $complete;
+        }
+        else
+        {
+            $instance->{appbar}->clear_stack();
+            hide_tooltip_window();
+        }
+        $combo_details->{value} = $value;
+        $combo_details->{complete} = $complete;
 
-	# Update the pulldown choices if the value has actually changed (what
-	# the user has entered may have been discarded due to not being valid)
-	# and that is what the user wants.
+        # Update the pulldown choices if the value has actually changed (what
+        # the user has entered may have been discarded due to not being valid)
+        # and that is what the user wants.
 
-	if ($value ne $old_value)
-	{
+        if ($value ne $old_value)
+        {
 
-	    my @item_list;
+            my @item_list;
 
-	    $wm->make_busy($instance, 1);
-	    $busy = 1;
-	    $wm->update_gui();
+            $wm->make_busy($instance, 1);
+            $busy = 1;
+            $wm->update_gui();
 
-	    foreach my $item (@{$combo_details->{list}})
-	    {
-		my $item_len = length($item);
-		if ($len <= $item_len && $value eq substr($item, 0, $len))
-		{
-		    push(@item_list, $item)
-			unless ($user_preferences->{static_lists});
+            foreach my $item (@{$combo_details->{list}})
+            {
+                my $item_len = length($item);
+                if ($len <= $item_len && $value eq substr($item, 0, $len))
+                {
+                    push(@item_list, $item)
+                        unless ($user_preferences->{static_lists});
 
-		    # The following check is needed in the case when the user
-		    # is simply deleting characters from the right.
+                    # The following check is needed in the case when the user
+                    # is simply deleting characters from the right.
 
-		    $combo_details->{complete} = 1 if ($len == $item_len);
-		}
-	    }
+                    $combo_details->{complete} = 1 if ($len == $item_len);
+                }
+            }
 
-	    if (! $user_preferences->{static_lists})
-	    {
+            if (! $user_preferences->{static_lists})
+            {
 
-		my ($counter,
-		    $update_interval);
+                my ($counter,
+                    $update_interval);
 
-		$instance->{appbar}->set_progress_percentage(0);
-		$instance->{appbar}->push(__x("Populating {name} list",
-					      name => $name));
-		$wm->update_gui();
-		$counter = 1;
-		$update_interval = calculate_update_interval(\@item_list);
-		$widget->get_model()->clear()
-		    unless ($user_preferences->{static_lists});
-		foreach my $item (@item_list)
-		{
-		    $widget->append_text($item);
-		    if (($counter % $update_interval) == 0)
-		    {
-			$instance->{appbar}->set_progress_percentage
-			    ($counter / scalar(@item_list));
-			$wm->update_gui();
-		    }
-		    ++ $counter;
-		}
-		$instance->{appbar}->set_progress_percentage(1);
-		$wm->update_gui();
-		$instance->{appbar}->set_progress_percentage(0);
-		$instance->{appbar}->pop();
-		$wm->update_gui();
+                $instance->{appbar}->set_progress_percentage(0);
+                $instance->{appbar}->push(__x("Populating {name} list",
+                                              name => $name));
+                $wm->update_gui();
+                $counter = 1;
+                $update_interval = calculate_update_interval(\@item_list);
+                $widget->get_model()->clear()
+                    unless ($user_preferences->{static_lists});
+                foreach my $item (@item_list)
+                {
+                    $widget->append_text($item);
+                    if (($counter % $update_interval) == 0)
+                    {
+                        $instance->{appbar}->set_progress_percentage
+                            ($counter / scalar(@item_list));
+                        $wm->update_gui();
+                    }
+                    ++ $counter;
+                }
+                $instance->{appbar}->set_progress_percentage(1);
+                $wm->update_gui();
+                $instance->{appbar}->set_progress_percentage(0);
+                $instance->{appbar}->pop();
+                $wm->update_gui();
 
-	    }
+            }
 
-	}
+        }
 
-	# Update the window state on a significant change.
+        # Update the window state on a significant change.
 
-	if ($combo_details->{complete} != $old_complete
-	    || ($combo_details->{complete}
-		&& $combo_details->{value} ne $old_value))
-	{
-	    if (! $busy)
-	    {
-		$wm->make_busy($instance, 1);
-		$busy = 1;
-	    }
-	    $wm->update_gui();
-	    &{$instance->{update_handler}}($instance, $change_state);
-	}
+        if ($combo_details->{complete} != $old_complete
+            || ($combo_details->{complete}
+                && $combo_details->{value} ne $old_value))
+        {
+            if (! $busy)
+            {
+                $wm->make_busy($instance, 1);
+                $busy = 1;
+            }
+            $wm->update_gui();
+            &{$instance->{update_handler}}($instance, $change_state);
+        }
 
-	$wm->make_busy($instance, 0) if ($busy);
+        $wm->make_busy($instance, 0) if ($busy);
 
     }
 
@@ -479,7 +479,7 @@ sub get_tooltip_window($$$$)
     my ($parent, $message, $x, $y) = @_;
 
     my ($glade,
-	$instance);
+        $instance);
     my $wm = WindowManager->instance();
 
     # Create a new tooltip window if an existing one wasn't found, otherwise
@@ -488,42 +488,42 @@ sub get_tooltip_window($$$$)
     if (! defined($instance = $wm->cond_find($window_type, sub { return 1; })))
     {
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("eventbox", "message_label")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("eventbox", "message_label")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup the colours used for the tooltip window.
+        # Setup the colours used for the tooltip window.
 
-	$instance->{window}->modify_bg("normal",
-				       Gtk2::Gdk::Color->parse("Black"));
-	$instance->{eventbox}->modify_bg("normal",
-					 Gtk2::Gdk::Color->parse("Pink"));
+        $instance->{window}->modify_bg("normal",
+                                       Gtk2::Gdk::Color->parse("Black"));
+        $instance->{eventbox}->modify_bg("normal",
+                                         Gtk2::Gdk::Color->parse("Pink"));
 
     }
     else
     {
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
-	$instance->{window}->hide();
-	Glib::Source->remove($instance->{timeout_source_id});
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
+        $instance->{window}->hide();
+        Glib::Source->remove($instance->{timeout_source_id});
     }
 
     local $instance->{in_cb} = 1;
@@ -533,13 +533,13 @@ sub get_tooltip_window($$$$)
 
     $instance->{message_label}->set_text($message);
     $instance->{timeout_source_id} =
-	Glib::Timeout->add(3000,
-			   sub {
-			       my $instance = $_[0];
-			       $instance->{window}->hide();
-			       return FALSE;
-			   },
-			   $instance);
+        Glib::Timeout->add(3000,
+                           sub {
+                               my $instance = $_[0];
+                               $instance->{window}->hide();
+                               return FALSE;
+                           },
+                           $instance);
 
     # Position it, reparent window and display it.
 
@@ -551,7 +551,7 @@ sub get_tooltip_window($$$$)
     # If necessary, register the window for management.
 
     $wm->manage($instance, $window_type, $instance->{window})
-	if (defined($glade));
+        if (defined($glade));
 
     return $instance;
 
@@ -578,16 +578,16 @@ sub hide_tooltip_window()
     # hide timeout handler.
 
     if (defined($instance = WindowManager->instance()->cond_find
-		($window_type,
-		 sub {
-		     my $instance = $_[0];
-		     return $instance->{window}->mapped();
-		 })))
+                ($window_type,
+                 sub {
+                     my $instance = $_[0];
+                     return $instance->{window}->mapped();
+                 })))
     {
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
-	$instance->{window}->hide();
-	Glib::Source->remove($instance->{timeout_source_id});
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
+        $instance->{window}->hide();
+        Glib::Source->remove($instance->{timeout_source_id});
     }
 
 }

@@ -77,13 +77,13 @@ use constant REVISION_DETAILS => 0x04;
 
 use constant ALL_CHANGED               => 0xff;
 use constant BRANCH_CHANGED            => (REVISION | DIRECTORY
-					   | DIRECTORY_VIEW | DISPLAY_OF_FILE);
+                                           | DIRECTORY_VIEW | DISPLAY_OF_FILE);
 use constant DATABASE_CHANGED          => 0xff;
 use constant DIRECTORY_CHANGED         => (DIRECTORY_VIEW | DISPLAY_OF_FILE);
 use constant FILE_CHANGED              => (DISPLAY_OF_FILE);
 use constant NEW_FIND                  => 0xff;
 use constant REVISION_CHANGED          => (DIRECTORY | REVISION_LIST
-					   | DIRECTORY_VIEW | DISPLAY_OF_FILE);
+                                           | DIRECTORY_VIEW | DISPLAY_OF_FILE);
 use constant SELECTED_REVISION_CHANGED => (REVISION_DETAILS);
 
 # Constant for the strftime() format string that is used to generate Montoone
@@ -150,40 +150,40 @@ our $suppress_mtn_warnings;
 use base qw(Exporter);
 
 our %EXPORT_TAGS = (constants => [qw(ALL_CHANGED
-				     BRANCH
-				     BRANCH_CHANGED
-				     DATABASE_CHANGED
-				     DIRECTORY
-				     DIRECTORY_CHANGED
-				     DIRECTORY_VIEW
-				     DISPLAY_OF_FILE
-				     DURATION_DAYS
-				     DURATION_HOURS
-				     DURATION_MINUTES
-				     DURATION_MONTHS
-				     DURATION_YEARS
-				     FILE_CHANGED
-				     GRAPHVIZ_LAYOUT_PROGRAM
-				     MTN_TIME_STRING
-				     NEW_FIND
-				     REVISION
-				     REVISION_CHANGED
-				     REVISION_DETAILS
-				     REVISION_LIST
-				     SELECTED_REVISION_CHANGED)],
-		    variables => [qw(@encodings
-				     $file_encoding
-				     $glade_file
-				     @keys
-				     $line_image
-				     $mime_match_table
-				     $mono_font
-				     $mtn_key
-				     $select_escape_re
-				     $suppress_mtn_warnings
-				     $tmp_dir
-				     $tooltips
-				     $user_preferences)]);
+                                     BRANCH
+                                     BRANCH_CHANGED
+                                     DATABASE_CHANGED
+                                     DIRECTORY
+                                     DIRECTORY_CHANGED
+                                     DIRECTORY_VIEW
+                                     DISPLAY_OF_FILE
+                                     DURATION_DAYS
+                                     DURATION_HOURS
+                                     DURATION_MINUTES
+                                     DURATION_MONTHS
+                                     DURATION_YEARS
+                                     FILE_CHANGED
+                                     GRAPHVIZ_LAYOUT_PROGRAM
+                                     MTN_TIME_STRING
+                                     NEW_FIND
+                                     REVISION
+                                     REVISION_CHANGED
+                                     REVISION_DETAILS
+                                     REVISION_LIST
+                                     SELECTED_REVISION_CHANGED)],
+                    variables => [qw(@encodings
+                                     $file_encoding
+                                     $glade_file
+                                     @keys
+                                     $line_image
+                                     $mime_match_table
+                                     $mono_font
+                                     $mtn_key
+                                     $select_escape_re
+                                     $suppress_mtn_warnings
+                                     $tmp_dir
+                                     $tooltips
+                                     $user_preferences)]);
 our @EXPORT = qw();
 Exporter::export_ok_tags(qw(constants variables));
 our $VERSION = 0.1;

@@ -60,10 +60,10 @@ my $__attributes = __("Attributes");
 # for.
 
 my @__types = ($__added,
-	       $__removed,
-	       $__changed,
-	       $__renamed,
-	       $__attributes);
+               $__removed,
+               $__changed,
+               $__renamed,
+               $__attributes);
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
@@ -103,26 +103,26 @@ sub display_change_log($$;$$)
     my ($mtn, $revision_id, $text_colour, $tag) = @_;
 
     my (@certs_list,
-	$instance,
-	@revision_details);
+        $instance,
+        @revision_details);
 
     $instance = get_change_log_window();
     $instance->{changelog_buffer}->set_text("");
     $instance->{window}->set_title(__x("Change Log For {rev}",
-				       rev => ($tag ? $tag : $revision_id)));
+                                       rev => ($tag ? $tag : $revision_id)));
     $mtn->certs(\@certs_list, $revision_id);
     $mtn->get_revision(\@revision_details, $revision_id);
     generate_revision_report($instance->{changelog_buffer},
-			     $revision_id,
-			     \@certs_list,
-			     $text_colour ? $text_colour : "",
-			     \@revision_details);
+                             $revision_id,
+                             \@certs_list,
+                             $text_colour ? $text_colour : "",
+                             \@revision_details);
     $instance->{changelog_buffer}->
-	place_cursor($instance->{changelog_buffer}->get_start_iter());
+        place_cursor($instance->{changelog_buffer}->get_start_iter());
     if ($instance->{changelog_scrolledwindow}->realized())
     {
-	$instance->{changelog_scrolledwindow}->get_vadjustment()->set_value(0);
-	$instance->{changelog_scrolledwindow}->get_hadjustment()->set_value(0);
+        $instance->{changelog_scrolledwindow}->get_vadjustment()->set_value(0);
+        $instance->{changelog_scrolledwindow}->get_hadjustment()->set_value(0);
     }
     $instance->{window}->show_all();
     $instance->{window}->present();
@@ -158,43 +158,43 @@ sub generate_revision_report($$$$;$)
 {
 
     my ($text_buffer, $revision_id, $certs_list, $colour, $revision_details)
-	= @_;
+        = @_;
 
     my ($bold,
-	$cert_max_len,
-	@change_logs,
-	$i,
-	$italics,
-	$manifest_id,
-	$normal,
-	@parent_revision_ids,
-	%revision_data,
-	%seen,
-	@unique);
+        $cert_max_len,
+        @change_logs,
+        $i,
+        $italics,
+        $manifest_id,
+        $normal,
+        @parent_revision_ids,
+        %revision_data,
+        %seen,
+        @unique);
 
     # Sort out colour attributes.
 
     if ($colour ne "")
     {
-	$normal = $colour;
-	$bold = "bold-" . $colour;
-	$italics = "italics-" . $colour;
+        $normal = $colour;
+        $bold = "bold-" . $colour;
+        $italics = "italics-" . $colour;
     }
     else
     {
-	$normal = "normal";
-	$bold = "bold";
-	$italics = "italics";
+        $normal = "normal";
+        $bold = "bold";
+        $italics = "italics";
     }
 
     # Revision id.
 
     $text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
-					   __("Revision id: "),
-					   $bold);
+                                           __("Revision id: "),
+                                           $bold);
     $text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
-					   $revision_id . "\n",
-					   $normal);
+                                           $revision_id . "\n",
+                                           $normal);
 
     # Certs.
 
@@ -204,9 +204,9 @@ sub generate_revision_report($$$$;$)
     $cert_max_len = 0;
     foreach my $cert (@$certs_list)
     {
-	$cert_max_len = length($cert->{name})
-	    if ($cert->{name} ne "changelog"
-		&& length($cert->{name}) > $cert_max_len);
+        $cert_max_len = length($cert->{name})
+            if ($cert->{name} ne "changelog"
+                && length($cert->{name}) > $cert_max_len);
     }
 
     # Process each cert in turn.
@@ -214,52 +214,52 @@ sub generate_revision_report($$$$;$)
     foreach my $cert (@$certs_list)
     {
 
-	# Collect all changelog certs together for output as one collection
-	# after the other certs.
+        # Collect all changelog certs together for output as one collection
+        # after the other certs.
 
-	if ($cert->{name} eq "changelog")
-	{
-	    my $change_log = $cert->{value};
-	    $change_log =~ s/\s+$//s;
-	    push(@change_logs, $change_log) if ($change_log ne "");
-	}
-	else
-	{
+        if ($cert->{name} eq "changelog")
+        {
+            my $change_log = $cert->{value};
+            $change_log =~ s/\s+$//s;
+            push(@change_logs, $change_log) if ($change_log ne "");
+        }
+        else
+        {
 
-	    # All other remaining certs.
+            # All other remaining certs.
 
-	    # Format date values so that they look nice.
+            # Format date values so that they look nice.
 
-	    if ($cert->{name} eq "date")
-	    {
-		$cert->{value} =~ s/T/ /;
-	    }
+            if ($cert->{name} eq "date")
+            {
+                $cert->{value} =~ s/T/ /;
+            }
 
-	    # Otherwise if the cert value contains newline characters then
-	    # indent subsequent lines so as to match the first line.
+            # Otherwise if the cert value contains newline characters then
+            # indent subsequent lines so as to match the first line.
 
-	    elsif (index($cert->{value}, "\n") >= 0)
-	    {
-		my $padding = sprintf("\n%-*s", $cert_max_len + 2, "");
-		$cert->{value} =~ s/\n/$padding/g;
-	    }
+            elsif (index($cert->{value}, "\n") >= 0)
+            {
+                my $padding = sprintf("\n%-*s", $cert_max_len + 2, "");
+                $cert->{value} =~ s/\n/$padding/g;
+            }
 
-	    # Print out the cert's name.
+            # Print out the cert's name.
 
-	    $text_buffer->insert_with_tags_by_name
-		($text_buffer->get_end_iter(),
-		 sprintf("\n%-*s ",
-			 $cert_max_len + 1, ucfirst($cert->{name}) . ":"),
-		 $bold);
+            $text_buffer->insert_with_tags_by_name
+                ($text_buffer->get_end_iter(),
+                 sprintf("\n%-*s ",
+                         $cert_max_len + 1, ucfirst($cert->{name}) . ":"),
+                 $bold);
 
-	    # Print out the cert's value.
+            # Print out the cert's value.
 
-	    $text_buffer->insert_with_tags_by_name
-		($text_buffer->get_end_iter(),
-		 sprintf("%s", $cert->{value}),
-		 $normal);
+            $text_buffer->insert_with_tags_by_name
+                ($text_buffer->get_end_iter(),
+                 sprintf("%s", $cert->{value}),
+                 $normal);
 
-	}
+        }
 
     }
 
@@ -268,19 +268,19 @@ sub generate_revision_report($$$$;$)
     $i = 1;
     foreach my $change_log (@change_logs)
     {
-	$text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
-					       "\n",
-					       $normal);
-	$text_buffer->insert_with_tags_by_name
-	    ($text_buffer->get_end_iter(),
-	     __x("\nChange Log{optional_count}:\n",
-		 optional_count => (scalar(@change_logs) > 1)
-		     ? sprintf(" %d", $i) : ""),
-	     $bold);
-	$text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
-					       $change_log,
-					       $normal);
-	++ $i;
+        $text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
+                                               "\n",
+                                               $normal);
+        $text_buffer->insert_with_tags_by_name
+            ($text_buffer->get_end_iter(),
+             __x("\nChange Log{optional_count}:\n",
+                 optional_count => (scalar(@change_logs) > 1)
+                     ? sprintf(" %d", $i) : ""),
+             $bold);
+        $text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
+                                               $change_log,
+                                               $normal);
+        ++ $i;
     }
 
     # The rest is only provided if it is a detailed report.
@@ -288,98 +288,98 @@ sub generate_revision_report($$$$;$)
     if (defined($revision_details))
     {
 
-	# Revision details.
+        # Revision details.
 
-	$text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
-					       __("\n\nChanges Made:\n"),
-					       $bold);
-	foreach my $type (@__types)
-	{
-	    $revision_data{$type} = [];
-	}
-	foreach my $change (@$revision_details)
-	{
-	    if ($change->{type} eq "add_dir")
-	    {
-		push(@{$revision_data{$__added}}, $change->{name} . "/");
-	    }
-	    elsif ($change->{type} eq "add_file")
-	    {
-		push(@{$revision_data{$__added}}, $change->{name});
-	    }
-	    elsif ($change->{type} eq "delete")
-	    {
-		push(@{$revision_data{$__removed}}, $change->{name});
-	    }
-	    elsif ($change->{type} eq "patch")
-	    {
-		push(@{$revision_data{$__changed}}, $change->{name});
-	    }
-	    elsif ($change->{type} eq "rename")
-	    {
-		push(@{$revision_data{$__renamed}},
-		     $change->{from_name} . " -> " . $change->{to_name});
-	    }
-	    elsif ($change->{type} eq "clear")
-	    {
-		push(@{$revision_data{$__attributes}},
-		     __x("{name}: {attribute} was cleared",
-			 name      => $change->{name},
-			 attribute => $change->{attribute}));
-	    }
-	    elsif ($change->{type} eq "set")
-	    {
-		push(@{$revision_data{$__attributes}},
-		     sprintf("%s: %s = %s",
-			     $change->{name},
-			     $change->{attribute},
-			     $change->{value}));
-	    }
-	    elsif ($change->{type} eq "old_revision")
-	    {
-		push(@parent_revision_ids, $change->{revision_id});
-	    }
-	    elsif ($change->{type} eq "new_manifest")
-	    {
-		$manifest_id = $change->{manifest_id};
-	    }
-	}
-	foreach my $type (@__types)
-	{
-	    if (scalar(@{$revision_data{$type}}) > 0)
-	    {
-		$text_buffer->insert_with_tags_by_name
-		    ($text_buffer->get_end_iter(),
-		     "    " . $type . ":\n",
-		     $italics);
-		%seen = ();
-		@unique = sort(grep(! $seen{$_} ++, @{$revision_data{$type}}));
-		foreach my $line (@unique)
-		{
-		    $text_buffer->insert_with_tags_by_name
-			($text_buffer->get_end_iter(),
-			 "\t" . $line . "\n",
-			 $normal);
-		}
-	    }
-	}
+        $text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
+                                               __("\n\nChanges Made:\n"),
+                                               $bold);
+        foreach my $type (@__types)
+        {
+            $revision_data{$type} = [];
+        }
+        foreach my $change (@$revision_details)
+        {
+            if ($change->{type} eq "add_dir")
+            {
+                push(@{$revision_data{$__added}}, $change->{name} . "/");
+            }
+            elsif ($change->{type} eq "add_file")
+            {
+                push(@{$revision_data{$__added}}, $change->{name});
+            }
+            elsif ($change->{type} eq "delete")
+            {
+                push(@{$revision_data{$__removed}}, $change->{name});
+            }
+            elsif ($change->{type} eq "patch")
+            {
+                push(@{$revision_data{$__changed}}, $change->{name});
+            }
+            elsif ($change->{type} eq "rename")
+            {
+                push(@{$revision_data{$__renamed}},
+                     $change->{from_name} . " -> " . $change->{to_name});
+            }
+            elsif ($change->{type} eq "clear")
+            {
+                push(@{$revision_data{$__attributes}},
+                     __x("{name}: {attribute} was cleared",
+                         name      => $change->{name},
+                         attribute => $change->{attribute}));
+            }
+            elsif ($change->{type} eq "set")
+            {
+                push(@{$revision_data{$__attributes}},
+                     sprintf("%s: %s = %s",
+                             $change->{name},
+                             $change->{attribute},
+                             $change->{value}));
+            }
+            elsif ($change->{type} eq "old_revision")
+            {
+                push(@parent_revision_ids, $change->{revision_id});
+            }
+            elsif ($change->{type} eq "new_manifest")
+            {
+                $manifest_id = $change->{manifest_id};
+            }
+        }
+        foreach my $type (@__types)
+        {
+            if (scalar(@{$revision_data{$type}}) > 0)
+            {
+                $text_buffer->insert_with_tags_by_name
+                    ($text_buffer->get_end_iter(),
+                     "    " . $type . ":\n",
+                     $italics);
+                %seen = ();
+                @unique = sort(grep(! $seen{$_} ++, @{$revision_data{$type}}));
+                foreach my $line (@unique)
+                {
+                    $text_buffer->insert_with_tags_by_name
+                        ($text_buffer->get_end_iter(),
+                         "\t" . $line . "\n",
+                         $normal);
+                }
+            }
+        }
 
-	# Parent revision and manifest ids.
+        # Parent revision and manifest ids.
 
-	$text_buffer->insert_with_tags_by_name
-	    ($text_buffer->get_end_iter(),
-	     __("\nParent revision id(s): "),
-	     $bold);
-	$text_buffer->insert_with_tags_by_name
-	    ($text_buffer->get_end_iter(),
-	     join(" ", @parent_revision_ids) . "\n",
-	     $normal);
-	$text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
-					       __("Manifest id:           "),
-					       $bold);
-	$text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
-					       $manifest_id,
-					       $normal);
+        $text_buffer->insert_with_tags_by_name
+            ($text_buffer->get_end_iter(),
+             __("\nParent revision id(s): "),
+             $bold);
+        $text_buffer->insert_with_tags_by_name
+            ($text_buffer->get_end_iter(),
+             join(" ", @parent_revision_ids) . "\n",
+             $normal);
+        $text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
+                                               __("Manifest id:           "),
+                                               $bold);
+        $text_buffer->insert_with_tags_by_name($text_buffer->get_end_iter(),
+                                               $manifest_id,
+                                               $normal);
 
     }
 
@@ -411,74 +411,74 @@ sub get_change_log_window()
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my $glade;
+        my $glade;
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("changelog_textview",
-			    "changelog_scrolledwindow")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("changelog_textview",
+                            "changelog_scrolledwindow")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup the changelog window deletion handler.
+        # Setup the changelog window deletion handler.
 
-	$instance->{window}->signal_connect
-	    ("delete_event",
-	     sub {
-		 my ($widget, $event, $instance) = @_;
-		 return TRUE if ($instance->{in_cb});
-		 local $instance->{in_cb} = 1;
-		 hide_find_text($instance->{changelog_textview});
-		 $widget->hide();
-		 $instance->{changelog_buffer}->set_text("");
-		 return TRUE;
-	     },
-	     $instance);
+        $instance->{window}->signal_connect
+            ("delete_event",
+             sub {
+                 my ($widget, $event, $instance) = @_;
+                 return TRUE if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 hide_find_text($instance->{changelog_textview});
+                 $widget->hide();
+                 $instance->{changelog_buffer}->set_text("");
+                 return TRUE;
+             },
+             $instance);
 
-	# Setup the revision changelog viewer.
+        # Setup the revision changelog viewer.
 
-	$instance->{changelog_buffer} =
-	    $instance->{changelog_textview}->get_buffer();
-	create_format_tags($instance->{changelog_buffer});
-	$instance->{changelog_textview}->modify_font($mono_font);
+        $instance->{changelog_buffer} =
+            $instance->{changelog_textview}->get_buffer();
+        create_format_tags($instance->{changelog_buffer});
+        $instance->{changelog_textview}->modify_font($mono_font);
 
-	# Register the window for management and set up the help callbacks.
+        # Register the window for management and set up the help callbacks.
 
-	$wm->manage($instance, $window_type, $instance->{window});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => undef,
-	      help_ref => __("mtnb-lachc-the-change-log-window")});
+        $wm->manage($instance, $window_type, $instance->{window});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => undef,
+              help_ref => __("mtnb-lachc-the-change-log-window")});
 
     }
     else
     {
 
-	my ($height,
-	    $width);
+        my ($height,
+            $width);
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	($width, $height) = $instance->{window}->get_default_size();
-	$instance->{window}->resize($width, $height);
+        ($width, $height) = $instance->{window}->get_default_size();
+        $instance->{window}->resize($width, $height);
 
     }
 

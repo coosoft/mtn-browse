@@ -51,7 +51,7 @@ use warnings;
 # Constants for the columns within the tag weightings liststore widget.
 
 use constant TLS_COLUMN_TYPES     => ("Glib::Int",
-				      "Glib::String");
+                                      "Glib::String");
 use constant TLS_WEIGHTING_COLUMN => 0;
 use constant TLS_PATTERN_COLUMN   => 1;
 
@@ -95,16 +95,16 @@ sub manage_tag_weightings($$)
     my ($parent, $weightings) = @_;
 
     my ($changed,
-	$instance,
-	$response);
+        $instance,
+        $response);
 
     $instance = get_manage_tag_weightings_window($parent, $weightings);
     $response = busy_dialog_run($instance);
     $instance->{window}->hide();
     if ($response eq "ok")
     {
-	$changed = 1;
-	@$weightings = @{$instance->{tag_weightings}};
+        $changed = 1;
+        @$weightings = @{$instance->{tag_weightings}};
     }
     $instance->{tags_liststore}->clear();
     $instance->{tag_weightings} = [];
@@ -141,18 +141,18 @@ sub tags_treeselection_changed_cb($$)
 
     if ($widget->count_selected_rows() > 0)
     {
-	my ($iter,
-	    $model);
-	($model, $iter) = $widget->get_selected();
-	$instance->{selected_tag} =
-	    {weighting => $model->get($iter, TLS_WEIGHTING_COLUMN),
-	     pattern   => $model->get($iter, TLS_PATTERN_COLUMN)};
-	$instance->{remove_tag_weighting_button}->set_sensitive(TRUE);
+        my ($iter,
+            $model);
+        ($model, $iter) = $widget->get_selected();
+        $instance->{selected_tag} =
+            {weighting => $model->get($iter, TLS_WEIGHTING_COLUMN),
+             pattern   => $model->get($iter, TLS_PATTERN_COLUMN)};
+        $instance->{remove_tag_weighting_button}->set_sensitive(TRUE);
     }
     else
     {
-	$instance->{selected_tag} = undef;
-	$instance->{remove_tag_weighting_button}->set_sensitive(FALSE);
+        $instance->{selected_tag} = undef;
+        $instance->{remove_tag_weighting_button}->set_sensitive(FALSE);
     }
 
 }
@@ -182,8 +182,8 @@ sub tag_pattern_entry_changed_cb($$)
     local $instance->{in_cb} = 1;
 
     $instance->{add_tag_weighting_button}->set_sensitive
-	((length($instance->{tag_pattern_entry}->get_text()) > 0) ?
-	 TRUE : FALSE);
+        ((length($instance->{tag_pattern_entry}->get_text()) > 0) ?
+         TRUE : FALSE);
 
 }
 #
@@ -217,39 +217,39 @@ sub add_tag_weighting_button_clicked_cb($$)
     $pattern = $instance->{tag_pattern_entry}->get_text();
     eval
     {
-	my $expr = qr/$pattern/;
+        my $expr = qr/$pattern/;
     };
     if ($@)
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("`{pattern}' is an invalid\ntag name pattern.",
-		 pattern => $pattern));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("`{pattern}' is an invalid\ntag name pattern.",
+                 pattern => $pattern));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Now check for duplicate entries.
 
     if (grep(/^\Q$pattern\E$/,
-	     map($_->{pattern}, @{$instance->{tag_weightings}}))
-	> 0)
+             map($_->{pattern}, @{$instance->{tag_weightings}}))
+        > 0)
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("`{pattern}' is already entered\n"
-		     . "into your tag weightings list.",
-		 pattern => $pattern));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("`{pattern}' is already entered\n"
+                     . "into your tag weightings list.",
+                 pattern => $pattern));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Ok so add it to the tag weightings list and reload the tags treeview.
@@ -261,10 +261,10 @@ sub add_tag_weighting_button_clicked_cb($$)
 
     $instance->{weighting_spinbutton}->update();
     push(@{$instance->{tag_weightings}},
-	 {weighting => $instance->{weighting_spinbutton}->get_value_as_int(),
-	  pattern   => $pattern});
+         {weighting => $instance->{weighting_spinbutton}->get_value_as_int(),
+          pattern   => $pattern});
     @{$instance->{tag_weightings}} = sort({ $a->{pattern} cmp $b->{pattern} }
-					  @{$instance->{tag_weightings}});
+                                          @{$instance->{tag_weightings}});
     load_tags_treeview($instance);
 
 }
@@ -299,19 +299,19 @@ sub remove_tag_weighting_button_clicked_cb($$)
     if (defined($instance->{selected_tag}))
     {
 
-	# Locate the pattern and remove it from the list.
+        # Locate the pattern and remove it from the list.
 
-	for ($i = 0; $i < scalar(@{$instance->{tag_weightings}}); ++ $i)
-	{
-	    last if ($instance->{tag_weightings}->[$i]->{pattern}
-		     eq $instance->{selected_tag}->{pattern});
-	}
-	splice(@{$instance->{tag_weightings}}, $i, 1);
+        for ($i = 0; $i < scalar(@{$instance->{tag_weightings}}); ++ $i)
+        {
+            last if ($instance->{tag_weightings}->[$i]->{pattern}
+                     eq $instance->{selected_tag}->{pattern});
+        }
+        splice(@{$instance->{tag_weightings}}, $i, 1);
 
-	# Reload the tags treeview.
+        # Reload the tags treeview.
 
-	load_tags_treeview($instance);
-	$instance->{remove_tag_weighting_button}->set_sensitive(FALSE);
+        load_tags_treeview($instance);
+        $instance->{remove_tag_weighting_button}->set_sensitive(FALSE);
 
     }
 
@@ -341,7 +341,7 @@ sub get_manage_tag_weightings_window($$)
     my ($parent, $weightings) = @_;
 
     my ($glade,
-	$instance);
+        $instance);
     my $window_type = "manage_tag_weightings_window";
     my $wm = WindowManager->instance();
 
@@ -351,84 +351,84 @@ sub get_manage_tag_weightings_window($$)
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my ($image,
-	    $renderer,
-	    $tv_column);
+        my ($image,
+            $renderer,
+            $tv_column);
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("tags_treeview",
-			    "tag_pattern_entry",
-			    "weighting_spinbutton",
-			    "add_tag_weighting_button",
-			    "remove_tag_weighting_button")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("tags_treeview",
+                            "tag_pattern_entry",
+                            "weighting_spinbutton",
+                            "add_tag_weighting_button",
+                            "remove_tag_weighting_button")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup the tag weightings list.
+        # Setup the tag weightings list.
 
-	$instance->{tags_liststore} = Gtk2::ListStore->new(TLS_COLUMN_TYPES);
-	$instance->{tags_treeview}->set_model($instance->{tags_liststore});
+        $instance->{tags_liststore} = Gtk2::ListStore->new(TLS_COLUMN_TYPES);
+        $instance->{tags_treeview}->set_model($instance->{tags_liststore});
 
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$image = Gtk2::Image->new_from_stock("mtnb-weighting", "menu");
-	$image->show_all();
-	$tv_column->set_widget($image);
-	$tv_column->set_resizable(FALSE);
-	$tv_column->set_sort_column_id(TLS_WEIGHTING_COLUMN);
-	$renderer = Gtk2::CellRendererText->new();
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "text" => TLS_WEIGHTING_COLUMN);
-	$instance->{tags_treeview}->append_column($tv_column);
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $image = Gtk2::Image->new_from_stock("mtnb-weighting", "menu");
+        $image->show_all();
+        $tv_column->set_widget($image);
+        $tv_column->set_resizable(FALSE);
+        $tv_column->set_sort_column_id(TLS_WEIGHTING_COLUMN);
+        $renderer = Gtk2::CellRendererText->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "text" => TLS_WEIGHTING_COLUMN);
+        $instance->{tags_treeview}->append_column($tv_column);
 
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$tv_column->set_title(__("Tag Name Pattern"));
-	$tv_column->set_resizable(FALSE);
-	$tv_column->set_sizing("grow-only");
-	$tv_column->set_sort_column_id(TLS_PATTERN_COLUMN);
-	$renderer = Gtk2::CellRendererText->new();
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "text" => TLS_PATTERN_COLUMN);
-	$instance->{tags_treeview}->append_column($tv_column);
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $tv_column->set_title(__("Tag Name Pattern"));
+        $tv_column->set_resizable(FALSE);
+        $tv_column->set_sizing("grow-only");
+        $tv_column->set_sort_column_id(TLS_PATTERN_COLUMN);
+        $renderer = Gtk2::CellRendererText->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "text" => TLS_PATTERN_COLUMN);
+        $instance->{tags_treeview}->append_column($tv_column);
 
-	$instance->{tags_treeview}->set_search_column(TLS_PATTERN_COLUMN);
-	$instance->{tags_treeview}->
-	    set_search_equal_func(\&treeview_column_searcher);
+        $instance->{tags_treeview}->set_search_column(TLS_PATTERN_COLUMN);
+        $instance->{tags_treeview}->
+            set_search_equal_func(\&treeview_column_searcher);
 
-	$instance->{tags_treeview}->get_selection()->
-	    signal_connect("changed",
-			   \&tags_treeselection_changed_cb,
-			   $instance);
+        $instance->{tags_treeview}->get_selection()->
+            signal_connect("changed",
+                           \&tags_treeselection_changed_cb,
+                           $instance);
 
     }
     else
     {
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Reset the manage tag weightings dialog's state.
+        # Reset the manage tag weightings dialog's state.
 
-	$instance->{tags_liststore}->clear();
-	$instance->{tags_liststore} = Gtk2::ListStore->new(TLS_COLUMN_TYPES);
-	$instance->{tags_treeview}->set_model($instance->{tags_liststore});
-	$instance->{tags_treeview}->set_search_column(TLS_PATTERN_COLUMN);
+        $instance->{tags_liststore}->clear();
+        $instance->{tags_liststore} = Gtk2::ListStore->new(TLS_COLUMN_TYPES);
+        $instance->{tags_treeview}->set_model($instance->{tags_liststore});
+        $instance->{tags_treeview}->set_search_column(TLS_PATTERN_COLUMN);
 
     }
 
@@ -465,13 +465,13 @@ sub get_manage_tag_weightings_window($$)
 
     if (defined($glade))
     {
-	$wm->manage($instance, $window_type, $instance->{window});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => undef,
-	      help_ref => __("TDB-mtnb-upc-the-manage-server-bookmarks-dialog-"
-			     . "window")});
+        $wm->manage($instance, $window_type, $instance->{window});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => undef,
+              help_ref => __("TDB-mtnb-upc-the-manage-server-bookmarks-dialog-"
+                             . "window")});
     }
 
     return $instance;
@@ -500,13 +500,13 @@ sub load_tags_treeview($)
     $instance->{tags_liststore}->clear();
     foreach my $entry (@{$instance->{tag_weightings}})
     {
-	$instance->{tags_liststore}->
-	    set($instance->{tags_liststore}->append(),
-		TLS_WEIGHTING_COLUMN, $entry->{weighting},
-		TLS_PATTERN_COLUMN, $entry->{pattern});
+        $instance->{tags_liststore}->
+            set($instance->{tags_liststore}->append(),
+                TLS_WEIGHTING_COLUMN, $entry->{weighting},
+                TLS_PATTERN_COLUMN, $entry->{pattern});
     }
     $instance->{tags_treeview}->scroll_to_point(0, 0)
-	if ($instance->{tags_treeview}->realized());
+        if ($instance->{tags_treeview}->realized());
 
 }
 

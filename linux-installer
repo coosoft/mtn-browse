@@ -75,31 +75,31 @@ use Installer;
 {
 
     my ($confirm,
-	$dep_level,
-	$dest_dir,
-	$dir,
-	$file,
-	$file_comparison,
-	$globs_file,
-	$help,
-	$html_viewer,
-	$infile,
-	$input,
-	$installer,
-	$interactive,
-	$lib_dest_dir,
-	$lib_dir,
-	$lib_prefix_dir,
-	$locale,
-	$man,
-	$mas_path,
-	$outfile,
-	$parser,
-	$prefix_dir,
-	$prefix_dest_dir,
-	$quiet,
-	$use_dists_mas_lib,
-	$use_source_view_2);
+        $dep_level,
+        $dest_dir,
+        $dir,
+        $file,
+        $file_comparison,
+        $globs_file,
+        $help,
+        $html_viewer,
+        $infile,
+        $input,
+        $installer,
+        $interactive,
+        $lib_dest_dir,
+        $lib_dir,
+        $lib_prefix_dir,
+        $locale,
+        $man,
+        $mas_path,
+        $outfile,
+        $parser,
+        $prefix_dir,
+        $prefix_dest_dir,
+        $quiet,
+        $use_dists_mas_lib,
+        $use_source_view_2);
 
     # Assign defaults.
 
@@ -117,20 +117,20 @@ use Installer;
     $parser = Getopt::Long::Parser->new();
     $parser->configure("bundling");
     if (! $parser->getoptions("confirm|c"           => \$confirm,
-			      "dep-level=i"         => \$dep_level,
-			      "destdir|d=s"         => \$dest_dir,
-			      "file-comparison|f=s" => \$file_comparison,
-			      "globs-file|g=s"      => \$globs_file,
-			      "html-viewer=s"       => \$html_viewer,
-			      "interactive|i"       => \$interactive,
-			      "libdir|l=s"          => \$lib_dir,
-			      "prefix|p=s"          => \$prefix_dir,
-			      "quiet|q"             => \$quiet,
-			      "use-dists-mas!"      => \$use_dists_mas_lib,
-			      "help|?"              => \$help,
-			      "man|m"               => \$man))
+                              "dep-level=i"         => \$dep_level,
+                              "destdir|d=s"         => \$dest_dir,
+                              "file-comparison|f=s" => \$file_comparison,
+                              "globs-file|g=s"      => \$globs_file,
+                              "html-viewer=s"       => \$html_viewer,
+                              "interactive|i"       => \$interactive,
+                              "libdir|l=s"          => \$lib_dir,
+                              "prefix|p=s"          => \$prefix_dir,
+                              "quiet|q"             => \$quiet,
+                              "use-dists-mas!"      => \$use_dists_mas_lib,
+                              "help|?"              => \$help,
+                              "man|m"               => \$man))
     {
-	pod2usage(1);
+        pod2usage(1);
     }
     pod2usage(0) if ($help);
     pod2usage(-exitstatus => 0, -verbose => 2) if ($man);
@@ -140,53 +140,53 @@ use Installer;
     if ($dep_level > 0)
     {
 
-	my (%deps,
-	    $err_msg,
-	    $met);
+        my (%deps,
+            $err_msg,
+            $met);
 
-	# Build up the dependency list.
+        # Build up the dependency list.
 
-	%deps = ("Glib"               => 1.144,
-		 "Gnome2"             => 1.040,
-		 "Gnome2::Canvas"     => 1.002,
-		 "Gnome2::VFS"        => 1.080,
-		 "Gtk2"               => 1.146,
-		 "Gtk2::GladeXML"     => 1.006,
-		 "Gtk2::SourceView2"  => 0.10,
-		 "Locale::TextDomain" => 1.16);
-	$deps{"Monotone::AutomateStdio"} = 0.05 if (! $use_dists_mas_lib);
+        %deps = ("Glib"               => 1.144,
+                 "Gnome2"             => 1.040,
+                 "Gnome2::Canvas"     => 1.002,
+                 "Gnome2::VFS"        => 1.080,
+                 "Gtk2"               => 1.146,
+                 "Gtk2::GladeXML"     => 1.006,
+                 "Gtk2::SourceView2"  => 0.10,
+                 "Locale::TextDomain" => 1.16);
+        $deps{"Monotone::AutomateStdio"} = 0.05 if (! $use_dists_mas_lib);
 
-	# Do the check.
+        # Do the check.
 
-	$met = DependencyChecker::check(\%deps, \$err_msg);
+        $met = DependencyChecker::check(\%deps, \$err_msg);
 
-	# If the error was down to a missing Gtk2::SourceView2 package then
-	# look for Gtk2::SourceView.
+        # If the error was down to a missing Gtk2::SourceView2 package then
+        # look for Gtk2::SourceView.
 
-	if ($met)
-	{
-	    $use_source_view_2 = 1;
-	}
-	else
-	{
-	    if ($err_msg =~ m/Gtk2::SourceView2 [0-9.]+ not found\.$/)
-	    {
-		delete($deps{"Gtk2::SourceView2"});
-		$deps{"Gtk2::SourceView"} = 1.000;
-		$met = DependencyChecker::check(\%deps, \$err_msg);
-	    }
-	}
+        if ($met)
+        {
+            $use_source_view_2 = 1;
+        }
+        else
+        {
+            if ($err_msg =~ m/Gtk2::SourceView2 [0-9.]+ not found\.$/)
+            {
+                delete($deps{"Gtk2::SourceView2"});
+                $deps{"Gtk2::SourceView"} = 1.000;
+                $met = DependencyChecker::check(\%deps, \$err_msg);
+            }
+        }
 
-	# Deal with the result depending upon what the user wants.
+        # Deal with the result depending upon what the user wants.
 
-	if (! $met)
-	{
-	    printf(STDERR "%s: %s\n",
-		   ($dep_level == 2) ? "Error" : "Warning",
-		   $err_msg);
-	    exit(1) if ($dep_level < 3);
-	}
-	exit(0) if ($dep_level == 1);
+        if (! $met)
+        {
+            printf(STDERR "%s: %s\n",
+                   ($dep_level == 2) ? "Error" : "Warning",
+                   $err_msg);
+            exit(1) if ($dep_level < 3);
+        }
+        exit(0) if ($dep_level == 1);
 
     }
 
@@ -195,202 +195,202 @@ use Installer;
     print("Linux installer for mtn-browse\n\n") if ($interactive);
     while (1)
     {
-	if ($interactive)
-	{
-	    print("Where is your MIME globs file? [" . $globs_file . "]: ");
-	    chomp($input = <STDIN>);
-	    ($input) = ($input =~ m/^\s*(.*)\s*$/);
-	    $globs_file = $input if ($input ne "");
-	}
-	if (! -f $globs_file)
-	{
-	    print("Error: File `" . $globs_file . "' is unreadable.\n");
-	    exit(1) if (! $interactive);
-	    next;
-	}
+        if ($interactive)
+        {
+            print("Where is your MIME globs file? [" . $globs_file . "]: ");
+            chomp($input = <STDIN>);
+            ($input) = ($input =~ m/^\s*(.*)\s*$/);
+            $globs_file = $input if ($input ne "");
+        }
+        if (! -f $globs_file)
+        {
+            print("Error: File `" . $globs_file . "' is unreadable.\n");
+            exit(1) if (! $interactive);
+            next;
+        }
 
-	if ($interactive)
-	{
-	    print("Where will it be run from (PREFIX_DIR)? [" . $prefix_dir
-		  . "]: ");
-	    chomp($input = <STDIN>);
-	    ($input) = ($input =~ m/^\s*(.*)\s*$/);
-	    $prefix_dir = $input if ($input ne "");
-	}
-	if (-e $prefix_dir && ! -d $prefix_dir)
-	{
-	    print("Error: Directory `" . $prefix_dir . "' is not a "
-		  . "directory.\n");
-	    exit(1) if (! $interactive);
-	    next;
-	}
+        if ($interactive)
+        {
+            print("Where will it be run from (PREFIX_DIR)? [" . $prefix_dir
+                  . "]: ");
+            chomp($input = <STDIN>);
+            ($input) = ($input =~ m/^\s*(.*)\s*$/);
+            $prefix_dir = $input if ($input ne "");
+        }
+        if (-e $prefix_dir && ! -d $prefix_dir)
+        {
+            print("Error: Directory `" . $prefix_dir . "' is not a "
+                  . "directory.\n");
+            exit(1) if (! $interactive);
+            next;
+        }
 
-	if ($interactive)
-	{
-	    print("Where do you want to copy it to (DEST_DIR)? [" . $dest_dir
-		  . "]: ");
-	    chomp($input = <STDIN>);
-	    ($input) = ($input =~ m/^\s*(.*)\s*$/);
-	    $dest_dir = $input if ($input ne "");
-	}
-	$prefix_dest_dir = $dest_dir . $prefix_dir;
-	if (-e $prefix_dest_dir
-	    && (! -d $prefix_dest_dir || ! -w $prefix_dest_dir))
-	{
-	    print("Error: Directory `" . $prefix_dest_dir . "' is unwritable "
-		  . "or not a directory.\n");
-	    exit(1) if (! $interactive);
-	    next;
-	}
+        if ($interactive)
+        {
+            print("Where do you want to copy it to (DEST_DIR)? [" . $dest_dir
+                  . "]: ");
+            chomp($input = <STDIN>);
+            ($input) = ($input =~ m/^\s*(.*)\s*$/);
+            $dest_dir = $input if ($input ne "");
+        }
+        $prefix_dest_dir = $dest_dir . $prefix_dir;
+        if (-e $prefix_dest_dir
+            && (! -d $prefix_dest_dir || ! -w $prefix_dest_dir))
+        {
+            print("Error: Directory `" . $prefix_dest_dir . "' is unwritable "
+                  . "or not a directory.\n");
+            exit(1) if (! $interactive);
+            next;
+        }
 
-	if ($interactive)
-	{
-	    print("Where should the libraries go (LIB_DIR)? [<PREFIX_DIR>"
-		  . $lib_dir . "]: ");
-	    chomp($input = <STDIN>);
-	    ($input) = ($input =~ m/^\s*(.*)\s*$/);
-	    $lib_dir = $input if ($input ne "");
-	}
-	$lib_prefix_dir = $prefix_dir . "/" . $lib_dir;
-	$lib_prefix_dir =~ s/\/\//\//g;
-	$lib_dest_dir = $dest_dir . $prefix_dir. "/" . $lib_dir;
-	$lib_dest_dir =~ s/\/\//\//g;
-	if (-e $lib_dest_dir && (! -d $lib_dest_dir || ! -w $lib_dest_dir))
-	{
-	    print("Error: Directory `" . $lib_dest_dir . "' is unwritable or "
-		  . "not a directory.\n");
-	    exit(1) if (! $interactive);
-	    next;
-	}
+        if ($interactive)
+        {
+            print("Where should the libraries go (LIB_DIR)? [<PREFIX_DIR>"
+                  . $lib_dir . "]: ");
+            chomp($input = <STDIN>);
+            ($input) = ($input =~ m/^\s*(.*)\s*$/);
+            $lib_dir = $input if ($input ne "");
+        }
+        $lib_prefix_dir = $prefix_dir . "/" . $lib_dir;
+        $lib_prefix_dir =~ s/\/\//\//g;
+        $lib_dest_dir = $dest_dir . $prefix_dir. "/" . $lib_dir;
+        $lib_dest_dir =~ s/\/\//\//g;
+        if (-e $lib_dest_dir && (! -d $lib_dest_dir || ! -w $lib_dest_dir))
+        {
+            print("Error: Directory `" . $lib_dest_dir . "' is unwritable or "
+                  . "not a directory.\n");
+            exit(1) if (! $interactive);
+            next;
+        }
 
-	if ($interactive)
-	{
-	    print("Program to use for file comparisons (FILE_COMPARE_CMD)? "
-		  . "[" . $file_comparison . "]: ");
-	    chomp($input = <STDIN>);
-	    ($input) = ($input =~ m/^\s*(.*)\s*$/);
-	    $file_comparison = $input if ($input ne "");
-	}
-	if ($file_comparison ne "")
-	{
-	    my $found;
+        if ($interactive)
+        {
+            print("Program to use for file comparisons (FILE_COMPARE_CMD)? "
+                  . "[" . $file_comparison . "]: ");
+            chomp($input = <STDIN>);
+            ($input) = ($input =~ m/^\s*(.*)\s*$/);
+            $file_comparison = $input if ($input ne "");
+        }
+        if ($file_comparison ne "")
+        {
+            my $found;
 
-	    # Check full paths or scan $PATH for it.
+            # Check full paths or scan $PATH for it.
 
-	    if ($file_comparison =~ m/^\//)
-	    {
-		$found = 1 if (-x $file_comparison);
-	    }
-	    else
-	    {
-		my $cmd;
-		$cmd = (split(/[[:blank:]]/, $file_comparison))[0];
-		foreach my $dir (split(/:/, $ENV{PATH}))
-		{
-		    if (-x "${dir}/$cmd")
-		    {
-			$found = 1;
-			last;
-		    }
-		}
-	    }
+            if ($file_comparison =~ m/^\//)
+            {
+                $found = 1 if (-x $file_comparison);
+            }
+            else
+            {
+                my $cmd;
+                $cmd = (split(/[[:blank:]]/, $file_comparison))[0];
+                foreach my $dir (split(/:/, $ENV{PATH}))
+                {
+                    if (-x "${dir}/$cmd")
+                    {
+                        $found = 1;
+                        last;
+                    }
+                }
+            }
 
-	    if (! $found)
-	    {
-		print("Warning: Program `" . $file_comparison
-		      . "' cannot be found or is not executable.\n");
-	    }
-	}
+            if (! $found)
+            {
+                print("Warning: Program `" . $file_comparison
+                      . "' cannot be found or is not executable.\n");
+            }
+        }
 
-	if ($interactive)
-	{
-	    print("Use Yelp or web browser to display help (HTML_VIEWER_CMD)? "
-		  . "[" . (($html_viewer ne "") ? $html_viewer : "Use Yelp")
-		  . "]: ");
-	    chomp($input = <STDIN>);
-	    ($input) = ($input =~ m/^\s*(.*)\s*$/);
-	    $html_viewer = $input if ($input ne "");
-	}
-	if ($html_viewer ne "")
-	{
-	    my $found;
+        if ($interactive)
+        {
+            print("Use Yelp or web browser to display help (HTML_VIEWER_CMD)? "
+                  . "[" . (($html_viewer ne "") ? $html_viewer : "Use Yelp")
+                  . "]: ");
+            chomp($input = <STDIN>);
+            ($input) = ($input =~ m/^\s*(.*)\s*$/);
+            $html_viewer = $input if ($input ne "");
+        }
+        if ($html_viewer ne "")
+        {
+            my $found;
 
-	    # Check full paths or scan $PATH for it.
+            # Check full paths or scan $PATH for it.
 
-	    if ($html_viewer =~ m/^\//)
-	    {
-		$found = 1 if (-x $html_viewer);
-	    }
-	    else
-	    {
-		my $cmd;
-		$cmd = (split(/[[:blank:]]/, $html_viewer))[0];
-		foreach my $dir (split(/:/, $ENV{PATH}))
-		{
-		    if (-x "${dir}/$cmd")
-		    {
-			$found = 1;
-			last;
-		    }
-		}
-	    }
+            if ($html_viewer =~ m/^\//)
+            {
+                $found = 1 if (-x $html_viewer);
+            }
+            else
+            {
+                my $cmd;
+                $cmd = (split(/[[:blank:]]/, $html_viewer))[0];
+                foreach my $dir (split(/:/, $ENV{PATH}))
+                {
+                    if (-x "${dir}/$cmd")
+                    {
+                        $found = 1;
+                        last;
+                    }
+                }
+            }
 
-	    if (! $found)
-	    {
-		print("Error: Program `" . $html_viewer
-		      . "' cannot be found or is not executable.\n");
-		exit(1) if (! $interactive);
-		next;
-	    }
-	}
+            if (! $found)
+            {
+                print("Error: Program `" . $html_viewer
+                      . "' cannot be found or is not executable.\n");
+                exit(1) if (! $interactive);
+                next;
+            }
+        }
 
-	if ($interactive)
-	{
-	    print("Use the Monotone::AutomateStdio (MAS) library that came "
-		  . "with this package? [Y]: ");
-	    chomp($input = <STDIN>);
-	    if ($input =~ m/^\s*[nN]\s*$/)
-	    {
-		$use_dists_mas_lib = 0;
-	    }
-	    else
-	    {
-		$use_dists_mas_lib = 1;
-	    }
-	}
+        if ($interactive)
+        {
+            print("Use the Monotone::AutomateStdio (MAS) library that came "
+                  . "with this package? [Y]: ");
+            chomp($input = <STDIN>);
+            if ($input =~ m/^\s*[nN]\s*$/)
+            {
+                $use_dists_mas_lib = 0;
+            }
+            else
+            {
+                $use_dists_mas_lib = 1;
+            }
+        }
 
-	if ($confirm || $interactive || ! $quiet)
-	{
-	    print("\nInstallation options are:\n");
-	    print("GLOBS_FILE       = " . $globs_file . "\n");
-	    print("PREFIX_DIR       = " . $prefix_dir . "\n");
-	    print("DEST_DIR         = " . $dest_dir . "\n");
-	    print("LIB_DIR          = <PREFIX_DIR>/" . $lib_dir . "\n");
-	    print("FILE_COMPARE_CMD = " . $file_comparison . "\n");
-	    print("HTML_VIEWER_CMD  = "
-		  . (($html_viewer ne "") ? $html_viewer : "Use Yelp") . "\n");
-	    print("Use my MAS       = " . ($use_dists_mas_lib ? "Yes" : "No")
-		  . "\n");
-	}
-	if ($interactive)
-	{
-	    print("\nAccept these? [N]: ");
-	    chomp($input = <STDIN>);
-	    if ($input =~ m/^\s*[yY]\s*$/)
-	    {
-		last;
-	    }
-	}
-	elsif ($confirm)
-	{
-	    print("\nPress <Return> to continue: ");
-	    <STDIN>;
-	    last;
-	}
-	else
-	{
-	    last;
-	}
+        if ($confirm || $interactive || ! $quiet)
+        {
+            print("\nInstallation options are:\n");
+            print("GLOBS_FILE       = " . $globs_file . "\n");
+            print("PREFIX_DIR       = " . $prefix_dir . "\n");
+            print("DEST_DIR         = " . $dest_dir . "\n");
+            print("LIB_DIR          = <PREFIX_DIR>/" . $lib_dir . "\n");
+            print("FILE_COMPARE_CMD = " . $file_comparison . "\n");
+            print("HTML_VIEWER_CMD  = "
+                  . (($html_viewer ne "") ? $html_viewer : "Use Yelp") . "\n");
+            print("Use my MAS       = " . ($use_dists_mas_lib ? "Yes" : "No")
+                  . "\n");
+        }
+        if ($interactive)
+        {
+            print("\nAccept these? [N]: ");
+            chomp($input = <STDIN>);
+            if ($input =~ m/^\s*[yY]\s*$/)
+            {
+                last;
+            }
+        }
+        elsif ($confirm)
+        {
+            print("\nPress <Return> to continue: ");
+            <STDIN>;
+            last;
+        }
+        else
+        {
+            last;
+        }
     }
 
     print("Installing...\n") if (! $quiet);
@@ -400,164 +400,164 @@ use Installer;
 
     if ($use_source_view_2)
     {
-	die("IO::File failed with $!")
-	    if (! defined($infile = IO::File->new("mtn-browse-sv2", "r")));
+        die("IO::File failed with $!")
+            if (! defined($infile = IO::File->new("mtn-browse-sv2", "r")));
     }
     else
     {
-	die("IO::File failed with $!")
-	    if (! defined($infile = IO::File->new("mtn-browse", "r")));
+        die("IO::File failed with $!")
+            if (! defined($infile = IO::File->new("mtn-browse", "r")));
     }
     die("IO::File failed with $!")
-	if (! defined($outfile = IO::File->new("mtn-browse.out", "w")));
+        if (! defined($outfile = IO::File->new("mtn-browse.out", "w")));
     while (defined($input = $infile->getline()))
     {
-	$input =~ s/\@INST:FILE_COMPARE_CMD\@/$file_comparison/g;
-	$input =~ s/\@INST:HTML_VIEWER_CMD\@/$html_viewer/g;
-	$input =~ s/\@INST:LIB_DIR\@/$lib_prefix_dir/g;
-	$input =~ s/\@INST:GLOBS_FILE\@/$globs_file/g;
-	$input =~ s/\@INST:PREFIX_DIR\@/$prefix_dir/g;
-	$outfile->print($input);
+        $input =~ s/\@INST:FILE_COMPARE_CMD\@/$file_comparison/g;
+        $input =~ s/\@INST:HTML_VIEWER_CMD\@/$html_viewer/g;
+        $input =~ s/\@INST:LIB_DIR\@/$lib_prefix_dir/g;
+        $input =~ s/\@INST:GLOBS_FILE\@/$globs_file/g;
+        $input =~ s/\@INST:PREFIX_DIR\@/$prefix_dir/g;
+        $outfile->print($input);
     }
     $infile->close();
     $outfile->close();
     $infile = $outfile = undef;
     $installer->install("mtn-browse.out",
-			"${prefix_dest_dir}/bin/mtn-browse",
-			0755);
+                        "${prefix_dest_dir}/bin/mtn-browse",
+                        0755);
     unlink("mtn-browse.out");
 
     # Install modules and libraries.
 
     die("IO::Dir failed with $!")
-	if (! defined($dir = IO::Dir->new("lib/perl")));
+        if (! defined($dir = IO::Dir->new("lib/perl")));
     while (defined($file = $dir->read()))
     {
-	$installer->install("lib/perl/$file",  "${lib_dest_dir}/perl/$file")
-	    if ($file =~ m/.*\.pm$/);
+        $installer->install("lib/perl/$file",  "${lib_dest_dir}/perl/$file")
+            if ($file =~ m/.*\.pm$/);
     }
     $dir->close();
     if ($use_dists_mas_lib)
     {
-	my $mas_dir;
-	if (-r "lib/perl/Monotone/AutomateStdio.pm")
-	{
-	    $mas_dir = "lib/perl/Monotone";
-	}
-	elsif (-r "../automate-stdio/lib/Monotone/AutomateStdio.pm")
-	{
-	    $mas_dir = "../automate-stdio/lib/Monotone";
-	}
-	else
-	{
-	    die("Been asked to use my MAS library but cannot find it.");
-	}
-	die("IO::Dir failed with $!")
-	    if (! defined($dir = IO::Dir->new($mas_dir)));
-	while (defined($file = $dir->read()))
-	{
-	    $installer->install("${mas_dir}/$file",
-				"${lib_dest_dir}/perl/Monotone/$file")
-		if ($file =~ m/.*\.pm$/ || $file =~ m/.*\.pod$/);
-	}
-	$dir->close();
+        my $mas_dir;
+        if (-r "lib/perl/Monotone/AutomateStdio.pm")
+        {
+            $mas_dir = "lib/perl/Monotone";
+        }
+        elsif (-r "../automate-stdio/lib/Monotone/AutomateStdio.pm")
+        {
+            $mas_dir = "../automate-stdio/lib/Monotone";
+        }
+        else
+        {
+            die("Been asked to use my MAS library but cannot find it.");
+        }
+        die("IO::Dir failed with $!")
+            if (! defined($dir = IO::Dir->new($mas_dir)));
+        while (defined($file = $dir->read()))
+        {
+            $installer->install("${mas_dir}/$file",
+                                "${lib_dest_dir}/perl/Monotone/$file")
+                if ($file =~ m/.*\.pm$/ || $file =~ m/.*\.pod$/);
+        }
+        $dir->close();
     }
 
     # Install GUI components.
 
     $installer->install("lib/ui/mtn-browse.glade",
-			"${prefix_dest_dir}/share/mtn-browse/glade/"
-			    . "mtn-browse.glade");
+                        "${prefix_dest_dir}/share/mtn-browse/glade/"
+                            . "mtn-browse.glade");
     die("IO::Dir failed with $!")
-	if (! defined($dir = IO::Dir->new("lib/ui/pixmaps")));
+        if (! defined($dir = IO::Dir->new("lib/ui/pixmaps")));
     while (defined($file = $dir->read()))
     {
-	$installer->install("lib/ui/pixmaps/$file",
-			    "${prefix_dest_dir}/share/mtn-browse/glade/$file")
-	    if ($file =~ m/.*\.png$/);
+        $installer->install("lib/ui/pixmaps/$file",
+                            "${prefix_dest_dir}/share/mtn-browse/glade/$file")
+            if ($file =~ m/.*\.png$/);
     }
     $dir->close();
 
     # Install translation files.
 
     die("IO::Dir failed with $!")
-	if (! defined($dir = IO::Dir->new("locale")));
+        if (! defined($dir = IO::Dir->new("locale")));
     while (defined($file = $dir->read()))
     {
-	if ($file =~ m/(.*)\.po$/)
-	{
-	    my $locale = $1;
-	    system("msgfmt --output-file=locale/${locale}.mo locale/$file");
-	    $installer->install("locale/${locale}.mo",
-				"${prefix_dest_dir}/share/locale/${locale}/"
-				    . "LC_MESSAGES/mtn-browse.mo");
-	}
+        if ($file =~ m/(.*)\.po$/)
+        {
+            my $locale = $1;
+            system("msgfmt --output-file=locale/${locale}.mo locale/$file");
+            $installer->install("locale/${locale}.mo",
+                                "${prefix_dest_dir}/share/locale/${locale}/"
+                                    . "LC_MESSAGES/mtn-browse.mo");
+        }
     }
     $dir->close();
 
     # Install help files.
 
     die("IO::Dir failed with $!")
-	if (! defined($dir = IO::Dir->new("locale/help")));
+        if (! defined($dir = IO::Dir->new("locale/help")));
     while (defined($locale = $dir->read()))
     {
-	next if ($locale eq "." || $locale eq "..");
-	my ($figures_dir,
-	    $img_file);
-	if ($html_viewer ne "")
-	{
-	    my ($html_file,
-		$subdir);
-	    die("IO::Dir failed with $!")
-		if (! defined($subdir =
-			      IO::Dir->new("locale/help/${locale}")));
-	    while (defined($html_file = $subdir->read()))
-	    {
-		next unless ($html_file =~ m/^[^.]+\.html$/);
-		$installer->install("locale/help/${locale}/$html_file",
-				    "${prefix_dest_dir}/share/gnome/help/"
-					. "mtn-browse/${locale}/$html_file");
-	    }
-	    die("IO::Dir failed with $!")
-		if (! defined($subdir =
-			      IO::Dir->new("locale/help/${locale}/images")));
-	    while (defined($img_file = $subdir->read()))
-	    {
-		next if ($img_file eq "." || $img_file eq "..");
-		$installer->install("locale/help/${locale}/images/$img_file",
-				    "${prefix_dest_dir}/share/gnome/help/"
-					. "mtn-browse/${locale}/images/"
-					. "$img_file");
-	    }
-	}
-	else
-	{
-	    $installer->install("locale/help/${locale}/mtn-browse.xml",
-				"${prefix_dest_dir}/share/gnome/help/"
-				    . "mtn-browse/${locale}/mtn-browse.xml");
-	}
-	die("IO::Dir failed with $!")
-	    if (! defined($figures_dir =
-			  IO::Dir->new("locale/help/${locale}/figures")));
-	while (defined($img_file = $figures_dir->read()))
-	{
-	    next if ($img_file eq "." || $img_file eq "..");
-	    $installer->install("locale/help/${locale}/figures/$img_file",
-				"${prefix_dest_dir}/share/gnome/help/"
-				    . "mtn-browse/${locale}/figures/"
-				    . "$img_file");
-	}
-	die("IO::Dir failed with $!")
-	    if (! defined($figures_dir =
-			  IO::Dir->new("locale/help/${locale}/figures")));
-	while (defined($img_file = $figures_dir->read()))
-	{
-	    next if ($img_file eq "." || $img_file eq "..");
-	    $installer->install("locale/help/${locale}/figures/$img_file",
-				"${prefix_dest_dir}/share/gnome/help/"
-				    . "mtn-browse/${locale}/figures/"
-				    . "$img_file");
-	}
+        next if ($locale eq "." || $locale eq "..");
+        my ($figures_dir,
+            $img_file);
+        if ($html_viewer ne "")
+        {
+            my ($html_file,
+                $subdir);
+            die("IO::Dir failed with $!")
+                if (! defined($subdir =
+                              IO::Dir->new("locale/help/${locale}")));
+            while (defined($html_file = $subdir->read()))
+            {
+                next unless ($html_file =~ m/^[^.]+\.html$/);
+                $installer->install("locale/help/${locale}/$html_file",
+                                    "${prefix_dest_dir}/share/gnome/help/"
+                                        . "mtn-browse/${locale}/$html_file");
+            }
+            die("IO::Dir failed with $!")
+                if (! defined($subdir =
+                              IO::Dir->new("locale/help/${locale}/images")));
+            while (defined($img_file = $subdir->read()))
+            {
+                next if ($img_file eq "." || $img_file eq "..");
+                $installer->install("locale/help/${locale}/images/$img_file",
+                                    "${prefix_dest_dir}/share/gnome/help/"
+                                        . "mtn-browse/${locale}/images/"
+                                        . "$img_file");
+            }
+        }
+        else
+        {
+            $installer->install("locale/help/${locale}/mtn-browse.xml",
+                                "${prefix_dest_dir}/share/gnome/help/"
+                                    . "mtn-browse/${locale}/mtn-browse.xml");
+        }
+        die("IO::Dir failed with $!")
+            if (! defined($figures_dir =
+                          IO::Dir->new("locale/help/${locale}/figures")));
+        while (defined($img_file = $figures_dir->read()))
+        {
+            next if ($img_file eq "." || $img_file eq "..");
+            $installer->install("locale/help/${locale}/figures/$img_file",
+                                "${prefix_dest_dir}/share/gnome/help/"
+                                    . "mtn-browse/${locale}/figures/"
+                                    . "$img_file");
+        }
+        die("IO::Dir failed with $!")
+            if (! defined($figures_dir =
+                          IO::Dir->new("locale/help/${locale}/figures")));
+        while (defined($img_file = $figures_dir->read()))
+        {
+            next if ($img_file eq "." || $img_file eq "..");
+            $installer->install("locale/help/${locale}/figures/$img_file",
+                                "${prefix_dest_dir}/share/gnome/help/"
+                                    . "mtn-browse/${locale}/figures/"
+                                    . "$img_file");
+        }
     }
     $dir->close();
 

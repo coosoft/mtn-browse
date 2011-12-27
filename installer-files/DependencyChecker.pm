@@ -103,49 +103,49 @@ sub check($$)
     {
 
         # Attempt to eval the package in. Perl 5.8.0 has a bug with require
-	# Foo::Bar alone in an eval, so an extra statement is a workaround.
+        # Foo::Bar alone in an eval, so an extra statement is a workaround.
 
         eval "require $dep; 0";
 
-	# What was the outcome?
+        # What was the outcome?
 
-	if ($@ ne "")
-	{
+        if ($@ ne "")
+        {
 
-	    # Not installed.
+            # Not installed.
 
-	    $$err_msg = sprintf("Prerequisite %s %s not found.",
-				$dep,
-				$dependencies->{$dep});
-	    $met = undef;
+            $$err_msg = sprintf("Prerequisite %s %s not found.",
+                                $dep,
+                                $dependencies->{$dep});
+            $met = undef;
 
-	}
-	elsif ($dependencies->{$dep} > 0)
-	{
+        }
+        elsif ($dependencies->{$dep} > 0)
+        {
 
-	    my $version;
+            my $version;
 
-	    # Installed, and we need to check the version number.
+            # Installed, and we need to check the version number.
 
-	    # Get the version number, converting X.Y_Z alpha version #s to X.YZ
-	    # for easier comparisons.
+            # Get the version number, converting X.Y_Z alpha version #s to X.YZ
+            # for easier comparisons.
 
-	    $version = defined($dep->VERSION) ? $dep->VERSION : 0;
-	    $version =~ s/(\d+)\.(\d+)_(\d+)/$1.$2$3/;
+            $version = defined($dep->VERSION) ? $dep->VERSION : 0;
+            $version =~ s/(\d+)\.(\d+)_(\d+)/$1.$2$3/;
 
-	    # Now check the version numbers.
+            # Now check the version numbers.
 
-	    if ($version < $dependencies->{$dep})
-	    {
-		$$err_msg =
-		    sprintf("Prerequisite %s %s not found. We have %s.",
-			    $dep,
-			    $dependencies->{$dep},
-			    $version);
-		$met = undef;
-	    }
+            if ($version < $dependencies->{$dep})
+            {
+                $$err_msg =
+                    sprintf("Prerequisite %s %s not found. We have %s.",
+                            $dep,
+                            $dependencies->{$dep},
+                            $version);
+                $met = undef;
+            }
 
-	}
+        }
 
     }
 

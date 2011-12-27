@@ -86,16 +86,16 @@ sub manage_server_bookmarks($$)
     my ($parent, $bookmarks) = @_;
 
     my ($changed,
-	$instance,
-	$response);
+        $instance,
+        $response);
 
     $instance = get_manage_server_bookmarks_window($parent, $bookmarks);
     $response = busy_dialog_run($instance);
     $instance->{window}->hide();
     if ($response eq "ok")
     {
-	$changed = 1;
-	@$bookmarks = @{$instance->{server_bookmarks}};
+        $changed = 1;
+        @$bookmarks = @{$instance->{server_bookmarks}};
     }
     $instance->{servers_liststore}->clear();
     $instance->{server_bookmarks} = [];
@@ -132,16 +132,16 @@ sub servers_treeselection_changed_cb($$)
 
     if ($widget->count_selected_rows() > 0)
     {
-	my ($iter,
-	    $model);
-	($model, $iter) = $widget->get_selected();
-	$instance->{selected_server} = $model->get($iter, 0);
-	$instance->{remove_server_button}->set_sensitive(TRUE);
+        my ($iter,
+            $model);
+        ($model, $iter) = $widget->get_selected();
+        $instance->{selected_server} = $model->get($iter, 0);
+        $instance->{remove_server_button}->set_sensitive(TRUE);
     }
     else
     {
-	$instance->{selected_server} = undef;
-	$instance->{remove_server_button}->set_sensitive(FALSE);
+        $instance->{selected_server} = undef;
+        $instance->{remove_server_button}->set_sensitive(FALSE);
     }
 
 }
@@ -171,8 +171,8 @@ sub server_entry_changed_cb($$)
     local $instance->{in_cb} = 1;
 
     $instance->{add_server_button}->set_sensitive
-	((length($instance->{server_entry}->get_text()) > 0) ?
-	 TRUE : FALSE);
+        ((length($instance->{server_entry}->get_text()) > 0) ?
+         TRUE : FALSE);
 
 }
 #
@@ -206,33 +206,33 @@ sub add_server_button_clicked_cb($$)
     $server = $instance->{server_entry}->get_text();
     if ($server !~ m/^[A-Za-z0-9._-]+(:\d+)?$/)
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("`{server}' is an invalid server\n"
-		 . "name (<server>[:port] is expected).",
-		 server => $server));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("`{server}' is an invalid server\n"
+                 . "name (<server>[:port] is expected).",
+                 server => $server));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Now check for duplicate entries.
 
     if (grep(/^\Q$server\E$/, @{$instance->{server_bookmarks}}) > 0)
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("`{server}' is already entered\ninto your bookmarks list.",
-		 server => $server));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("`{server}' is already entered\ninto your bookmarks list.",
+                 server => $server));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Ok so add it to the server bookmarks list and reload the servers
@@ -274,19 +274,19 @@ sub remove_server_button_clicked_cb($$)
     if (defined($instance->{selected_server}))
     {
 
-	# Locate the server and remove it from the list.
+        # Locate the server and remove it from the list.
 
-	for ($i = 0; $i < scalar(@{$instance->{server_bookmarks}}); ++ $i)
-	{
-	    last if ($instance->{server_bookmarks}->[$i]
-		     eq $instance->{selected_server});
-	}
-	splice(@{$instance->{server_bookmarks}}, $i, 1);
+        for ($i = 0; $i < scalar(@{$instance->{server_bookmarks}}); ++ $i)
+        {
+            last if ($instance->{server_bookmarks}->[$i]
+                     eq $instance->{selected_server});
+        }
+        splice(@{$instance->{server_bookmarks}}, $i, 1);
 
-	# Reload the servers treeview.
+        # Reload the servers treeview.
 
-	load_servers_treeview($instance);
-	$instance->{remove_server_button}->set_sensitive(FALSE);
+        load_servers_treeview($instance);
+        $instance->{remove_server_button}->set_sensitive(FALSE);
 
     }
 
@@ -316,7 +316,7 @@ sub get_manage_server_bookmarks_window($$)
     my ($parent, $bookmarks) = @_;
 
     my ($glade,
-	$instance);
+        $instance);
     my $window_type = "manage_server_bookmarks_window";
     my $wm = WindowManager->instance();
 
@@ -326,55 +326,55 @@ sub get_manage_server_bookmarks_window($$)
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my ($renderer,
-	    $tv_column);
+        my ($renderer,
+            $tv_column);
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("servers_treeview",
-			    "server_entry",
-			    "add_server_button",
-			    "remove_server_button")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("servers_treeview",
+                            "server_entry",
+                            "add_server_button",
+                            "remove_server_button")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup the servers list.
+        # Setup the servers list.
 
-	$instance->{servers_liststore} = Gtk2::ListStore->new("Glib::String");
-	$instance->{servers_treeview}->
-	    set_model($instance->{servers_liststore});
+        $instance->{servers_liststore} = Gtk2::ListStore->new("Glib::String");
+        $instance->{servers_treeview}->
+            set_model($instance->{servers_liststore});
 
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$tv_column->set_sizing("grow-only");
-	$renderer = Gtk2::CellRendererText->new();
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "text" => 0);
-	$instance->{servers_treeview}->append_column($tv_column);
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $tv_column->set_sizing("grow-only");
+        $renderer = Gtk2::CellRendererText->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "text" => 0);
+        $instance->{servers_treeview}->append_column($tv_column);
 
-	$instance->{servers_treeview}->set_search_column(0);
-	$instance->{servers_treeview}->
-	    set_search_equal_func(\&treeview_column_searcher);
+        $instance->{servers_treeview}->set_search_column(0);
+        $instance->{servers_treeview}->
+            set_search_equal_func(\&treeview_column_searcher);
 
-	$instance->{servers_treeview}->get_selection()->
-	    signal_connect("changed",
-			   \&servers_treeselection_changed_cb,
-			   $instance);
+        $instance->{servers_treeview}->get_selection()->
+            signal_connect("changed",
+                           \&servers_treeselection_changed_cb,
+                           $instance);
 
     }
 
@@ -411,13 +411,13 @@ sub get_manage_server_bookmarks_window($$)
 
     if (defined($glade))
     {
-	$wm->manage($instance, $window_type, $instance->{window});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => undef,
-	      help_ref => __("mtnb-upc-the-manage-server-bookmarks-dialog-"
-			     . "window")});
+        $wm->manage($instance, $window_type, $instance->{window});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => undef,
+              help_ref => __("mtnb-upc-the-manage-server-bookmarks-dialog-"
+                             . "window")});
     }
 
     return $instance;
@@ -447,13 +447,13 @@ sub load_servers_treeview($)
     $instance->{servers_liststore}->clear();
     foreach my $entry (@{$instance->{server_bookmarks}})
     {
-	$instance->{servers_liststore}->
-	    set($instance->{servers_liststore}->append(),
-		0,
-		$entry);
+        $instance->{servers_liststore}->
+            set($instance->{servers_liststore}->append(),
+                0,
+                $entry);
     }
     $instance->{servers_treeview}->scroll_to_point(0, 0)
-	if ($instance->{servers_treeview}->realized());
+        if ($instance->{servers_treeview}->realized());
 
 }
 

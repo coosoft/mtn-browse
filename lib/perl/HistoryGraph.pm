@@ -82,7 +82,7 @@ use constant SUSPENDED_BORDER_COLOUR    => "DeepSkyBlue";
 # Constants for the columns within the branches liststore widget.
 
 use constant BLS_COLUMN_TYPES    => ("Glib::Boolean",
-				     "Glib::String");
+                                     "Glib::String");
 use constant BLS_SELECTED_COLUMN => 0;
 use constant BLS_BRANCH_COLUMN   => 1;
 
@@ -173,11 +173,11 @@ sub display_history_graph($;$$$$)
 {
 
     my ($mtn,
-	$branches,
-	$from_date,
-	$to_date,
-	$revision_id)
-	= @_;
+        $branches,
+        $from_date,
+        $to_date,
+        $revision_id)
+        = @_;
 
     my $instance;
 
@@ -186,17 +186,17 @@ sub display_history_graph($;$$$$)
 
     $instance->{mtn} = $mtn;
     $instance->{graph_data}->{parameters}->{branches} =
-	defined($branches) ? $branches : [];
+        defined($branches) ? $branches : [];
     $instance->{graph_data}->{parameters}->{from_date} =
-	defined($from_date) ? $from_date : "";
+        defined($from_date) ? $from_date : "";
     $instance->{graph_data}->{parameters}->{to_date} =
-	defined($to_date) ? $to_date : "";
+        defined($to_date) ? $to_date : "";
     $instance->{graph_data}->{parameters}->{draw_left_to_right} =
-	$draw_left_to_right;
+        $draw_left_to_right;
     $instance->{graph_data}->{parameters}->{show_all_propagate_nodes} =
-	$show_all_propagate_nodes;
+        $show_all_propagate_nodes;
     $instance->{graph_data}->{parameters}->{colour_by_author} =
-	$colour_by_author;
+        $colour_by_author;
     $instance->{graph_data}->{parameters}->{revision_id} = $revision_id;
     $instance->{graph_data}->{parameters}->{new} = 1;
     $instance->{window}->show_all();
@@ -207,19 +207,19 @@ sub display_history_graph($;$$$$)
     # otherwise simply display the revision graph.
 
     if (scalar(@{$instance->{graph_data}->{parameters}->{branches}}) == 0
-	&& $instance->{graph_data}->{parameters}->{from_date} eq ""
-	&& $instance->{graph_data}->{parameters}->{to_date} eq "")
+        && $instance->{graph_data}->{parameters}->{from_date} eq ""
+        && $instance->{graph_data}->{parameters}->{to_date} eq "")
     {
-	WindowManager->instance()->update_gui();
-	if (change_history_graph_parameters
-	    ($instance, $instance->{graph_data}->{parameters}))
-	{
-	    generate_history_graph($instance);
-	}
+        WindowManager->instance()->update_gui();
+        if (change_history_graph_parameters
+            ($instance, $instance->{graph_data}->{parameters}))
+        {
+            generate_history_graph($instance);
+        }
     }
     else
     {
-	generate_history_graph($instance);
+        generate_history_graph($instance);
     }
 
 }
@@ -248,11 +248,11 @@ sub change_history_graph_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     if (change_history_graph_parameters($instance,
-					$instance->{graph_data}->{parameters}))
+                                        $instance->{graph_data}->{parameters}))
     {
-	$instance->{graph_data}->{parameters}->{revision_id} =
-	    $instance->{selected_revision_id};
-	generate_history_graph($instance);
+        $instance->{graph_data}->{parameters}->{revision_id} =
+            $instance->{selected_revision_id};
+        generate_history_graph($instance);
     }
 
 }
@@ -281,36 +281,36 @@ sub tag_weightings_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     if (manage_tag_weightings($instance->{window},
-			      $user_preferences->{tag_weightings}))
+                              $user_preferences->{tag_weightings}))
     {
 
-	eval
-	{
-	    save_preferences($user_preferences);
-	};
-	if ($@)
-	{
-	    chomp($@);
-	    my $dialog = Gtk2::MessageDialog->new
-		(undef,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __("Your preferences could not be saved:\n") . $@);
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	}
+        eval
+        {
+            save_preferences($user_preferences);
+        };
+        if ($@)
+        {
+            chomp($@);
+            my $dialog = Gtk2::MessageDialog->new
+                (undef,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __("Your preferences could not be saved:\n") . $@);
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+        }
 
-	# Regenerate all of the compiled tag weightings tables.
+        # Regenerate all of the compiled tag weightings tables.
 
-	WindowManager->instance()->cond_find
-	    ($window_type,
-	     sub {
-		 my $instance = $_[0];
-		 compile_tag_weighting_patterns
-		     ($instance->{compiled_tag_weightings});
-		 return;
-	     });
+        WindowManager->instance()->cond_find
+            ($window_type,
+             sub {
+                 my $instance = $_[0];
+                 compile_tag_weighting_patterns
+                     ($instance->{compiled_tag_weightings});
+                 return;
+             });
 
     }
 
@@ -478,43 +478,43 @@ sub graph_advanced_find_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     my (@dummy,
-	$revision_id);
+        $revision_id);
 
     # Let the user choose the revision (we aren't interested in the branch
     # name(s)). Only allow the user to select graphed revisions.
 
     if (advanced_find
-	($instance,
-	 \$revision_id,
-	 \@dummy,
-	 sub {
-	     my ($parent, $revision_id, $instance) = @_;
-	     if (! exists($instance->{graph_data}->{child_graph}->
-			  {$revision_id}))
-	     {
-		 my $dialog = Gtk2::MessageDialog->new
-		     ($parent,
-		      ["modal"],
-		      "info",
-		      "close",
-		      __x("Revision `{revision_id}'\n"
-			      . "cannot be found within the current history "
-			      . "graph.\nPlease select another revision.",
-			  revision_id => $revision_id));
-		 busy_dialog_run($dialog);
-		 $dialog->destroy();
-		 return;
-	     }
-	     return 1;
-	 },
-	 $instance))
+        ($instance,
+         \$revision_id,
+         \@dummy,
+         sub {
+             my ($parent, $revision_id, $instance) = @_;
+             if (! exists($instance->{graph_data}->{child_graph}->
+                          {$revision_id}))
+             {
+                 my $dialog = Gtk2::MessageDialog->new
+                     ($parent,
+                      ["modal"],
+                      "info",
+                      "close",
+                      __x("Revision `{revision_id}'\n"
+                              . "cannot be found within the current history "
+                              . "graph.\nPlease select another revision.",
+                          revision_id => $revision_id));
+                 busy_dialog_run($dialog);
+                 $dialog->destroy();
+                 return;
+             }
+             return 1;
+         },
+         $instance))
     {
 
-	# The user has selected a graphed revision so select it and make sure
-	# it is visible.
+        # The user has selected a graphed revision so select it and make sure
+        # it is visible.
 
-	scroll_to_node($instance, $revision_id);
-	select_node($instance, $revision_id);
+        scroll_to_node($instance, $revision_id);
+        select_node($instance, $revision_id);
 
     }
 
@@ -544,9 +544,9 @@ sub graph_revision_change_history_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     display_revision_change_history
-	($instance->{mtn},
-	 get_node_tag($instance, $instance->{selected_revision_id}),
-	 $instance->{selected_revision_id});
+        ($instance->{mtn},
+         get_node_tag($instance, $instance->{selected_revision_id}),
+         $instance->{selected_revision_id});
 
 }
 #
@@ -574,10 +574,10 @@ sub graph_revision_change_log_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     display_change_log
-	($instance->{mtn},
-	 $instance->{selected_revision_id},
-	 "",
-	 get_node_tag($instance, $instance->{selected_revision_id}));
+        ($instance->{mtn},
+         $instance->{selected_revision_id},
+         "",
+         get_node_tag($instance, $instance->{selected_revision_id}));
 
 }
 #
@@ -608,8 +608,8 @@ sub browse_revision_button_clicked_cb($$)
         {$instance->{selected_revision_id}}->{branches};
 
     get_browser_window($instance->{mtn},
-		       (scalar(@$branches) > 0) ? $$branches[0] : "",
-		       $instance->{selected_revision_id});
+                       (scalar(@$branches) > 0) ? $$branches[0] : "",
+                       $instance->{selected_revision_id});
 
 }
 #
@@ -652,226 +652,226 @@ sub canvas_item_event_cb($$$)
     my $type = $event->type();
 
     $revision_id = defined($revision_id)
-	? $revision_id : $instance->{selected_revision_id};
+        ? $revision_id : $instance->{selected_revision_id};
 
     if ($type eq "button-press")
     {
 
-	my $button = $event->button();
+        my $button = $event->button();
 
-	if ($button == 1)
-	{
-	    if (defined($revision_id))
-	    {
-		select_node($instance, $revision_id);
-		return TRUE;
-	    }
-	}
-	elsif ($button == 3)
-	{
+        if ($button == 1)
+        {
+            if (defined($revision_id))
+            {
+                select_node($instance, $revision_id);
+                return TRUE;
+            }
+        }
+        elsif ($button == 3)
+        {
 
-	    my ($menu,
-		$menu_item);
+            my ($menu,
+                $menu_item);
 
-	    # Create a popup menu with the options in it.
+            # Create a popup menu with the options in it.
 
-	    $menu = Gtk2::Menu->new();
+            $menu = Gtk2::Menu->new();
 
-	    $menu_item =
-		Gtk2::MenuItem->new(__("_Copy Revision Id To The Clipboard"));
-	    $menu->append($menu_item);
-	    if (defined($revision_id))
-	    {
-		$menu_item->signal_connect
-		    ("activate",
-		     sub {
-			 my ($widget, $instance) = @_;
-			 my $clipboard = Gtk2::Clipboard->
-			     get(Gtk2::Gdk->SELECTION_PRIMARY());
-			 $clipboard->set_text($revision_id);
-		     },
-		     $instance);
-	    }
-	    else
-	    {
-		$menu_item->set_sensitive(FALSE);
-	    }
-	    $menu_item->show();
+            $menu_item =
+                Gtk2::MenuItem->new(__("_Copy Revision Id To The Clipboard"));
+            $menu->append($menu_item);
+            if (defined($revision_id))
+            {
+                $menu_item->signal_connect
+                    ("activate",
+                     sub {
+                         my ($widget, $instance) = @_;
+                         my $clipboard = Gtk2::Clipboard->
+                             get(Gtk2::Gdk->SELECTION_PRIMARY());
+                         $clipboard->set_text($revision_id);
+                     },
+                     $instance);
+            }
+            else
+            {
+                $menu_item->set_sensitive(FALSE);
+            }
+            $menu_item->show();
 
-	    $menu_item =
-		Gtk2::MenuItem->new(__("_Go To Selected Revision"));
-	    $menu->append($menu_item);
-	    if (defined($instance->{selected_revision_id}))
-	    {
-		$menu_item->signal_connect
-		    ("activate",
-		     sub {
-			 my ($widget, $instance) = @_;
-			 scroll_to_node($instance,
-					$instance->{selected_revision_id});
-		     },
-		     $instance);
-	    }
-	    else
-	    {
-		$menu_item->set_sensitive(FALSE);
-	    }
-	    $menu_item->show();
+            $menu_item =
+                Gtk2::MenuItem->new(__("_Go To Selected Revision"));
+            $menu->append($menu_item);
+            if (defined($instance->{selected_revision_id}))
+            {
+                $menu_item->signal_connect
+                    ("activate",
+                     sub {
+                         my ($widget, $instance) = @_;
+                         scroll_to_node($instance,
+                                        $instance->{selected_revision_id});
+                     },
+                     $instance);
+            }
+            else
+            {
+                $menu_item->set_sensitive(FALSE);
+            }
+            $menu_item->show();
 
-	    $menu_item = Gtk2::SeparatorMenuItem->new();
-	    $menu_item->show();
-	    $menu->append($menu_item);
+            $menu_item = Gtk2::SeparatorMenuItem->new();
+            $menu_item->show();
+            $menu->append($menu_item);
 
-	    $menu_item = Gtk2::MenuItem->new(__("Display Change _Log"));
-	    $menu->append($menu_item);
-	    if (defined($revision_id))
-	    {
-		$menu_item->signal_connect
-		    ("activate",
-		     sub {
-			 my ($widget, $instance) = @_;
-			 display_change_log($instance->{mtn},
-					    $revision_id,
-					    "",
-					    get_node_tag($instance,
-							 $revision_id));
-		     },
-		     $instance);
-	    }
-	    else
-	    {
-		$menu_item->set_sensitive(FALSE);
-	    }
-	    $menu_item->show();
+            $menu_item = Gtk2::MenuItem->new(__("Display Change _Log"));
+            $menu->append($menu_item);
+            if (defined($revision_id))
+            {
+                $menu_item->signal_connect
+                    ("activate",
+                     sub {
+                         my ($widget, $instance) = @_;
+                         display_change_log($instance->{mtn},
+                                            $revision_id,
+                                            "",
+                                            get_node_tag($instance,
+                                                         $revision_id));
+                     },
+                     $instance);
+            }
+            else
+            {
+                $menu_item->set_sensitive(FALSE);
+            }
+            $menu_item->show();
 
-	    $menu_item = Gtk2::MenuItem->new(__("Display _Revision History"));
-	    $menu->append($menu_item);
-	    if (defined($revision_id))
-	    {
-		$menu_item->signal_connect
-		    ("activate",
-		     sub {
-			 my ($widget, $instance) = @_;
-			 display_revision_change_history($instance->{mtn},
-							 get_node_tag
-							     ($instance,
-							      $revision_id),
-							 $revision_id);
-		     },
-		     $instance);
-	    }
-	    else
-	    {
-		$menu_item->set_sensitive(FALSE);
-	    }
-	    $menu_item->show();
+            $menu_item = Gtk2::MenuItem->new(__("Display _Revision History"));
+            $menu->append($menu_item);
+            if (defined($revision_id))
+            {
+                $menu_item->signal_connect
+                    ("activate",
+                     sub {
+                         my ($widget, $instance) = @_;
+                         display_revision_change_history($instance->{mtn},
+                                                         get_node_tag
+                                                             ($instance,
+                                                              $revision_id),
+                                                         $revision_id);
+                     },
+                     $instance);
+            }
+            else
+            {
+                $menu_item->set_sensitive(FALSE);
+            }
+            $menu_item->show();
 
-	    $menu_item = Gtk2::SeparatorMenuItem->new();
-	    $menu_item->show();
-	    $menu->append($menu_item);
+            $menu_item = Gtk2::SeparatorMenuItem->new();
+            $menu_item->show();
+            $menu->append($menu_item);
 
-	    $menu_item = Gtk2::MenuItem->new(__("_Browse Revision"));
-	    $menu->append($menu_item);
-	    if (defined($revision_id))
-	    {
-		$menu_item->signal_connect
-		    ("activate",
-		     sub {
-			 my ($widget, $instance) = @_;
-			 my $branches = $instance->{graph_data}->
-			     {child_graph}->{$revision_id}->{branches};
-			 get_browser_window
-			     ($instance->{mtn},
-			      (scalar(@$branches) > 0) ? $$branches[0] : "",
-			      $revision_id);
-		     },
-		     $instance);
-	    }
-	    else
-	    {
-		$menu_item->set_sensitive(FALSE);
-	    }
-	    $menu_item->show();
+            $menu_item = Gtk2::MenuItem->new(__("_Browse Revision"));
+            $menu->append($menu_item);
+            if (defined($revision_id))
+            {
+                $menu_item->signal_connect
+                    ("activate",
+                     sub {
+                         my ($widget, $instance) = @_;
+                         my $branches = $instance->{graph_data}->
+                             {child_graph}->{$revision_id}->{branches};
+                         get_browser_window
+                             ($instance->{mtn},
+                              (scalar(@$branches) > 0) ? $$branches[0] : "",
+                              $revision_id);
+                     },
+                     $instance);
+            }
+            else
+            {
+                $menu_item->set_sensitive(FALSE);
+            }
+            $menu_item->show();
 
-	    $menu_item = Gtk2::SeparatorMenuItem->new();
-	    $menu_item->show();
-	    $menu->append($menu_item);
+            $menu_item = Gtk2::SeparatorMenuItem->new();
+            $menu_item->show();
+            $menu->append($menu_item);
 
-	    $menu_item = Gtk2::MenuItem->new
-		(__("Compare Revision _With Selected"));
-	    $menu->append($menu_item);
-	    if (defined($instance->{selected_revision_id})
-		&& defined($revision_id)
-		&& $instance->{selected_revision_id} ne $revision_id)
-	    {
-		$menu_item->signal_connect
-		    ("activate",
-		     sub {
-			 my ($widget, $instance) = @_;
-			 my @revision_ids;
-			 $instance->{mtn}->toposort
-			     (\@revision_ids,
-			      $instance->{selected_revision_id},
-			      $revision_id);
-			 display_revision_comparison($instance->{mtn},
-						     $revision_ids[0],
-						     $revision_ids[1],
-						     undef);
-		     },
-		     $instance);
-	    }
-	    else
-	    {
-		$menu_item->set_sensitive(FALSE);
-	    }
-	    $menu_item->show();
+            $menu_item = Gtk2::MenuItem->new
+                (__("Compare Revision _With Selected"));
+            $menu->append($menu_item);
+            if (defined($instance->{selected_revision_id})
+                && defined($revision_id)
+                && $instance->{selected_revision_id} ne $revision_id)
+            {
+                $menu_item->signal_connect
+                    ("activate",
+                     sub {
+                         my ($widget, $instance) = @_;
+                         my @revision_ids;
+                         $instance->{mtn}->toposort
+                             (\@revision_ids,
+                              $instance->{selected_revision_id},
+                              $revision_id);
+                         display_revision_comparison($instance->{mtn},
+                                                     $revision_ids[0],
+                                                     $revision_ids[1],
+                                                     undef);
+                     },
+                     $instance);
+            }
+            else
+            {
+                $menu_item->set_sensitive(FALSE);
+            }
+            $menu_item->show();
 
-	    # Display the popup menu.
+            # Display the popup menu.
 
-	    $menu->popup(undef, undef, undef, undef, $button, $event->time());
+            $menu->popup(undef, undef, undef, undef, $button, $event->time());
 
-	    return TRUE;
+            return TRUE;
 
-	}
+        }
 
     }
     elsif (defined($revision_id)
-	   && $type eq "2button-press" && $event->button() == 1)
+           && $type eq "2button-press" && $event->button() == 1)
     {
 
-	my $node = $instance->{graph_data}->{child_graph}->{$revision_id};
+        my $node = $instance->{graph_data}->{child_graph}->{$revision_id};
 
-	# Display a new graph for the node under the mouse if it is in the
-	# history graph but not selected (i.e. its on an unselected branch).
+        # Display a new graph for the node under the mouse if it is in the
+        # history graph but not selected (i.e. its on an unselected branch).
 
-	if (! ($node->{flags} & SELECTED_NODE))
-	{
-	    if (scalar(@{$node->{branches}}) > 0)
-	    {
-		display_history_graph
-		    ($instance->{mtn},
-		     [$node->{branches}->[0]],
-		     $instance->{graph_data}->{parameters}->{from_date},
-		     $instance->{graph_data}->{parameters}->{to_date},
-		     $revision_id);
-	    }
-	    else
-	    {
-		my $dialog = Gtk2::MessageDialog->new
-		    ($instance->{window},
-		     ["modal"],
-		     "info",
-		     "close",
-		     __x("Revision `{revision_id}'\n"
-			 . "is not on a branch and so a separate history\n"
-			 . "graph showing that branch cannot be generated.",
-			 revision_id => $revision_id));
-		busy_dialog_run($dialog);
-		$dialog->destroy();
-	    }
-	}
+        if (! ($node->{flags} & SELECTED_NODE))
+        {
+            if (scalar(@{$node->{branches}}) > 0)
+            {
+                display_history_graph
+                    ($instance->{mtn},
+                     [$node->{branches}->[0]],
+                     $instance->{graph_data}->{parameters}->{from_date},
+                     $instance->{graph_data}->{parameters}->{to_date},
+                     $revision_id);
+            }
+            else
+            {
+                my $dialog = Gtk2::MessageDialog->new
+                    ($instance->{window},
+                     ["modal"],
+                     "info",
+                     "close",
+                     __x("Revision `{revision_id}'\n"
+                         . "is not on a branch and so a separate history\n"
+                         . "graph showing that branch cannot be generated.",
+                         revision_id => $revision_id));
+                busy_dialog_run($dialog);
+                $dialog->destroy();
+            }
+        }
 
-	return TRUE;
+        return TRUE;
 
     }
 
@@ -898,7 +898,7 @@ sub generate_history_graph($)
     my $instance = $_[0];
 
     my ($counter,
-	@revision_ids);
+        @revision_ids);
     my $wm = WindowManager->instance();
 
     $wm->make_busy($instance, 1);
@@ -918,54 +918,54 @@ sub generate_history_graph($)
 
     if (! $instance->{stop})
     {
-	my (%branch_set,
-	    @branches);
-	$instance->{appbar}->set_progress_percentage(0);
-	$instance->{appbar}->set_status(__("Getting revision information"));
-	$wm->update_gui();
-	$instance->{mtn}->branches(\@branches);
-	foreach my $branch (@branches)
-	{
-	    $branch_set{$branch} = undef;
-	}
-	@branches = ();
-	$counter = 1;
-	@revision_ids = keys(%{$instance->{graph_data}->{child_graph}});
-	foreach my $revision_id (@revision_ids)
-	{
-	    my $node = $instance->{graph_data}->{child_graph}->{$revision_id};
-	    populate_revision_details($instance, $revision_id);
-	    foreach my $branch (@{$node->{branches}})
-	    {
-		$node->{flags} |= SUSPENDED_NODE
-		    unless (exists($branch_set{$branch}));
-	    }
-	    if (($counter % 100) == 0)
-	    {
-		$instance->{appbar}->set_progress_percentage
-		    ($counter / scalar(@revision_ids));
-		$wm->update_gui();
-	    }
-	    ++ $counter;
+        my (%branch_set,
+            @branches);
+        $instance->{appbar}->set_progress_percentage(0);
+        $instance->{appbar}->set_status(__("Getting revision information"));
+        $wm->update_gui();
+        $instance->{mtn}->branches(\@branches);
+        foreach my $branch (@branches)
+        {
+            $branch_set{$branch} = undef;
+        }
+        @branches = ();
+        $counter = 1;
+        @revision_ids = keys(%{$instance->{graph_data}->{child_graph}});
+        foreach my $revision_id (@revision_ids)
+        {
+            my $node = $instance->{graph_data}->{child_graph}->{$revision_id};
+            populate_revision_details($instance, $revision_id);
+            foreach my $branch (@{$node->{branches}})
+            {
+                $node->{flags} |= SUSPENDED_NODE
+                    unless (exists($branch_set{$branch}));
+            }
+            if (($counter % 100) == 0)
+            {
+                $instance->{appbar}->set_progress_percentage
+                    ($counter / scalar(@revision_ids));
+                $wm->update_gui();
+            }
+            ++ $counter;
 
-	    # Stop if the user wants to.
+            # Stop if the user wants to.
 
-	    last if ($instance->{stop});
-	}
-	$instance->{appbar}->set_progress_percentage(1);
-	$wm->update_gui();
+            last if ($instance->{stop});
+        }
+        $instance->{appbar}->set_progress_percentage(1);
+        $wm->update_gui();
     }
 
     # Get dot to lay out the history graph.
 
     if (! $instance->{stop})
     {
-	$instance->{appbar}->set_progress_percentage(0);
-	$instance->{appbar}->
-	    set_status(__x("Laying out graph with {program}",
-			   program => GRAPHVIZ_LAYOUT_PROGRAM));
-	$wm->update_gui();
-	layout_graph($instance);
+        $instance->{appbar}->set_progress_percentage(0);
+        $instance->{appbar}->
+            set_status(__x("Laying out graph with {program}",
+                           program => GRAPHVIZ_LAYOUT_PROGRAM));
+        $wm->update_gui();
+        layout_graph($instance);
     }
 
     # Now draw it in our canvas.
@@ -978,29 +978,29 @@ sub generate_history_graph($)
 
     if ($instance->{stop})
     {
-	my $parameters = $instance->{graph_data}->{parameters};
-	$instance->{graph_data}->{parameters} = undef;
-	reset_history_graph_instance($instance);
-	$instance->{graph_data}->{parameters} = $parameters;
+        my $parameters = $instance->{graph_data}->{parameters};
+        $instance->{graph_data}->{parameters} = undef;
+        reset_history_graph_instance($instance);
+        $instance->{graph_data}->{parameters} = $parameters;
     }
     else
     {
-	$instance->{graph_advanced_find_button}->set_sensitive(TRUE);
-	if (defined($instance->{graph_data}->{parameters}->{revision_id})
-	    && exists($instance->{graph_data}->{child_graph}->
-		      {$instance->{graph_data}->{parameters}->{revision_id}}))
-	{
-	    scroll_to_node($instance,
-			   $instance->{graph_data}->{parameters}->
-			       {revision_id});
-	    select_node($instance,
-			$instance->{graph_data}->{parameters}->{revision_id});
-	}
-	elsif (scalar(@{$instance->{graph_data}->{head_revisions}}) > 0)
-	{
-	    scroll_to_node($instance,
-			   $instance->{graph_data}->{head_revisions}->[0]);
-	}
+        $instance->{graph_advanced_find_button}->set_sensitive(TRUE);
+        if (defined($instance->{graph_data}->{parameters}->{revision_id})
+            && exists($instance->{graph_data}->{child_graph}->
+                      {$instance->{graph_data}->{parameters}->{revision_id}}))
+        {
+            scroll_to_node($instance,
+                           $instance->{graph_data}->{parameters}->
+                               {revision_id});
+            select_node($instance,
+                        $instance->{graph_data}->{parameters}->{revision_id});
+        }
+        elsif (scalar(@{$instance->{graph_data}->{head_revisions}}) > 0)
+        {
+            scroll_to_node($instance,
+                           $instance->{graph_data}->{head_revisions}->[0]);
+        }
     }
 
     $instance->{stop_button}->set_sensitive(FALSE);
@@ -1032,17 +1032,17 @@ sub generate_ancestry_graph($)
     my $instance = $_[0];
 
     my (%branches_set,
-	$branch_selector,
-	$counter,
-	%date_set,
-	$date_range_selector,
-	$date_selector,
-	@graph,
-	%graph_db,
-	@head_revisions,
-	%nr_of_parents,
-	$selected_set,
-	$update_interval);
+        $branch_selector,
+        $counter,
+        %date_set,
+        $date_range_selector,
+        $date_selector,
+        @graph,
+        %graph_db,
+        @head_revisions,
+        %nr_of_parents,
+        $selected_set,
+        $update_interval);
     my $parameters = $instance->{graph_data}->{parameters};
     my $wm = WindowManager->instance();
 
@@ -1057,147 +1057,147 @@ sub generate_ancestry_graph($)
 
     if ($parameters->{from_date} ne "")
     {
-	$date_range_selector = "l:" . $parameters->{from_date};
-	$date_selector = 1;
+        $date_range_selector = "l:" . $parameters->{from_date};
+        $date_selector = 1;
     }
     else
     {
-	$date_range_selector = "";
+        $date_range_selector = "";
     }
     if ($parameters->{to_date} ne "")
     {
-	if ($date_range_selector eq "")
-	{
-	    $date_range_selector = "e:" . $parameters->{to_date};
-	}
-	else
-	{
-	    $date_range_selector .= "/e:" . $parameters->{to_date};
-	}
-	$date_selector = 1;
+        if ($date_range_selector eq "")
+        {
+            $date_range_selector = "e:" . $parameters->{to_date};
+        }
+        else
+        {
+            $date_range_selector .= "/e:" . $parameters->{to_date};
+        }
+        $date_selector = 1;
     }
 
     # Remember that this is a user generated query and so may contain invalid
     # data. So protect ourselves.
 
     CachingAutomateStdio->register_error_handler
-	(MTN_SEVERITY_ALL,
-	 sub {
-	     my ($severity, $message) = @_;
-	     my $dialog;
-	     $dialog = Gtk2::MessageDialog->new_with_markup
-		 ($instance->{window},
-		  ["modal"],
-		  "warning",
-		  "close",
-		  __x("There is a problem with an internal query, Monotone "
-			  . "gave:\n<b><i>{error_message}</i></b>",
-		      error_message =>
-			  Glib::Markup::escape_text($message)));
-	     busy_dialog_run($dialog);
-	     $dialog->destroy();
-	     die("Bad query");
-	 });
+        (MTN_SEVERITY_ALL,
+         sub {
+             my ($severity, $message) = @_;
+             my $dialog;
+             $dialog = Gtk2::MessageDialog->new_with_markup
+                 ($instance->{window},
+                  ["modal"],
+                  "warning",
+                  "close",
+                  __x("There is a problem with an internal query, Monotone "
+                          . "gave:\n<b><i>{error_message}</i></b>",
+                      error_message =>
+                          Glib::Markup::escape_text($message)));
+             busy_dialog_run($dialog);
+             $dialog->destroy();
+             die("Bad query");
+         });
     eval
     {
 
-	my $nr_selections;
+        my $nr_selections;
 
-	# Do the branches hit list (using the or operator and one selection
-	# operation if we can). Please note that this rather convoluted code is
-	# due to a small bug in Monotone 1.0 where
-	# `(b:branch1|b:branch2)/l:2008-01-01' and `(b:branch1|b:branch2)' are
-	# invalid but `b:branch1|b:branch2' and
-	# `l:2008-01-01/(b:branch1|b:branch2)' are not.
+        # Do the branches hit list (using the or operator and one selection
+        # operation if we can). Please note that this rather convoluted code is
+        # due to a small bug in Monotone 1.0 where
+        # `(b:branch1|b:branch2)/l:2008-01-01' and `(b:branch1|b:branch2)' are
+        # invalid but `b:branch1|b:branch2' and
+        # `l:2008-01-01/(b:branch1|b:branch2)' are not.
 
-	$instance->{appbar}->set_progress_percentage(0);
-	$wm->update_gui();
-	$nr_selections =
-	    (($instance->{mtn}->supports(MTN_SELECTOR_OR_OPERATOR))
-	         ? 1 : scalar(@{$parameters->{branches}}))
-	    + (($date_range_selector ne "") ? 1 : 0);
-	$update_interval = calculate_update_interval($nr_selections, 40);
-	if (scalar(@{$parameters->{branches}}) > 0)
-	{
+        $instance->{appbar}->set_progress_percentage(0);
+        $wm->update_gui();
+        $nr_selections =
+            (($instance->{mtn}->supports(MTN_SELECTOR_OR_OPERATOR))
+                 ? 1 : scalar(@{$parameters->{branches}}))
+            + (($date_range_selector ne "") ? 1 : 0);
+        $update_interval = calculate_update_interval($nr_selections, 40);
+        if (scalar(@{$parameters->{branches}}) > 0)
+        {
 
-	    my (@escaped_branches,
-		@revision_ids);
-	    my $date_range = ($date_range_selector ne "")
-		? ($date_range_selector . "/") : "";
+            my (@escaped_branches,
+                @revision_ids);
+            my $date_range = ($date_range_selector ne "")
+                ? ($date_range_selector . "/") : "";
 
-	    foreach my $branch (@{$parameters->{branches}})
-	    {
-		my $escaped_value = $branch;
-		$escaped_value =~ s/$select_escape_re/\\$1/g;
-		push(@escaped_branches, $escaped_value);
-	    }
+            foreach my $branch (@{$parameters->{branches}})
+            {
+                my $escaped_value = $branch;
+                $escaped_value =~ s/$select_escape_re/\\$1/g;
+                push(@escaped_branches, $escaped_value);
+            }
 
-	    $branch_selector = 1;
-	    if ($instance->{mtn}->supports(MTN_SELECTOR_OR_OPERATOR))
-	    {
-		my $selector;
-		$selector = "b:" . join("|b:", @escaped_branches);
-		if ($date_range ne "")
-		{
-		    $selector = $date_range . "(" . $selector . ")";
-		}
-		$instance->{mtn}->select(\@revision_ids, $selector);
-		foreach my $revision_id (@revision_ids)
-		{
-		    $branches_set{$revision_id} = undef;
-		}
-		$instance->{appbar}->set_progress_percentage
-		    (1 / $nr_selections);
-	    }
-	    else
-	    {
-		$counter = 1;
-		foreach my $branch (@escaped_branches)
-		{
-		    $instance->{mtn}->select(\@revision_ids,
-					     $date_range . "b:" . $branch);
-		    foreach my $revision_id (@revision_ids)
-		    {
-			$branches_set{$revision_id} = undef;
-		    }
+            $branch_selector = 1;
+            if ($instance->{mtn}->supports(MTN_SELECTOR_OR_OPERATOR))
+            {
+                my $selector;
+                $selector = "b:" . join("|b:", @escaped_branches);
+                if ($date_range ne "")
+                {
+                    $selector = $date_range . "(" . $selector . ")";
+                }
+                $instance->{mtn}->select(\@revision_ids, $selector);
+                foreach my $revision_id (@revision_ids)
+                {
+                    $branches_set{$revision_id} = undef;
+                }
+                $instance->{appbar}->set_progress_percentage
+                    (1 / $nr_selections);
+            }
+            else
+            {
+                $counter = 1;
+                foreach my $branch (@escaped_branches)
+                {
+                    $instance->{mtn}->select(\@revision_ids,
+                                             $date_range . "b:" . $branch);
+                    foreach my $revision_id (@revision_ids)
+                    {
+                        $branches_set{$revision_id} = undef;
+                    }
 
-		    if (($counter % $update_interval) == 0)
-		    {
-			$instance->{appbar}->set_progress_percentage
-			    ($counter / $nr_selections);
-			$wm->update_gui();
-		    }
-		    ++ $counter;
+                    if (($counter % $update_interval) == 0)
+                    {
+                        $instance->{appbar}->set_progress_percentage
+                            ($counter / $nr_selections);
+                        $wm->update_gui();
+                    }
+                    ++ $counter;
 
-		    # Stop if the user wants to.
+                    # Stop if the user wants to.
 
-		    last if ($instance->{stop});
-		}
-	    }
+                    last if ($instance->{stop});
+                }
+            }
 
-	}
-	$wm->update_gui();
+        }
+        $wm->update_gui();
 
-	# Now do the date hit list.
+        # Now do the date hit list.
 
-	if (! $instance->{stop} && $date_range_selector ne "")
-	{
-	    my @revision_ids;
-	    $instance->{mtn}->select(\@revision_ids, $date_range_selector);
-	    foreach my $revision_id (@revision_ids)
-	    {
-		$date_set{$revision_id} = undef;
-	    }
-	}
-	$instance->{appbar}->set_progress_percentage(1);
-	$wm->update_gui();
+        if (! $instance->{stop} && $date_range_selector ne "")
+        {
+            my @revision_ids;
+            $instance->{mtn}->select(\@revision_ids, $date_range_selector);
+            foreach my $revision_id (@revision_ids)
+            {
+                $date_set{$revision_id} = undef;
+            }
+        }
+        $instance->{appbar}->set_progress_percentage(1);
+        $wm->update_gui();
 
-	%branches_set = %date_set = () if ($instance->{stop});
+        %branches_set = %date_set = () if ($instance->{stop});
 
     };
     $instance->{stop} = 1 if ($@);
     CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
-						 \&mtn_error_handler);
+                                                 \&mtn_error_handler);
 
     # Set the selected_set variable to point to which ever selector set should
     # be used to determine whether a revision exactly matches the caller's
@@ -1210,11 +1210,11 @@ sub generate_ancestry_graph($)
 
     if ($branch_selector)
     {
-	$selected_set = \%branches_set;
+        $selected_set = \%branches_set;
     }
     elsif ($date_selector)
     {
-	$selected_set = \%date_set;
+        $selected_set = \%date_set;
     }
 
     # Get the revision graph from Monotone.
@@ -1233,99 +1233,99 @@ sub generate_ancestry_graph($)
     foreach my $entry (@graph)
     {
 
-	my ($current_selected,
-	    $selected);
+        my ($current_selected,
+            $selected);
 
-	# A revision is selected if:
-	#     1) There are no selectors, i.e. everything is selected.
-	#     2) Not all propagation nodes are to be shown and the revision is
-	#        within the specified date range and on one of the selected
-	#        branches.
-	#     3) All propagation nodes are to be shown and the revision is
-	#        within the specified date range and it or one of its parents
-	#        are on one of the selected branches.
-	#     4) There is no branch selector and the revision is within the
-	#        specified date range.
+        # A revision is selected if:
+        #     1) There are no selectors, i.e. everything is selected.
+        #     2) Not all propagation nodes are to be shown and the revision is
+        #        within the specified date range and on one of the selected
+        #        branches.
+        #     3) All propagation nodes are to be shown and the revision is
+        #        within the specified date range and it or one of its parents
+        #        are on one of the selected branches.
+        #     4) There is no branch selector and the revision is within the
+        #        specified date range.
 
-	if (! defined($selected_set)
-	    || exists($selected_set->{$entry->{revision_id}}))
-	{
-	    $current_selected = $selected = 1;
-	}
-	elsif ($parameters->{show_all_propagate_nodes} && $branch_selector
-	       && (! $date_selector
-		   || exists($date_set{$entry->{revision_id}})))
-	{
-	    foreach my $parent_id (@{$entry->{parent_ids}})
-	    {
-		if (exists($selected_set->{$parent_id}))
-		{
-		    $selected = 1;
-		    last;
-		}
-	    }
-	}
+        if (! defined($selected_set)
+            || exists($selected_set->{$entry->{revision_id}}))
+        {
+            $current_selected = $selected = 1;
+        }
+        elsif ($parameters->{show_all_propagate_nodes} && $branch_selector
+               && (! $date_selector
+                   || exists($date_set{$entry->{revision_id}})))
+        {
+            foreach my $parent_id (@{$entry->{parent_ids}})
+            {
+                if (exists($selected_set->{$parent_id}))
+                {
+                    $selected = 1;
+                    last;
+                }
+            }
+        }
 
-	# If the revision has been selected then process it.
+        # If the revision has been selected then process it.
 
-	if ($selected)
-	{
+        if ($selected)
+        {
 
-	    # File the revision. Remember it may already exist as it might be a
-	    # parent of a revision that has already been processed.
+            # File the revision. Remember it may already exist as it might be a
+            # parent of a revision that has already been processed.
 
-	    if (! exists($graph_db{$entry->{revision_id}}))
-	    {
-		$graph_db{$entry->{revision_id}} = {children => [],
-						    flags    => 0};
-	    }
+            if (! exists($graph_db{$entry->{revision_id}}))
+            {
+                $graph_db{$entry->{revision_id}} = {children => [],
+                                                    flags    => 0};
+            }
 
-	    # If the current revision is selected itself then all parents
-	    # should be included if they are in the date range (need to show
-	    # propagation revisions), otherwise only those parents that are
-	    # within the date range and on the right branch(es) should be
-	    # included.
+            # If the current revision is selected itself then all parents
+            # should be included if they are in the date range (need to show
+            # propagation revisions), otherwise only those parents that are
+            # within the date range and on the right branch(es) should be
+            # included.
 
-	    foreach my $parent_id (@{$entry->{parent_ids}})
-	    {
-		if (($current_selected
-		     && (! $date_selector || exists($date_set{$parent_id})))
-		    || (! $current_selected
-			&& (! defined($selected_set)
-			    || exists($selected_set->{$parent_id}))))
-		{
-		    if (exists($graph_db{$parent_id}))
-		    {
-			push(@{$graph_db{$parent_id}->{children}},
-			     $entry->{revision_id});
-		    }
-		    else
-		    {
-			$graph_db{$parent_id} =
-			    {children => [$entry->{revision_id}],
-			     flags    => 0};
-		    }
-		}
-	    }
+            foreach my $parent_id (@{$entry->{parent_ids}})
+            {
+                if (($current_selected
+                     && (! $date_selector || exists($date_set{$parent_id})))
+                    || (! $current_selected
+                        && (! defined($selected_set)
+                            || exists($selected_set->{$parent_id}))))
+                {
+                    if (exists($graph_db{$parent_id}))
+                    {
+                        push(@{$graph_db{$parent_id}->{children}},
+                             $entry->{revision_id});
+                    }
+                    else
+                    {
+                        $graph_db{$parent_id} =
+                            {children => [$entry->{revision_id}],
+                             flags    => 0};
+                    }
+                }
+            }
 
-	    # If this node was actually selected then mark it as such.
+            # If this node was actually selected then mark it as such.
 
-	    $graph_db{$entry->{revision_id}}->{flags} |= SELECTED_NODE
-		if ($current_selected);
+            $graph_db{$entry->{revision_id}}->{flags} |= SELECTED_NODE
+                if ($current_selected);
 
-	}
+        }
 
-	if (($counter % $update_interval) == 0)
-	{
-	    $instance->{appbar}->set_progress_percentage
-		($counter / scalar(@graph));
-	    $wm->update_gui();
-	}
-	++ $counter;
+        if (($counter % $update_interval) == 0)
+        {
+            $instance->{appbar}->set_progress_percentage
+                ($counter / scalar(@graph));
+            $wm->update_gui();
+        }
+        ++ $counter;
 
-	# Stop if the user wants to.
+        # Stop if the user wants to.
 
-	last if ($instance->{stop});
+        last if ($instance->{stop});
 
     }
     $instance->{appbar}->set_progress_percentage(1);
@@ -1335,13 +1335,13 @@ sub generate_ancestry_graph($)
 
     if (! $instance->{stop})
     {
-	foreach my $revision_id (keys(%graph_db))
-	{
-	    if (scalar(@{$graph_db{$revision_id}->{children}}) == 0)
-	    {
-		push(@head_revisions, $revision_id);
-	    }
-	}
+        foreach my $revision_id (keys(%graph_db))
+        {
+            if (scalar(@{$graph_db{$revision_id}->{children}}) == 0)
+            {
+                push(@head_revisions, $revision_id);
+            }
+        }
     }
 
     # If we have more than one head revision and we have restricted the graph
@@ -1352,127 +1352,127 @@ sub generate_ancestry_graph($)
 
     if (! $instance->{stop} && $branch_selector && scalar(@head_revisions) > 1)
     {
-	my ($context,
-	    %parent_db);
-	if ($date_selector)
-	{
-	    foreach my $entry (@graph)
-	    {
-		if (exists($date_set{$entry->{revision_id}}))
-		{
-		    my @parent_ids;
-		    foreach my $parent_id (@{$entry->{parent_ids}})
-		    {
-			push(@parent_ids, $parent_id)
-			    if (exists($date_set{$parent_id}));
-		    }
-		    $parent_db{$entry->{revision_id}} = \@parent_ids;
-		}
-	    }
-	}
-	else
-	{
-	    foreach my $entry (@graph)
-	    {
-		$parent_db{$entry->{revision_id}} = $entry->{parent_ids};
-	    }
-	}
-	$context = {selected_set      => $selected_set,
-		    graph_db          => \%graph_db,
-		    outside_selection => undef,
-		    parent_db         => \%parent_db,
-		    parents           => [],
-		    processed_set     => {},
-		    aggressive_search => 0};
-	$instance->{appbar}->set_progress_percentage(0);
-	$wm->update_gui();
-	$update_interval = calculate_update_interval(\@head_revisions);
-	$counter = 1;
-	foreach my $head_id (@head_revisions)
-	{
+        my ($context,
+            %parent_db);
+        if ($date_selector)
+        {
+            foreach my $entry (@graph)
+            {
+                if (exists($date_set{$entry->{revision_id}}))
+                {
+                    my @parent_ids;
+                    foreach my $parent_id (@{$entry->{parent_ids}})
+                    {
+                        push(@parent_ids, $parent_id)
+                            if (exists($date_set{$parent_id}));
+                    }
+                    $parent_db{$entry->{revision_id}} = \@parent_ids;
+                }
+            }
+        }
+        else
+        {
+            foreach my $entry (@graph)
+            {
+                $parent_db{$entry->{revision_id}} = $entry->{parent_ids};
+            }
+        }
+        $context = {selected_set      => $selected_set,
+                    graph_db          => \%graph_db,
+                    outside_selection => undef,
+                    parent_db         => \%parent_db,
+                    parents           => [],
+                    processed_set     => {},
+                    aggressive_search => 0};
+        $instance->{appbar}->set_progress_percentage(0);
+        $wm->update_gui();
+        $update_interval = calculate_update_interval(\@head_revisions);
+        $counter = 1;
+        foreach my $head_id (@head_revisions)
+        {
 
-	    # Try and join up gaps starting from this head revision.
+            # Try and join up gaps starting from this head revision.
 
-	    $context->{outside_selection} = undef;
-	    $context->{parents} = [];
-	    graph_reconnect_helper($context, $head_id);
+            $context->{outside_selection} = undef;
+            $context->{parents} = [];
+            graph_reconnect_helper($context, $head_id);
 
-	    if (($counter % $update_interval) == 0)
-	    {
-		$instance->{appbar}->set_progress_percentage
-		    ($counter / scalar(@head_revisions));
-		$wm->update_gui();
-	    }
-	    ++ $counter;
+            if (($counter % $update_interval) == 0)
+            {
+                $instance->{appbar}->set_progress_percentage
+                    ($counter / scalar(@head_revisions));
+                $wm->update_gui();
+            }
+            ++ $counter;
 
-	    # Stop if the user wants to.
+            # Stop if the user wants to.
 
-	    last if ($instance->{stop});
+            last if ($instance->{stop});
 
-	}
-	$instance->{appbar}->set_progress_percentage(1);
-	$wm->update_gui();
+        }
+        $instance->{appbar}->set_progress_percentage(1);
+        $wm->update_gui();
     }
 
     if (! $instance->{stop})
     {
 
-	# Create a hash indexed by revision id that gives the number of parents
-	# for that revision.
+        # Create a hash indexed by revision id that gives the number of parents
+        # for that revision.
 
-	foreach my $revision_id (keys(%graph_db))
-	{
-	    foreach my $child_id (@{$graph_db{$revision_id}->{children}})
-	    {
-		if (exists($nr_of_parents{$child_id}))
-		{
-		    ++ $nr_of_parents{$child_id};
-		}
-		else
-		{
-		    $nr_of_parents{$child_id} = 1;
-		}
-	    }
-	}
+        foreach my $revision_id (keys(%graph_db))
+        {
+            foreach my $child_id (@{$graph_db{$revision_id}->{children}})
+            {
+                if (exists($nr_of_parents{$child_id}))
+                {
+                    ++ $nr_of_parents{$child_id};
+                }
+                else
+                {
+                    $nr_of_parents{$child_id} = 1;
+                }
+            }
+        }
 
-	# Now use this hash to mark up nodes that either have no parents or
-	# multiple ones (i.e. what will be rendered as circular merge nodes).
+        # Now use this hash to mark up nodes that either have no parents or
+        # multiple ones (i.e. what will be rendered as circular merge nodes).
 
-	foreach my $revision_id (keys(%graph_db))
-	{
-	    my $nr_parents = 0;
-	    if (exists($nr_of_parents{$revision_id}))
-	    {
-		$nr_parents = $nr_of_parents{$revision_id};
-	    }
-	    if ($nr_parents == 0)
-	    {
-		$graph_db{$revision_id}->{flags} |= NO_PARENTS;
-	    }
-	    elsif ($nr_parents > 1)
-	    {
-		$graph_db{$revision_id}->{flags} |= CIRCULAR_NODE;
-	    }
-	}
-	%nr_of_parents = ();
+        foreach my $revision_id (keys(%graph_db))
+        {
+            my $nr_parents = 0;
+            if (exists($nr_of_parents{$revision_id}))
+            {
+                $nr_parents = $nr_of_parents{$revision_id};
+            }
+            if ($nr_parents == 0)
+            {
+                $graph_db{$revision_id}->{flags} |= NO_PARENTS;
+            }
+            elsif ($nr_parents > 1)
+            {
+                $graph_db{$revision_id}->{flags} |= CIRCULAR_NODE;
+            }
+        }
+        %nr_of_parents = ();
 
-	# Update the list of head revisions.
+        # Update the list of head revisions.
 
-	@head_revisions = ();
-	foreach my $revision_id (keys(%graph_db))
-	{
-	    if ((! defined($selected_set)
-		 || exists($selected_set->{$revision_id}))
-		&& scalar(@{$graph_db{$revision_id}->{children}}) == 0)
-	    {
-		push(@head_revisions, $revision_id);
-	    }
-	}
+        @head_revisions = ();
+        foreach my $revision_id (keys(%graph_db))
+        {
+            if ((! defined($selected_set)
+                 || exists($selected_set->{$revision_id}))
+                && scalar(@{$graph_db{$revision_id}->{children}}) == 0)
+            {
+                push(@head_revisions, $revision_id);
+            }
+        }
 
-	# Store the graph database and the list of head revisions.
+        # Store the graph database and the list of head revisions.
 
-	$instance->{graph_data}->{child_graph} = \%graph_db;
-	$instance->{graph_data}->{head_revisions} = \@head_revisions;
+        $instance->{graph_data}->{child_graph} = \%graph_db;
+        $instance->{graph_data}->{head_revisions} = \@head_revisions;
 
     }
 
@@ -1513,180 +1513,180 @@ sub graph_reconnect_helper($$)
     if ($context->{outside_selection})
     {
 
-	# Yes we were so if we have just stumbled across a node that is to be
-	# graphed then make a note of the current revision in our parents list
-	# and then stop searching any further down this path. Otherwise carry
-	# on looking.
+        # Yes we were so if we have just stumbled across a node that is to be
+        # graphed then make a note of the current revision in our parents list
+        # and then stop searching any further down this path. Otherwise carry
+        # on looking.
 
-	if (exists($context->{graph_db}->{$revision_id}))
-	{
-	    push(@{$context->{parents}}, $revision_id);
-	    return;
-	}
-	else
-	{
-	    foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
-	    {
-		if (! exists($context->{processed_set}->{$parent_id}))
-		{
-		    graph_reconnect_helper($context, $parent_id);
-		}
-	    }
-	}
+        if (exists($context->{graph_db}->{$revision_id}))
+        {
+            push(@{$context->{parents}}, $revision_id);
+            return;
+        }
+        else
+        {
+            foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
+            {
+                if (! exists($context->{processed_set}->{$parent_id}))
+                {
+                    graph_reconnect_helper($context, $parent_id);
+                }
+            }
+        }
 
     }
     else
     {
 
-	my ($aggressive_search,
-	    $found_new_ancestors);
+        my ($aggressive_search,
+            $found_new_ancestors);
 
-	# No we weren't off selection.
+        # No we weren't off selection.
 
-	# If the current node is selected then check to see if there are any
-	# selected parents. If not then we need to go into an aggressive search
-	# mode where we do our best to find a graphed ancestor for it.
+        # If the current node is selected then check to see if there are any
+        # selected parents. If not then we need to go into an aggressive search
+        # mode where we do our best to find a graphed ancestor for it.
 
-	if (exists($context->{selected_set}->{$revision_id}))
-	{
-	    $aggressive_search = 1;
-	    foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
-	    {
-		if (exists($context->{selected_set}->{$parent_id}))
-		{
-		    $aggressive_search = 0;
-		    last;
-		}
-	    }
-	}
+        if (exists($context->{selected_set}->{$revision_id}))
+        {
+            $aggressive_search = 1;
+            foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
+            {
+                if (exists($context->{selected_set}->{$parent_id}))
+                {
+                    $aggressive_search = 0;
+                    last;
+                }
+            }
+        }
 
-	# Otherwise if the current node is a propagate node (i.e. in the graph
-	# database but not selected, e.g. an off-branch parent of an on-branch
-	# node) then see what we can join together. Remember that the parents
-	# of propagate nodes weren't even looked at until now.
+        # Otherwise if the current node is a propagate node (i.e. in the graph
+        # database but not selected, e.g. an off-branch parent of an on-branch
+        # node) then see what we can join together. Remember that the parents
+        # of propagate nodes weren't even looked at until now.
 
-	elsif (exists($context->{graph_db}->{$revision_id}))
-	{
+        elsif (exists($context->{graph_db}->{$revision_id}))
+        {
 
-	    my (@graphed_parents,
-		@selected_parents);
+            my (@graphed_parents,
+                @selected_parents);
 
-	    $aggressive_search = $context->{aggressive_search};
+            $aggressive_search = $context->{aggressive_search};
 
-	    # First scan the immediate parents for any that are graphed. If we
-	    # find selected parents then join those up, if not then try joining
-	    # up any graphed parents and if that fails and we are in aggressive
-	    # search mode (i.e. desparate to find any graphed ancestor) then
-	    # start up each parent path searching for any ancestor before
-	    # finally giving up.
+            # First scan the immediate parents for any that are graphed. If we
+            # find selected parents then join those up, if not then try joining
+            # up any graphed parents and if that fails and we are in aggressive
+            # search mode (i.e. desparate to find any graphed ancestor) then
+            # start up each parent path searching for any ancestor before
+            # finally giving up.
 
-	    foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
-	    {
-		if (exists($context->{selected_set}->{$parent_id}))
-		{
-		    push(@selected_parents, $parent_id);
-		    $found_new_ancestors = 1;
-		}
-		elsif (exists($context->{graph_db}->{$parent_id}))
-		{
-		    push(@graphed_parents, $parent_id);
-		    $found_new_ancestors = 1;
-		}
-	    }
+            foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
+            {
+                if (exists($context->{selected_set}->{$parent_id}))
+                {
+                    push(@selected_parents, $parent_id);
+                    $found_new_ancestors = 1;
+                }
+                elsif (exists($context->{graph_db}->{$parent_id}))
+                {
+                    push(@graphed_parents, $parent_id);
+                    $found_new_ancestors = 1;
+                }
+            }
 
-	    # Selected parents take precedence.
+            # Selected parents take precedence.
 
-	    if (scalar(@selected_parents) > 0)
-	    {
-		push(@{$context->{parents}}, @selected_parents);
-	    }
+            if (scalar(@selected_parents) > 0)
+            {
+                push(@{$context->{parents}}, @selected_parents);
+            }
 
-	    # Then graphed ones.
+            # Then graphed ones.
 
-	    elsif (scalar(@graphed_parents) > 0)
-	    {
-		push(@{$context->{parents}}, @graphed_parents);
-	    }
+            elsif (scalar(@graphed_parents) > 0)
+            {
+                push(@{$context->{parents}}, @graphed_parents);
+            }
 
-	    # Nothing found so far, do we need to do an aggressive search?
+            # Nothing found so far, do we need to do an aggressive search?
 
-	    elsif ($context->{aggressive_search})
-	    {
+            elsif ($context->{aggressive_search})
+            {
 
-		# Ok getting desperate, start a recursive search.
+                # Ok getting desperate, start a recursive search.
 
-		# Stash the current hit list away and use a blank one as we are
-		# going outside our selected set of revisions (we don't want to
-		# prevent subsequent walks outside our selected set on
-		# different nodes from finding a possible route to a graphed
-		# parent).
+                # Stash the current hit list away and use a blank one as we are
+                # going outside our selected set of revisions (we don't want to
+                # prevent subsequent walks outside our selected set on
+                # different nodes from finding a possible route to a graphed
+                # parent).
 
-		local $context->{processed_set} = {};
+                local $context->{processed_set} = {};
 
-		# Search up each parent node.
+                # Search up each parent node.
 
-		local $context->{outside_selection};
-		foreach my $parent_id
-		    (@{$context->{parent_db}->{$revision_id}})
-		{
-		    if (! exists($context->{processed_set}->{$parent_id}))
-		    {
-			$found_new_ancestors =
-			    $context->{outside_selection} = 1
-			    unless ($context->{outside_selection});
-			graph_reconnect_helper($context, $parent_id);
-		    }
-		}
+                local $context->{outside_selection};
+                foreach my $parent_id
+                    (@{$context->{parent_db}->{$revision_id}})
+                {
+                    if (! exists($context->{processed_set}->{$parent_id}))
+                    {
+                        $found_new_ancestors =
+                            $context->{outside_selection} = 1
+                            unless ($context->{outside_selection});
+                        graph_reconnect_helper($context, $parent_id);
+                    }
+                }
 
-	    }
+            }
 
-	    # If we have found some parents then file this revision as a child
-	    # of those parents in the graph database. By definition all found
-	    # parent nodes already exist in the graph database so no need to
-	    # worry about creating new nodes. Also avoid adding duplicate child
-	    # revision entries.
+            # If we have found some parents then file this revision as a child
+            # of those parents in the graph database. By definition all found
+            # parent nodes already exist in the graph database so no need to
+            # worry about creating new nodes. Also avoid adding duplicate child
+            # revision entries.
 
-	    if ($found_new_ancestors)
-	    {
-		foreach my $parent_id (@{$context->{parents}})
-		{
-		    my $found;
-		    foreach my $child_id
-			(@{$context->{graph_db}->{$parent_id}->{children}})
-		    {
-			if ($child_id eq $revision_id)
-			{
-			    $found = 1;
-			    last;
-			}
-		    }
-		    if (! $found)
-		    {
-			push(@{$context->{graph_db}->{$parent_id}->{children}},
-			     $revision_id);
-		    }
-		}
-		$context->{parents} = [];
-	    }
+            if ($found_new_ancestors)
+            {
+                foreach my $parent_id (@{$context->{parents}})
+                {
+                    my $found;
+                    foreach my $child_id
+                        (@{$context->{graph_db}->{$parent_id}->{children}})
+                    {
+                        if ($child_id eq $revision_id)
+                        {
+                            $found = 1;
+                            last;
+                        }
+                    }
+                    if (! $found)
+                    {
+                        push(@{$context->{graph_db}->{$parent_id}->{children}},
+                             $revision_id);
+                    }
+                }
+                $context->{parents} = [];
+            }
 
-	}
+        }
 
-	# If necessary update the aggressive search mode state, saving the old
-	# value on the stack.
+        # If necessary update the aggressive search mode state, saving the old
+        # value on the stack.
 
-	local $context->{aggressive_search} = $aggressive_search
-	    unless ($context->{aggressive_search} == $aggressive_search);
+        local $context->{aggressive_search} = $aggressive_search
+            unless ($context->{aggressive_search} == $aggressive_search);
 
-	# Now process the graphed parents.
+        # Now process the graphed parents.
 
-	foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
-	{
-	    if (! exists($context->{processed_set}->{$parent_id})
-		&& exists($context->{graph_db}->{$parent_id}))
-	    {
-		graph_reconnect_helper($context, $parent_id);
-	    }
-	}
+        foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
+        {
+            if (! exists($context->{processed_set}->{$parent_id})
+                && exists($context->{graph_db}->{$parent_id}))
+            {
+                graph_reconnect_helper($context, $parent_id);
+            }
+        }
 
     }
 
@@ -1716,10 +1716,10 @@ sub layout_graph($)
     my $instance = $_[0];
 
     my (@arrows,
-	$buffer,
-	@circles,
-	$prev_lines,
-	@rectangles);
+        $buffer,
+        @circles,
+        $prev_lines,
+        @rectangles);
 
     $instance->{graph_data}->{arrows} = [];
     $instance->{graph_data}->{circles} = [];
@@ -1730,11 +1730,11 @@ sub layout_graph($)
     # Run the dot subprocess.
 
     return unless (run_command(\$buffer,
-			       \&dot_input_handler_cb,
-			       $instance,
-			       \$instance->{stop},
-			       GRAPHVIZ_LAYOUT_PROGRAM, "-q", "-y", "-s" . DPI,
-			           "-Txdot"));
+                               \&dot_input_handler_cb,
+                               $instance,
+                               \$instance->{stop},
+                               GRAPHVIZ_LAYOUT_PROGRAM, "-q", "-y", "-s" . DPI,
+                                   "-Txdot"));
 
     # Parse the dot output, line by line.
 
@@ -1742,103 +1742,103 @@ sub layout_graph($)
     foreach my $line (split(/\n/, $buffer))
     {
 
-	my $revision_id;
+        my $revision_id;
 
-	# Deal with statements that span multiple lines.
+        # Deal with statements that span multiple lines.
 
-	if ($line =~ m/^(.*)\\$/)
-	{
-	    $prev_lines .= $1;
-	    next;
-	}
-	elsif ($prev_lines ne "")
-	{
-	    $line = $prev_lines . $line;
-	    $prev_lines = "";
-	}
+        if ($line =~ m/^(.*)\\$/)
+        {
+            $prev_lines .= $1;
+            next;
+        }
+        elsif ($prev_lines ne "")
+        {
+            $line = $prev_lines . $line;
+            $prev_lines = "";
+        }
 
-	# Parse statements.
+        # Parse statements.
 
-	# Look out for revision ids, always take the first one.
+        # Look out for revision ids, always take the first one.
 
-	if ($line =~ m/[ \t"]([0-9a-f]{40})[ \t"]/)
-	{
-	    $revision_id = $1;
-	}
+        if ($line =~ m/[ \t"]([0-9a-f]{40})[ \t"]/)
+        {
+            $revision_id = $1;
+        }
 
-	# Lines with arrow heads.
+        # Lines with arrow heads.
 
-	if ($line =~ m/B \d+(( \d+ \d+)+) *\".* P 3(( \d+){6}) *\"/)
-	{
-	    my (@arrow_points,
-		@line_points);
-	    @line_points = split(/ /, $1);
-	    shift(@line_points);
-	    @arrow_points = split(/ /, $3);
-	    shift(@arrow_points);
-	    if ($line =~ m/-> "??([0-9a-f]{40})[ \t"]/)
-	    {
-		my $to_revision_id = $1;
-		push(@arrows, {from_revision_id => $revision_id,
-			       to_revision_id   => $to_revision_id,
-			       line             => \@line_points,
-			       arrow            => \@arrow_points});
-	    }
-	}
+        if ($line =~ m/B \d+(( \d+ \d+)+) *\".* P 3(( \d+){6}) *\"/)
+        {
+            my (@arrow_points,
+                @line_points);
+            @line_points = split(/ /, $1);
+            shift(@line_points);
+            @arrow_points = split(/ /, $3);
+            shift(@arrow_points);
+            if ($line =~ m/-> "??([0-9a-f]{40})[ \t"]/)
+            {
+                my $to_revision_id = $1;
+                push(@arrows, {from_revision_id => $revision_id,
+                               to_revision_id   => $to_revision_id,
+                               line             => \@line_points,
+                               arrow            => \@arrow_points});
+            }
+        }
 
-	# Boxes.
+        # Boxes.
 
-	elsif ($line =~ m/p 4(( \d+){8}) *\"/)
-	{
-	    my ($br_x,
-		$br_y,
-		@coords,
-		$tl_x,
-		$tl_y);
-	    @coords = split(/ /, $1);
-	    shift(@coords);
-	    $tl_x = $instance->{graph_data}->{max_x} + 100;
-	    $br_x = 0;
-	    foreach my $i (0, 2, 4, 6)
-	    {
-		$tl_x = ($tl_x < $coords[$i]) ? $tl_x : $coords[$i];
-		$br_x = ($br_x > $coords[$i]) ? $br_x : $coords[$i];
-	    }
-	    $tl_y = $instance->{graph_data}->{max_y} + 100;
-	    $br_y = 0;
-	    foreach my $i (1, 3, 5, 7)
-	    {
-		$tl_y = ($tl_y < $coords[$i]) ? $tl_y : $coords[$i];
-		$br_y = ($br_y > $coords[$i]) ? $br_y : $coords[$i];
-	    }
-	    push(@rectangles, {revision_id => $revision_id,
-			       tl_x        => $tl_x,
-			       tl_y        => $tl_y,
-			       br_x        => $br_x,
-			       br_y        => $br_y});
-	}
+        elsif ($line =~ m/p 4(( \d+){8}) *\"/)
+        {
+            my ($br_x,
+                $br_y,
+                @coords,
+                $tl_x,
+                $tl_y);
+            @coords = split(/ /, $1);
+            shift(@coords);
+            $tl_x = $instance->{graph_data}->{max_x} + 100;
+            $br_x = 0;
+            foreach my $i (0, 2, 4, 6)
+            {
+                $tl_x = ($tl_x < $coords[$i]) ? $tl_x : $coords[$i];
+                $br_x = ($br_x > $coords[$i]) ? $br_x : $coords[$i];
+            }
+            $tl_y = $instance->{graph_data}->{max_y} + 100;
+            $br_y = 0;
+            foreach my $i (1, 3, 5, 7)
+            {
+                $tl_y = ($tl_y < $coords[$i]) ? $tl_y : $coords[$i];
+                $br_y = ($br_y > $coords[$i]) ? $br_y : $coords[$i];
+            }
+            push(@rectangles, {revision_id => $revision_id,
+                               tl_x        => $tl_x,
+                               tl_y        => $tl_y,
+                               br_x        => $br_x,
+                               br_y        => $br_y});
+        }
 
-	# Circles.
+        # Circles.
 
-	elsif ($line =~ m/e(( \d+){4}) *\"/)
-	{
-	    my @list;
-	    @list = split(/ /, $1);
-	    shift(@list);
-	    push(@circles, {revision_id => $revision_id,
-			    x           => $list[0],
-			    y           => $list[1],
-			    width       => $list[2],
-			    height      => $list[3]});
-	}
+        elsif ($line =~ m/e(( \d+){4}) *\"/)
+        {
+            my @list;
+            @list = split(/ /, $1);
+            shift(@list);
+            push(@circles, {revision_id => $revision_id,
+                            x           => $list[0],
+                            y           => $list[1],
+                            width       => $list[2],
+                            height      => $list[3]});
+        }
 
-	# Bounding box (i.e. the total size of the graph).
+        # Bounding box (i.e. the total size of the graph).
 
-	elsif ($line =~ m/bb=\"(\d+),(\d+),(\d+),(\d+)\"/)
-	{
-	    $instance->{graph_data}->{max_x} = max($1, $3);
-	    $instance->{graph_data}->{max_y} = max($2, $4);
-	}
+        elsif ($line =~ m/bb=\"(\d+),(\d+),(\d+),(\d+)\"/)
+        {
+            $instance->{graph_data}->{max_x} = max($1, $3);
+            $instance->{graph_data}->{max_y} = max($2, $4);
+        }
 
     }
 
@@ -1868,20 +1868,20 @@ sub dot_input_handler_cb($$)
     my ($fh_in, $instance) = @_;
 
     my ($child_db,
-	$hex_id_height,
-	$hex_id_width,
-	@revision_ids,
-	$text_item);
+        $hex_id_height,
+        $hex_id_width,
+        @revision_ids,
+        $text_item);
 
     # Create a canvas text item and then use it to get the pixel size of a hex
     # id when displayed on the screen. This text item is also used later on for
     # any tags that need to be displayed.
 
     $text_item = Gnome2::Canvas::Item->new
-	($instance->{graph_canvas}->root(),
-	 "Gnome2::Canvas::Text",
-	 font_desc  => $instance->{fontdescription},
-	 text       => "A" x HEX_ID_LENGTH);
+        ($instance->{graph_canvas}->root(),
+         "Gnome2::Canvas::Text",
+         font_desc  => $instance->{fontdescription},
+         text       => "A" x HEX_ID_LENGTH);
     $hex_id_width = $text_item->get("text-width");
     $hex_id_height = $text_item->get("text-height");
     $hex_id_height = max(HEIGHT, $hex_id_height + (TEXT_BORDER * 2));
@@ -1900,11 +1900,11 @@ sub dot_input_handler_cb($$)
     # Pre-amble.
 
     $fh_in->print("digraph \"mtn-browse\"\n"
-		  . "{\n");
+                  . "{\n");
     $fh_in->print("  graph [rankdir=LR];\n")
-	if ($instance->{graph_data}->{parameters}->{draw_left_to_right});
+        if ($instance->{graph_data}->{parameters}->{draw_left_to_right});
     $fh_in->print("  graph [ranksep=\"0.25\"];\n"
-		  . "  node [label=\"\"];\n");
+                  . "  node [label=\"\"];\n");
 
     # Rectangular non-merge nodes, possibly changing the width for tagged nodes
     # if we need more space. We give more padding for tagged nodes as these can
@@ -1912,54 +1912,54 @@ sub dot_input_handler_cb($$)
     # of the canvas widgets).
 
     $fh_in->printf("  node [shape=box, width = %f, height = %f];\n",
-		   $hex_id_width / DPI,
-		   $hex_id_height / DPI);
+                   $hex_id_width / DPI,
+                   $hex_id_height / DPI);
     foreach my $revision_id (@revision_ids)
     {
-	if (! ($child_db->{$revision_id}->{flags} & CIRCULAR_NODE))
-	{
-	    my $tag;
-	    my $width = WIDTH;
-	    $fh_in->print("  \"" . $revision_id . "\"");
-	    if (defined($tag = get_node_tag($instance, $revision_id)))
-	    {
-		$text_item->set(text => $tag);
-		$width = max(WIDTH,
-			     $text_item->get("text-width")
-			         + (TEXT_BORDER * 6));
-	    }
-	    if ($width != WIDTH)
-	    {
-		$fh_in->printf(" [width = %f];\n", $width / DPI);
-	    }
-	    else
-	    {
-		$fh_in->print(";\n");
-	    }
-	}
+        if (! ($child_db->{$revision_id}->{flags} & CIRCULAR_NODE))
+        {
+            my $tag;
+            my $width = WIDTH;
+            $fh_in->print("  \"" . $revision_id . "\"");
+            if (defined($tag = get_node_tag($instance, $revision_id)))
+            {
+                $text_item->set(text => $tag);
+                $width = max(WIDTH,
+                             $text_item->get("text-width")
+                                 + (TEXT_BORDER * 6));
+            }
+            if ($width != WIDTH)
+            {
+                $fh_in->printf(" [width = %f];\n", $width / DPI);
+            }
+            else
+            {
+                $fh_in->print(";\n");
+            }
+        }
     }
 
     # Circular merge nodes.
 
     $fh_in->printf("  node [shape=circle, width = %f, height = %f];\n",
-		   $hex_id_height / DPI,
-		   $hex_id_height / DPI);
+                   $hex_id_height / DPI,
+                   $hex_id_height / DPI);
     foreach my $revision_id (@revision_ids)
     {
-	if ($child_db->{$revision_id}->{flags} & CIRCULAR_NODE)
-	{
-	    $fh_in->print("  \"" . $revision_id . "\";\n");
-	}
+        if ($child_db->{$revision_id}->{flags} & CIRCULAR_NODE)
+        {
+            $fh_in->print("  \"" . $revision_id . "\";\n");
+        }
     }
 
     # Head nodes. These need to be grouped together.
 
     $fh_in->print("  subgraph heads\n"
-		  . "  {\n"
-		  . "    rank = sink;\n");
+                  . "  {\n"
+                  . "    rank = sink;\n");
     foreach my $revision_id (@{$instance->{graph_data}->{head_revisions}})
     {
-	$fh_in->print("    \"" . $revision_id . "\";\n");
+        $fh_in->print("    \"" . $revision_id . "\";\n");
     }
     $fh_in->print("  }\n");
 
@@ -1971,25 +1971,25 @@ sub dot_input_handler_cb($$)
 
     foreach my $revision_id (@revision_ids)
     {
-	my $selected = $child_db->{$revision_id}->{flags} & SELECTED_NODE;
-	my $no_parents = $child_db->{$revision_id}->{flags} & NO_PARENTS;
-	foreach my $child_id (@{$child_db->{$revision_id}->{children}})
-	{
-	    my $child_selected =
-		$child_db->{$child_id}->{flags} & SELECTED_NODE;
-	    $fh_in->print("  \"" . $revision_id . "\" -> \"" . $child_id
-			  . "\"");
-	    if ((! $selected && $child_selected && $no_parents)
-		|| ($selected && ! $child_selected
-		    && scalar(@{$child_db->{$child_id}->{children}}) == 0))
-	    {
-		$fh_in->print(" [weight = 4];\n");
-	    }
-	    else
-	    {
-		$fh_in->print(";\n");
-	    }
-	}
+        my $selected = $child_db->{$revision_id}->{flags} & SELECTED_NODE;
+        my $no_parents = $child_db->{$revision_id}->{flags} & NO_PARENTS;
+        foreach my $child_id (@{$child_db->{$revision_id}->{children}})
+        {
+            my $child_selected =
+                $child_db->{$child_id}->{flags} & SELECTED_NODE;
+            $fh_in->print("  \"" . $revision_id . "\" -> \"" . $child_id
+                          . "\"");
+            if ((! $selected && $child_selected && $no_parents)
+                || ($selected && ! $child_selected
+                    && scalar(@{$child_db->{$child_id}->{children}}) == 0))
+            {
+                $fh_in->print(" [weight = 4];\n");
+            }
+            else
+            {
+                $fh_in->print(";\n");
+            }
+        }
     }
 
     # Close off the graph and close dot's input so that it knows to start
@@ -2023,47 +2023,47 @@ sub draw_graph($)
     my $instance = $_[0];
 
     my ($counter,
-	$total,
-	$update_interval);
+        $total,
+        $update_interval);
     my $child_db = $instance->{graph_data}->{child_graph};
     my $wm = WindowManager->instance();
 
     $instance->{graph_canvas}->set_scroll_region
-	(0,
-	 0,
-	 $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
-	 $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
+        (0,
+         0,
+         $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
+         $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
     $instance->{graph}->{group} =
-	Gnome2::Canvas::Item->new($instance->{graph_canvas}->root(),
-				  "Gnome2::Canvas::Group",
-				  x => CANVAS_BORDER,
-				  y => CANVAS_BORDER);
+        Gnome2::Canvas::Item->new($instance->{graph_canvas}->root(),
+                                  "Gnome2::Canvas::Group",
+                                  x => CANVAS_BORDER,
+                                  y => CANVAS_BORDER);
 
     $instance->{graph}->{node_text_items} = [];
     $instance->{graph}->{selection_box} = Gnome2::Canvas::Item->new
-	($instance->{graph}->{group},
-	 "Gnome2::Canvas::Rect",
-	 x1            => 0,
-	 y1            => 0,
-	 x2            => 1,
-	 y2            => 1,
-	 fill_color    => "Red",
-	 outline_color => "Red",
-	 width_pixels  => LINE_WIDTH);
+        ($instance->{graph}->{group},
+         "Gnome2::Canvas::Rect",
+         x1            => 0,
+         y1            => 0,
+         x2            => 1,
+         y2            => 1,
+         fill_color    => "Red",
+         outline_color => "Red",
+         width_pixels  => LINE_WIDTH);
     $instance->{graph}->{selection_box}->hide();
 
     $total = scalar(@{$instance->{graph_data}->{rectangles}})
-	+ scalar(@{$instance->{graph_data}->{circles}})
-	+ scalar(@{$instance->{graph_data}->{arrows}});
+        + scalar(@{$instance->{graph_data}->{circles}})
+        + scalar(@{$instance->{graph_data}->{arrows}});
     $update_interval = calculate_update_interval($total);
 
     # Cancel any selections that are currently active as we have just blanked
     # the canvas.
 
     foreach my $item ($instance->{graph_advanced_find_button},
-		      @{$instance->{revision_sensitive_group}})
+                      @{$instance->{revision_sensitive_group}})
     {
-	$item->set_sensitive(FALSE);
+        $item->set_sensitive(FALSE);
     }
 
     # Draw the rectangular nodes with text inside them.
@@ -2075,89 +2075,89 @@ sub draw_graph($)
     foreach my $rectangle (@{$instance->{graph_data}->{rectangles}})
     {
 
-	my ($tag,
-	    $text,
-	    $widget);
-	my $node = $child_db->{$rectangle->{revision_id}};
-	my $node_group = Gnome2::Canvas::Item->new($instance->{graph}->{group},
-						   "Gnome2::Canvas::Group",
-						   x => 0,
-						   y => 0);
-	my $outline_colour = SELECTED_BORDER_COLOUR;
+        my ($tag,
+            $text,
+            $widget);
+        my $node = $child_db->{$rectangle->{revision_id}};
+        my $node_group = Gnome2::Canvas::Item->new($instance->{graph}->{group},
+                                                   "Gnome2::Canvas::Group",
+                                                   x => 0,
+                                                   y => 0);
+        my $outline_colour = SELECTED_BORDER_COLOUR;
 
-	# Link the child database node to the relevant geometric canvas
-	# information.
+        # Link the child database node to the relevant geometric canvas
+        # information.
 
-	$node->{canvas_item_details} = $rectangle;
+        $node->{canvas_item_details} = $rectangle;
 
-	# Decide on the colour depending on whether the node is suspended and
-	# then if it is not selected.
+        # Decide on the colour depending on whether the node is suspended and
+        # then if it is not selected.
 
-	if ($node->{flags} & SUSPENDED_NODE)
-	{
-	    $outline_colour = SUSPENDED_BORDER_COLOUR;
-	}
-	elsif (! ($node->{flags} & SELECTED_NODE))
-	{
-	    $outline_colour = NOT_SELECTED_BORDER_COLOUR;
-	}
+        if ($node->{flags} & SUSPENDED_NODE)
+        {
+            $outline_colour = SUSPENDED_BORDER_COLOUR;
+        }
+        elsif (! ($node->{flags} & SELECTED_NODE))
+        {
+            $outline_colour = NOT_SELECTED_BORDER_COLOUR;
+        }
 
-	# Draw the rectangle.
+        # Draw the rectangle.
 
-	$widget = Gnome2::Canvas::Item->new
-	    ($node_group,
-	     "Gnome2::Canvas::Rect",
-	     x1             => $rectangle->{tl_x},
-	     y1             => $rectangle->{tl_y},
-	     x2             => $rectangle->{br_x},
-	     y2             => $rectangle->{br_y},
-	     fill_color_gdk => get_node_colour($instance, $node),
-	     outline_color  => $outline_colour,
-	     width_pixels   => LINE_WIDTH);
+        $widget = Gnome2::Canvas::Item->new
+            ($node_group,
+             "Gnome2::Canvas::Rect",
+             x1             => $rectangle->{tl_x},
+             y1             => $rectangle->{tl_y},
+             x2             => $rectangle->{br_x},
+             y2             => $rectangle->{br_y},
+             fill_color_gdk => get_node_colour($instance, $node),
+             outline_color  => $outline_colour,
+             width_pixels   => LINE_WIDTH);
 
-	# Now the text, use a revision's tag and failing that use the first
-	# eight characters of its hex id.
+        # Now the text, use a revision's tag and failing that use the first
+        # eight characters of its hex id.
 
-	if (defined($tag = get_node_tag($instance, $rectangle->{revision_id})))
-	{
-	    $text = $tag;
-	}
-	else
-	{
-	    $text = substr($rectangle->{revision_id}, 0, HEX_ID_LENGTH);
-	}
-	$widget = Gnome2::Canvas::Item->new
-	    ($node_group,
-	     "Gnome2::Canvas::Text",
-	     x          => $rectangle->{tl_x}
-	                   + floor(($rectangle->{br_x} - $rectangle->{tl_x}
-				    + 1) / 2),
-	     y          => $rectangle->{tl_y}
-	                   + floor(($rectangle->{br_y} - $rectangle->{tl_y}
-				    + 1) / 2),
-	     font_desc  => $instance->{fontdescription},
-	     text       => $text,
-	     fill_color => FONT_COLOUR);
-	$widget->raise_to_top();
-	$widget->show();
-	push(@{$instance->{graph}->{node_text_items}}, $widget);
+        if (defined($tag = get_node_tag($instance, $rectangle->{revision_id})))
+        {
+            $text = $tag;
+        }
+        else
+        {
+            $text = substr($rectangle->{revision_id}, 0, HEX_ID_LENGTH);
+        }
+        $widget = Gnome2::Canvas::Item->new
+            ($node_group,
+             "Gnome2::Canvas::Text",
+             x          => $rectangle->{tl_x}
+                           + floor(($rectangle->{br_x} - $rectangle->{tl_x}
+                                    + 1) / 2),
+             y          => $rectangle->{tl_y}
+                           + floor(($rectangle->{br_y} - $rectangle->{tl_y}
+                                    + 1) / 2),
+             font_desc  => $instance->{fontdescription},
+             text       => $text,
+             fill_color => FONT_COLOUR);
+        $widget->raise_to_top();
+        $widget->show();
+        push(@{$instance->{graph}->{node_text_items}}, $widget);
 
-	$node_group->signal_connect
-	    ("event",
-	     \&canvas_item_event_cb,
-	     {instance    => $instance,
-	      revision_id => $rectangle->{revision_id}});
+        $node_group->signal_connect
+            ("event",
+             \&canvas_item_event_cb,
+             {instance    => $instance,
+              revision_id => $rectangle->{revision_id}});
 
-	if (($counter % $update_interval) == 0)
-	{
-	    $instance->{appbar}->set_progress_percentage($counter / $total);
-	    $wm->update_gui();
-	}
-	++ $counter;
+        if (($counter % $update_interval) == 0)
+        {
+            $instance->{appbar}->set_progress_percentage($counter / $total);
+            $wm->update_gui();
+        }
+        ++ $counter;
 
-	# Stop if the user wants to.
+        # Stop if the user wants to.
 
-	last if ($instance->{stop});
+        last if ($instance->{stop});
 
     }
 
@@ -2166,57 +2166,57 @@ sub draw_graph($)
     foreach my $circle (@{$instance->{graph_data}->{circles}})
     {
 
-	my $widget;
-	my $node = $child_db->{$circle->{revision_id}};
-	my $outline_colour = SELECTED_BORDER_COLOUR;
+        my $widget;
+        my $node = $child_db->{$circle->{revision_id}};
+        my $outline_colour = SELECTED_BORDER_COLOUR;
 
-	# Link the child database node to the relevant geometric canvas
-	# information.
+        # Link the child database node to the relevant geometric canvas
+        # information.
 
-	$node->{canvas_item_details} = $circle;
+        $node->{canvas_item_details} = $circle;
 
-	# Decide on the colour depending on whether the node is suspended and
-	# then if it is not selected.
+        # Decide on the colour depending on whether the node is suspended and
+        # then if it is not selected.
 
-	if ($node->{flags} & SUSPENDED_NODE)
-	{
-	    $outline_colour = SUSPENDED_BORDER_COLOUR;
-	}
-	elsif (! ($node->{flags} & SELECTED_NODE))
-	{
-	    $outline_colour = NOT_SELECTED_BORDER_COLOUR;
-	}
+        if ($node->{flags} & SUSPENDED_NODE)
+        {
+            $outline_colour = SUSPENDED_BORDER_COLOUR;
+        }
+        elsif (! ($node->{flags} & SELECTED_NODE))
+        {
+            $outline_colour = NOT_SELECTED_BORDER_COLOUR;
+        }
 
-	# Draw the circle.
+        # Draw the circle.
 
-	$widget = Gnome2::Canvas::Item->new
-	    ($instance->{graph}->{group},
-	     "Gnome2::Canvas::Ellipse",
-	     x1             => $circle->{x} - $circle->{width},
-	     y1             => $circle->{y} - $circle->{height},
-	     x2             => $circle->{x} + $circle->{width},
-	     y2             => $circle->{y} + $circle->{height},
-	     fill_color_gdk => get_node_colour($instance, $node),
-	     outline_color  => $outline_colour,
-	     width_pixels   => LINE_WIDTH);
-	$widget->raise_to_top();
-	$widget->show();
+        $widget = Gnome2::Canvas::Item->new
+            ($instance->{graph}->{group},
+             "Gnome2::Canvas::Ellipse",
+             x1             => $circle->{x} - $circle->{width},
+             y1             => $circle->{y} - $circle->{height},
+             x2             => $circle->{x} + $circle->{width},
+             y2             => $circle->{y} + $circle->{height},
+             fill_color_gdk => get_node_colour($instance, $node),
+             outline_color  => $outline_colour,
+             width_pixels   => LINE_WIDTH);
+        $widget->raise_to_top();
+        $widget->show();
 
-	$widget->signal_connect("event",
-				\&canvas_item_event_cb,
-				{instance    => $instance,
-				 revision_id => $circle->{revision_id}});
+        $widget->signal_connect("event",
+                                \&canvas_item_event_cb,
+                                {instance    => $instance,
+                                 revision_id => $circle->{revision_id}});
 
-	if (($counter % $update_interval) == 0)
-	{
-	    $instance->{appbar}->set_progress_percentage($counter / $total);
-	    $wm->update_gui();
-	}
-	++ $counter;
+        if (($counter % $update_interval) == 0)
+        {
+            $instance->{appbar}->set_progress_percentage($counter / $total);
+            $wm->update_gui();
+        }
+        ++ $counter;
 
-	# Stop if the user wants to.
+        # Stop if the user wants to.
 
-	last if ($instance->{stop});
+        last if ($instance->{stop});
     }
 
     # Draw the lines.
@@ -2224,60 +2224,60 @@ sub draw_graph($)
     foreach my $arrow (@{$instance->{graph_data}->{arrows}})
     {
 
-	my ($bpath,
-	    $colour,
-	    $i,
-	    $pathdef);
-	my $head = $arrow->{arrow};
-	my $line = $arrow->{line};
+        my ($bpath,
+            $colour,
+            $i,
+            $pathdef);
+        my $head = $arrow->{arrow};
+        my $line = $arrow->{line};
 
-	if (! ($child_db->{$arrow->{from_revision_id}}->{flags}
-	       & SELECTED_NODE)
-	    || ! ($child_db->{$arrow->{to_revision_id}}->{flags}
-		  & SELECTED_NODE))
-	{
-	    $colour = NOT_SELECTED_BORDER_COLOUR;
-	}
-	else
-	{
-	    $colour = SELECTED_BORDER_COLOUR;
-	}
-	$pathdef = Gnome2::Canvas::PathDef->new();
-	$pathdef->moveto($$line[0], $$line[1]);
-	$i = 2;
-	for ($i = 2; $i < scalar(@$line); $i += 6)
-	{
-	    $pathdef->curveto($$line[$i],
-			      $$line[$i + 1],
-			      $$line[$i + 2],
-			      $$line[$i + 3],
-			      $$line[$i + 4],
-			      $$line[$i + 5]);
-	}
-	$pathdef->lineto($$head[2], $$head[3]);
-	$pathdef->moveto($$head[0], $$head[1]);
-	$pathdef->lineto($$head[2], $$head[3]);
-	$pathdef->lineto($$head[4], $$head[5]);
-	$pathdef->closepath();
-	$bpath = Gnome2::Canvas::Item->new($instance->{graph}->{group},
-					   "Gnome2::Canvas::Bpath",
-					   fill_color    => $colour,
-					   outline_color => $colour,
-					   width_pixels  => LINE_WIDTH);
-	$bpath->set_path_def($pathdef);
-	$bpath->lower_to_bottom();
-	$bpath->show();
+        if (! ($child_db->{$arrow->{from_revision_id}}->{flags}
+               & SELECTED_NODE)
+            || ! ($child_db->{$arrow->{to_revision_id}}->{flags}
+                  & SELECTED_NODE))
+        {
+            $colour = NOT_SELECTED_BORDER_COLOUR;
+        }
+        else
+        {
+            $colour = SELECTED_BORDER_COLOUR;
+        }
+        $pathdef = Gnome2::Canvas::PathDef->new();
+        $pathdef->moveto($$line[0], $$line[1]);
+        $i = 2;
+        for ($i = 2; $i < scalar(@$line); $i += 6)
+        {
+            $pathdef->curveto($$line[$i],
+                              $$line[$i + 1],
+                              $$line[$i + 2],
+                              $$line[$i + 3],
+                              $$line[$i + 4],
+                              $$line[$i + 5]);
+        }
+        $pathdef->lineto($$head[2], $$head[3]);
+        $pathdef->moveto($$head[0], $$head[1]);
+        $pathdef->lineto($$head[2], $$head[3]);
+        $pathdef->lineto($$head[4], $$head[5]);
+        $pathdef->closepath();
+        $bpath = Gnome2::Canvas::Item->new($instance->{graph}->{group},
+                                           "Gnome2::Canvas::Bpath",
+                                           fill_color    => $colour,
+                                           outline_color => $colour,
+                                           width_pixels  => LINE_WIDTH);
+        $bpath->set_path_def($pathdef);
+        $bpath->lower_to_bottom();
+        $bpath->show();
 
-	if (($counter % $update_interval) == 0)
-	{
-	    $instance->{appbar}->set_progress_percentage($counter / $total);
-	    $wm->update_gui();
-	}
-	++ $counter;
+        if (($counter % $update_interval) == 0)
+        {
+            $instance->{appbar}->set_progress_percentage($counter / $total);
+            $wm->update_gui();
+        }
+        ++ $counter;
 
-	# Stop if the user wants to.
+        # Stop if the user wants to.
 
-	last if ($instance->{stop});
+        last if ($instance->{stop});
 
     }
     $instance->{appbar}->set_progress_percentage(1);
@@ -2288,10 +2288,10 @@ sub draw_graph($)
     # eighth of the page size.
 
     foreach my $adjustment
-	($instance->{graph_scrolledwindow}->get_hadjustment(),
-	 $instance->{graph_scrolledwindow}->get_vadjustment())
+        ($instance->{graph_scrolledwindow}->get_hadjustment(),
+         $instance->{graph_scrolledwindow}->get_vadjustment())
     {
-	$adjustment->step_increment($adjustment->page_increment() / 8);
+        $adjustment->step_increment($adjustment->page_increment() / 8);
     }
 
     $instance->{appbar}->set_progress_percentage(0);
@@ -2320,16 +2320,16 @@ sub select_node($$)
     my ($instance, $revision_id) = @_;
 
     my ($branches,
-	@certs,
-	$change_log,
-	$date,
-	$item,
-	$node);
+        @certs,
+        $change_log,
+        $date,
+        $item,
+        $node);
 
     # Look up the information node for the revision id.
 
     return unless (exists($instance->{graph_data}->{child_graph}->
-			  {$revision_id}));
+                          {$revision_id}));
     $node = $instance->{graph_data}->{child_graph}->{$revision_id};
     return unless (exists($node->{canvas_item_details}));
     $item = $node->{canvas_item_details};
@@ -2339,19 +2339,19 @@ sub select_node($$)
 
     if ($node->{flags} & CIRCULAR_NODE)
     {
-	$instance->{graph}->{selection_box}->set
-	    (x1 => $item->{x} - $item->{width} - SELECTION_BORDER,
-	     y1 => $item->{y} - $item->{height} - SELECTION_BORDER,
-	     x2 => $item->{x} + $item->{width} + SELECTION_BORDER,
-	     y2 => $item->{y} + $item->{height} + SELECTION_BORDER);
+        $instance->{graph}->{selection_box}->set
+            (x1 => $item->{x} - $item->{width} - SELECTION_BORDER,
+             y1 => $item->{y} - $item->{height} - SELECTION_BORDER,
+             x2 => $item->{x} + $item->{width} + SELECTION_BORDER,
+             y2 => $item->{y} + $item->{height} + SELECTION_BORDER);
     }
     else
     {
-	$instance->{graph}->{selection_box}->set
-	    (x1 => $item->{tl_x} - SELECTION_BORDER,
-	     y1 => $item->{tl_y} - SELECTION_BORDER,
-	     x2 => $item->{br_x} + SELECTION_BORDER,
-	     y2 => $item->{br_y} + SELECTION_BORDER);
+        $instance->{graph}->{selection_box}->set
+            (x1 => $item->{tl_x} - SELECTION_BORDER,
+             y1 => $item->{tl_y} - SELECTION_BORDER,
+             x2 => $item->{br_x} + SELECTION_BORDER,
+             y2 => $item->{br_y} + SELECTION_BORDER);
     }
     $instance->{graph}->{selection_box}->lower_to_bottom();
     $instance->{graph}->{selection_box}->show();
@@ -2363,12 +2363,12 @@ sub select_node($$)
     $instance->{mtn}->certs(\@certs, $revision_id);
     foreach my $cert (@certs)
     {
-	if ($cert->{name} eq "changelog")
-	{
-	    $change_log = $cert->{value};
-	    $change_log =~ s/\s+$//s;
-	    last;
-	}
+        if ($cert->{name} eq "changelog")
+        {
+            $change_log = $cert->{value};
+            $change_log =~ s/\s+$//s;
+            last;
+        }
     }
     $branches = join("\n", @{$node->{branches}});
     $date = $node->{date};
@@ -2383,7 +2383,7 @@ sub select_node($$)
 
     foreach my $item (@{$instance->{revision_sensitive_group}})
     {
-	$item->set_sensitive(TRUE);
+        $item->set_sensitive(TRUE);
     }
 
     # Make a note of what revision has been selected.
@@ -2413,16 +2413,16 @@ sub scroll_to_node($$)
     my ($instance, $revision_id) = @_;
 
     my ($height,
-	$item,
-	$node,
-	$width,
-	$x,
-	$y);
+        $item,
+        $node,
+        $width,
+        $x,
+        $y);
 
     # Look up the information node for the revision id.
 
     return unless (exists($instance->{graph_data}->{child_graph}->
-			  {$revision_id}));
+                          {$revision_id}));
     $node = $instance->{graph_data}->{child_graph}->{$revision_id};
     return unless (exists($node->{canvas_item_details}));
     $item = $node->{canvas_item_details};
@@ -2431,19 +2431,19 @@ sub scroll_to_node($$)
 
     if ($node->{flags} & CIRCULAR_NODE)
     {
-	$x = $item->{x};
-	$y = $item->{y};
+        $x = $item->{x};
+        $y = $item->{y};
     }
     else
     {
-	$x = $item->{tl_x} + floor(($item->{br_x} - $item->{tl_x} + 1) / 2);
-	$y = $item->{tl_y} + floor(($item->{br_y} - $item->{tl_y} + 1) / 2);
+        $x = $item->{tl_x} + floor(($item->{br_x} - $item->{tl_x} + 1) / 2);
+        $y = $item->{tl_y} + floor(($item->{br_y} - $item->{tl_y} + 1) / 2);
     }
 
     # Get the current dimensions of the canvas.
 
     ($width, $height) =
-	($instance->{graph_canvas}->window()->get_geometry())[2, 3];
+        ($instance->{graph_canvas}->window()->get_geometry())[2, 3];
 
     # Convert from world coordinates to canvas pixels (takes into account any
     # scaling factors currently in effect). Don't forget to also add in the
@@ -2493,20 +2493,20 @@ sub scale_canvas($)
     $instance->{graph_canvas}->set_pixels_per_unit($instance->{scale});
     if ((FONT_SIZE * $instance->{scale}) < 3)
     {
-	foreach my $text_item (@{$instance->{graph}->{node_text_items}})
-	{
-	    $text_item->hide();
-	}
+        foreach my $text_item (@{$instance->{graph}->{node_text_items}})
+        {
+            $text_item->hide();
+        }
     }
     else
     {
-	$instance->{fontdescription}->set_size
-	    (floor(FONT_SIZE * $instance->{scale}) * PANGO_SCALE);
-	foreach my $text_item (@{$instance->{graph}->{node_text_items}})
-	{
-	    $text_item->set(font_desc => $instance->{fontdescription});
-	    $text_item->show();
-	}
+        $instance->{fontdescription}->set_size
+            (floor(FONT_SIZE * $instance->{scale}) * PANGO_SCALE);
+        foreach my $text_item (@{$instance->{graph}->{node_text_items}})
+        {
+            $text_item->set(font_desc => $instance->{fontdescription});
+            $text_item->show();
+        }
     }
 
     # If we have something to redraw then do so, resized text looks
@@ -2514,11 +2514,11 @@ sub scale_canvas($)
 
     if (defined($instance->{graph}->{group}))
     {
-	$instance->{graph_canvas}->request_redraw
-	    (0,
-	     0,
-	     $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
-	     $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
+        $instance->{graph_canvas}->request_redraw
+            (0,
+             0,
+             $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
+             $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
     }
 
     # Make sure the canvas is up to date and then show it again.
@@ -2559,22 +2559,22 @@ sub get_node_colour($$)
 
     if ($instance->{graph_data}->{parameters}->{colour_by_author})
     {
-	$hash_values = [$node->{author}] if (defined($node->{author}));
+        $hash_values = [$node->{author}] if (defined($node->{author}));
     }
     else
     {
-	$hash_values = $node->{branches} if (scalar(@{$node->{branches}}) > 0);
+        $hash_values = $node->{branches} if (scalar(@{$node->{branches}}) > 0);
     }
 
     # First look for an existing colour for any of the branches.
 
     foreach my $value (@$hash_values)
     {
-	if (exists($instance->{colour_db}->{$value}))
-	{
-	    $colour = $instance->{colour_db}->{$value};
-	    last;
-	}
+        if (exists($instance->{colour_db}->{$value}))
+        {
+            $colour = $instance->{colour_db}->{$value};
+            last;
+        }
     }
 
     # Do we need a new colour?
@@ -2582,52 +2582,52 @@ sub get_node_colour($$)
     if (! defined($colour))
     {
 
-	# Yes we do.
+        # Yes we do.
 
-	# If the value used to generate the hash hash is "" then choose white
-	# otherwise generate a colour based on the MD5 hash of that value.
+        # If the value used to generate the hash hash is "" then choose white
+        # otherwise generate a colour based on the MD5 hash of that value.
 
-	if ($$hash_values[0] eq "")
-	{
-	    $colour = Gtk2::Gdk::Color->new(65535, 65535, 65535);
-	}
-	else
-	{
+        if ($$hash_values[0] eq "")
+        {
+            $colour = Gtk2::Gdk::Color->new(65535, 65535, 65535);
+        }
+        else
+        {
 
-	    my ($blue,
-		$green,
-		$hue,
-		$red,
-		$saturation,
-		$value);
+            my ($blue,
+                $green,
+                $hue,
+                $red,
+                $saturation,
+                $value);
 
-	    # Generate a new colour by hashing the differentiating value and
-	    # then using the first few bytes of that hash as HSV values (idea
-	    # taken from monotone-viz).
+            # Generate a new colour by hashing the differentiating value and
+            # then using the first few bytes of that hash as HSV values (idea
+            # taken from monotone-viz).
 
-	    ($hue, $saturation, $value) = unpack("CCC", md5($$hash_values[0]));
+            ($hue, $saturation, $value) = unpack("CCC", md5($$hash_values[0]));
 
-	    # Now scale values. Hue 0 to 359, saturation and value 0 to 1. In
-	    # addition scale saturation to only go from 35% to 50% and value to
-	    # only go from 70% to 100%. Then convert from HSV to RGB.
+            # Now scale values. Hue 0 to 359, saturation and value 0 to 1. In
+            # addition scale saturation to only go from 35% to 50% and value to
+            # only go from 70% to 100%. Then convert from HSV to RGB.
 
-	    $hue = ($hue / 255) * 359;
-	    $saturation = (($saturation / 255) * 0.15) + 0.35;
-	    $value = (($value / 255) * 0.30) + 0.70;
-	    hsv_to_rgb($hue, $saturation, $value, \$red, \$green, \$blue);
+            $hue = ($hue / 255) * 359;
+            $saturation = (($saturation / 255) * 0.15) + 0.35;
+            $value = (($value / 255) * 0.30) + 0.70;
+            hsv_to_rgb($hue, $saturation, $value, \$red, \$green, \$blue);
 
-	    # Scale RGB values and create a new colour object.
+            # Scale RGB values and create a new colour object.
 
-	    $colour =
-		Gtk2::Gdk::Color->new(floor(($red * 65535) + 0.5) & 0xffff,
-				      floor(($green * 65535) + 0.5) & 0xffff,
-				      floor(($blue * 65535) + 0.5) & 0xffff);
+            $colour =
+                Gtk2::Gdk::Color->new(floor(($red * 65535) + 0.5) & 0xffff,
+                                      floor(($green * 65535) + 0.5) & 0xffff,
+                                      floor(($blue * 65535) + 0.5) & 0xffff);
 
-	}
+        }
 
-	# Store colour under its hash value for possible reuse.
+        # Store colour under its hash value for possible reuse.
 
-	$instance->{colour_db}->{$$hash_values[0]} = $colour;
+        $instance->{colour_db}->{$$hash_values[0]} = $colour;
 
     }
 
@@ -2666,7 +2666,7 @@ sub hsv_to_rgb($$$$$$)
 
     if ($saturation == 0)
     {
-	$$red = $$green = $$blue = $value;
+        $$red = $$green = $$blue = $value;
     }
 
     # Now non-grey colours.
@@ -2674,58 +2674,58 @@ sub hsv_to_rgb($$$$$$)
     else
     {
 
-	my ($f,
-	    $i,
-	    $p,
-	    $q,
-	    $t);
+        my ($f,
+            $i,
+            $p,
+            $q,
+            $t);
 
-	# Hue is 0 to 360, scale it down into 0 to 5 and put the factorial part
-	# of that division into $f.
+        # Hue is 0 to 360, scale it down into 0 to 5 and put the factorial part
+        # of that division into $f.
 
-	$hue /= 60;
-	$i = floor($hue);
-	$f = $hue - $i;
-	$p = $value * (1 - $saturation);
-	$q = $value * (1 - ($saturation * $f));
-	$t = $value * (1 - ($saturation * (1 - $f)));
+        $hue /= 60;
+        $i = floor($hue);
+        $f = $hue - $i;
+        $p = $value * (1 - $saturation);
+        $q = $value * (1 - ($saturation * $f));
+        $t = $value * (1 - ($saturation * (1 - $f)));
 
-	if ($i == 0)
-	{
-	    $$red = $value;
-	    $$green = $t;
-	    $$blue = $p;
-	}
-	elsif ($i == 1)
-	{
-	    $$red = $q;
-	    $$green = $value;
-	    $$blue = $p;
-	}
-	elsif ($i == 2)
-	{
-	    $$red = $p;
-	    $$green = $value;
-	    $$blue = $t;
-	}
-	elsif ($i == 3)
-	{
-	    $$red = $p;
-	    $$green = $q;
-	    $$blue = $value;
-	}
-	elsif ($i == 4)
-	{
-	    $$red = $t;
-	    $$green = $p;
-	    $$blue = $value;
-	}
-	else
-	{
-	    $$red = $value;
-	    $$green = $p;
-	    $$blue = $q;
-	}
+        if ($i == 0)
+        {
+            $$red = $value;
+            $$green = $t;
+            $$blue = $p;
+        }
+        elsif ($i == 1)
+        {
+            $$red = $q;
+            $$green = $value;
+            $$blue = $p;
+        }
+        elsif ($i == 2)
+        {
+            $$red = $p;
+            $$green = $value;
+            $$blue = $t;
+        }
+        elsif ($i == 3)
+        {
+            $$red = $p;
+            $$green = $q;
+            $$blue = $value;
+        }
+        elsif ($i == 4)
+        {
+            $$red = $t;
+            $$green = $p;
+            $$blue = $value;
+        }
+        else
+        {
+            $$red = $value;
+            $$green = $p;
+            $$blue = $q;
+        }
 
     }
 
@@ -2753,33 +2753,33 @@ sub populate_revision_details($$)
     my ($instance, $revision_id) = @_;
 
     my ($author,
-	@branches,
-	@certs,
-	$date,
-	$node,
-	@tags);
+        @branches,
+        @certs,
+        $date,
+        $node,
+        @tags);
 
     # Get the revision's list of branches, tags and date.
 
     $instance->{mtn}->certs(\@certs, $revision_id);
     foreach my $cert (@certs)
     {
-	if ($cert->{name} eq "author")
-	{
-	    $author = $cert->{value} unless (defined($author));
-	}
-	elsif ($cert->{name} eq "branch")
-	{
-	    push(@branches, $cert->{value});
-	}
-	elsif ($cert->{name} eq "date")
-	{
-	    $date = $cert->{value} unless (defined($date));
-	}
-	elsif ($cert->{name} eq "tag")
-	{
-	    push(@tags, $cert->{value});
-	}
+        if ($cert->{name} eq "author")
+        {
+            $author = $cert->{value} unless (defined($author));
+        }
+        elsif ($cert->{name} eq "branch")
+        {
+            push(@branches, $cert->{value});
+        }
+        elsif ($cert->{name} eq "date")
+        {
+            $date = $cert->{value} unless (defined($date));
+        }
+        elsif ($cert->{name} eq "tag")
+        {
+            push(@tags, $cert->{value});
+        }
     }
     @branches = sort(@branches);
     @tags = sort(@tags);
@@ -2827,43 +2827,43 @@ sub get_node_tag($$)
     if (scalar(@{$node->{tags}}) > 0)
     {
 
-	# Yes there are so either return the highest weighted tag if we have a
-	# weightings list or just the first one if we don't.
+        # Yes there are so either return the highest weighted tag if we have a
+        # weightings list or just the first one if we don't.
 
-	if (scalar(@{$instance->{compiled_tag_weightings}}) > 0)
-	{
+        if (scalar(@{$instance->{compiled_tag_weightings}}) > 0)
+        {
 
-	    my @results;
+            my @results;
 
-	    # Ok so now find the tag with the highest weighting.
+            # Ok so now find the tag with the highest weighting.
 
-	    foreach my $tag (@{$node->{tags}})
-	    {
-		my $weighting = 0;
-		foreach my $entry (@{$instance->{compiled_tag_weightings}})
-		{
-		    if ($tag =~ m/$entry->{compiled_re}/)
-		    {
-			$weighting = $entry->{weighting};
-			last;
-		    }
-		}
-		push(@results, {tag_name => $tag, weighting => $weighting});
-	    }
+            foreach my $tag (@{$node->{tags}})
+            {
+                my $weighting = 0;
+                foreach my $entry (@{$instance->{compiled_tag_weightings}})
+                {
+                    if ($tag =~ m/$entry->{compiled_re}/)
+                    {
+                        $weighting = $entry->{weighting};
+                        last;
+                    }
+                }
+                push(@results, {tag_name => $tag, weighting => $weighting});
+            }
 
-	    # Now sort the results, highest weighting first and then sorted on
-	    # tag name.
+            # Now sort the results, highest weighting first and then sorted on
+            # tag name.
 
-	    @results = sort({ $b->{weighting} <=> $a->{weighting}
-			      || $a->{tag_name} cmp $b->{tag_name} }
-			    @results);
-	    return $results[0]->{tag_name};
+            @results = sort({ $b->{weighting} <=> $a->{weighting}
+                              || $a->{tag_name} cmp $b->{tag_name} }
+                            @results);
+            return $results[0]->{tag_name};
 
-	}
-	else
-	{
-	    return $node->{tags}->[0];
-	}
+        }
+        else
+        {
+            return $node->{tags}->[0];
+        }
 
     }
 
@@ -2893,8 +2893,8 @@ sub compile_tag_weighting_patterns($)
     @$list = ();
     foreach my $entry (@{$user_preferences->{tag_weightings}})
     {
-	push(@$list, {weighting   => $entry->{weighting},
-		      compiled_re => qr/$entry->{pattern}/});
+        push(@$list, {weighting   => $entry->{weighting},
+                      compiled_re => qr/$entry->{pattern}/});
     }
 
 }
@@ -2925,128 +2925,128 @@ sub get_history_graph_window()
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my $glade;
+        my $glade;
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("appbar",
-			    "graph_scrolledwindow",
-			    "graph_button_vbox",
-			    "graph_advanced_find_button",
-			    "stop_button",
-			    "author_value_label",
-			    "date_value_label",
-			    "branch_value_label",
-			    "change_log_value_label")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("appbar",
+                            "graph_scrolledwindow",
+                            "graph_button_vbox",
+                            "graph_advanced_find_button",
+                            "stop_button",
+                            "author_value_label",
+                            "date_value_label",
+                            "branch_value_label",
+                            "change_log_value_label")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Create the graph canvas widget. We can't do this in Glade as
-	# something does not honour the anti-aliased setting.
+        # Create the graph canvas widget. We can't do this in Glade as
+        # something does not honour the anti-aliased setting.
 
-	$instance->{graph_canvas} = Gnome2::Canvas->new_aa();
-	$instance->{graph_scrolledwindow}->add($instance->{graph_canvas});
-	$instance->{graph_canvas}->show_all();
+        $instance->{graph_canvas} = Gnome2::Canvas->new_aa();
+        $instance->{graph_scrolledwindow}->add($instance->{graph_canvas});
+        $instance->{graph_canvas}->show_all();
 
-	# Setup the history graph callbacks.
+        # Setup the history graph callbacks.
 
-	$instance->{window}->signal_connect
-	    ("delete_event",
-	     sub {
-		 my ($widget, $event, $instance) = @_;
-		 return TRUE if ($instance->{in_cb});
-		 local $instance->{in_cb} = 1;
-		 $widget->hide();
-		 reset_history_graph_instance($instance);
-		 $instance->{mtn} = undef;
-		 return TRUE;
-	     },
-	     $instance);
-	$instance->{stop_button}->signal_connect
-	    ("clicked", sub { $_[1]->{stop} = 1; }, $instance);
-	$instance->{graph_scrolledwindow}->signal_connect
-	    ("button_press_event",
-	     \&canvas_item_event_cb,
-	     {instance    => $instance,
-	      revision_id => undef});
+        $instance->{window}->signal_connect
+            ("delete_event",
+             sub {
+                 my ($widget, $event, $instance) = @_;
+                 return TRUE if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 $widget->hide();
+                 reset_history_graph_instance($instance);
+                 $instance->{mtn} = undef;
+                 return TRUE;
+             },
+             $instance);
+        $instance->{stop_button}->signal_connect
+            ("clicked", sub { $_[1]->{stop} = 1; }, $instance);
+        $instance->{graph_scrolledwindow}->signal_connect
+            ("button_press_event",
+             \&canvas_item_event_cb,
+             {instance    => $instance,
+              revision_id => undef});
 
-	# Gnome2::Canvas is a bit buggy and can get upset if any of its widgets
-	# are referenced by Perl when it gets destroyed (or so it seems).
-	# Therefore register a cleanup handler that will make sure all canvas
-	# widgets are unreferenced before the application exits.
+        # Gnome2::Canvas is a bit buggy and can get upset if any of its widgets
+        # are referenced by Perl when it gets destroyed (or so it seems).
+        # Therefore register a cleanup handler that will make sure all canvas
+        # widgets are unreferenced before the application exits.
 
-	$instance->{cleanup_handler} =
-	    sub {
-		my $instance = $_[0];
-		$instance->{graph} = undef;
-		$instance->{graph_canvas} = undef;
-	    };
+        $instance->{cleanup_handler} =
+            sub {
+                my $instance = $_[0];
+                $instance->{graph} = undef;
+                $instance->{graph_canvas} = undef;
+            };
 
-	# Create the font description for displaying text on the graph. I am
-	# using a fixed width or monospaced font as I think on balance it makes
-	# it easier to read hex ids.
+        # Create the font description for displaying text on the graph. I am
+        # using a fixed width or monospaced font as I think on balance it makes
+        # it easier to read hex ids.
 
-	$instance->{fontdescription} = Gtk2::Pango::FontDescription->
-	    from_string($user_preferences->{fixed_font});
+        $instance->{fontdescription} = Gtk2::Pango::FontDescription->
+            from_string($user_preferences->{fixed_font});
 
-	# Setup button sensitivity groups.
+        # Setup button sensitivity groups.
 
-	$instance->{revision_sensitivity_group} = [];
-	foreach my $item ("go_to_selected_revision",
-			  "graph_revision_change_history",
-			  "graph_revision_change_log",
-			  "browse_revision")
-	{
-	    push(@{$instance->{revision_sensitive_group}},
-		 $glade->get_widget($item . "_button"));
-	}
+        $instance->{revision_sensitivity_group} = [];
+        foreach my $item ("go_to_selected_revision",
+                          "graph_revision_change_history",
+                          "graph_revision_change_log",
+                          "browse_revision")
+        {
+            push(@{$instance->{revision_sensitive_group}},
+                 $glade->get_widget($item . "_button"));
+        }
 
-	# Register the window for management and set up the help callbacks.
+        # Register the window for management and set up the help callbacks.
 
-	$wm->manage($instance,
-		    $window_type,
-		    $instance->{window},
-		    $instance->{stop_button});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => "graph_button_vbox",
-	      help_ref => __("mtnb-lachc-history-buttons")},
-	     {widget   => undef,
-	      help_ref => __("mtnb-lachc-the-revision-and-file-history-"
-			     . "windows")});
+        $wm->manage($instance,
+                    $window_type,
+                    $instance->{window},
+                    $instance->{stop_button});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => "graph_button_vbox",
+              help_ref => __("mtnb-lachc-history-buttons")},
+             {widget   => undef,
+              help_ref => __("mtnb-lachc-the-revision-and-file-history-"
+                             . "windows")});
 
     }
     else
     {
 
-	my ($height,
-	    $width);
+        my ($height,
+            $width);
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
-	($width, $height) = $instance->{window}->get_default_size();
-	$instance->{window}->resize($width, $height);
-	$instance->{stop_button}->set_sensitive(FALSE);
-	$instance->{graph_canvas}->set_pixels_per_unit(1);
-	$instance->{appbar}->set_progress_percentage(0);
-	$instance->{appbar}->clear_stack();
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
+        ($width, $height) = $instance->{window}->get_default_size();
+        $instance->{window}->resize($width, $height);
+        $instance->{stop_button}->set_sensitive(FALSE);
+        $instance->{graph_canvas}->set_pixels_per_unit(1);
+        $instance->{appbar}->set_progress_percentage(0);
+        $instance->{appbar}->clear_stack();
 
     }
 
@@ -3084,22 +3084,22 @@ sub reset_history_graph_instance($)
     reset_history_graph_window($instance);
     $instance->{colour_db} = {};
     $instance->{graph_data} =
-	{parameters     =>
-	     {new                      => 0,
-	      branches                 => [],
-	      from_date                => "",
-	      to_date                  => "",
-	      draw_left_to_right       => $draw_left_to_right,
-	      show_all_propagate_nodes => $show_all_propagate_nodes,
-	      colour_by_author         => $colour_by_author,
-	      revision_id              => undef},
-	 child_graph    => {},
-	 head_revisions => [],
-	 arrows         => [],
-	 circles        => [],
-	 rectangles     => [],
-	 max_x          => 0,
-	 max_y          => 0};
+        {parameters     =>
+             {new                      => 0,
+              branches                 => [],
+              from_date                => "",
+              to_date                  => "",
+              draw_left_to_right       => $draw_left_to_right,
+              show_all_propagate_nodes => $show_all_propagate_nodes,
+              colour_by_author         => $colour_by_author,
+              revision_id              => undef},
+         child_graph    => {},
+         head_revisions => [],
+         arrows         => [],
+         circles        => [],
+         rectangles     => [],
+         max_x          => 0,
+         max_y          => 0};
 
 }
 #
@@ -3125,14 +3125,14 @@ sub reset_history_graph_window($)
     my $group = $instance->{graph}->{group};
 
     $instance->{graph} = {group           => undef,
-			  node_text_items => [],
-			  selection_box   => undef};
+                          node_text_items => [],
+                          selection_box   => undef};
     $group->destroy() if defined($group);
     $instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
     foreach my $item ($instance->{graph_advanced_find_button},
-		      @{$instance->{revision_sensitive_group}})
+                      @{$instance->{revision_sensitive_group}})
     {
-	$item->set_sensitive(FALSE);
+        $item->set_sensitive(FALSE);
     }
     set_label_value($instance->{author_value_label}, "");
     set_label_value($instance->{date_value_label}, "");
@@ -3167,9 +3167,9 @@ sub change_history_graph_parameters($$)
     my ($parent_instance, $parameters) = @_;
 
     my ($from_date,
-	$instance,
-	$ret_val,
-	$to_date);
+        $instance,
+        $ret_val,
+        $to_date);
     my $wm = WindowManager->instance();
 
     $instance = get_change_history_graph_window($parent_instance);
@@ -3178,44 +3178,44 @@ sub change_history_graph_parameters($$)
 
     {
 
-	my (@branches,
-	    %selected_branches);
+        my (@branches,
+            %selected_branches);
 
-	local $instance->{in_cb} = 1;
+        local $instance->{in_cb} = 1;
 
-	# Load in the complete list of branches, selecting any currently in the
-	# parameters.
+        # Load in the complete list of branches, selecting any currently in the
+        # parameters.
 
-	foreach my $branch (@{$parameters->{branches}})
-	{
-	    $selected_branches{$branch} = undef;
-	}
-	$instance->{mtn}->branches(\@branches);
-	$instance->{branches_liststore}->clear();
-	foreach my $branch (@branches)
-	{
-	    $instance->{branches_liststore}->
-		set($instance->{branches_liststore}->append(),
-		    BLS_SELECTED_COLUMN,
-		        exists($selected_branches{$branch}) ? TRUE : FALSE,
-		    BLS_BRANCH_COLUMN, $branch);
-	}
+        foreach my $branch (@{$parameters->{branches}})
+        {
+            $selected_branches{$branch} = undef;
+        }
+        $instance->{mtn}->branches(\@branches);
+        $instance->{branches_liststore}->clear();
+        foreach my $branch (@branches)
+        {
+            $instance->{branches_liststore}->
+                set($instance->{branches_liststore}->append(),
+                    BLS_SELECTED_COLUMN,
+                        exists($selected_branches{$branch}) ? TRUE : FALSE,
+                    BLS_BRANCH_COLUMN, $branch);
+        }
 
-	# Also load in any dates specified by the caller (but don't do this
-	# after the first time the user changes the parameters - otherwise his
-	# settings will keep getting reset which he will find annoying).
+        # Also load in any dates specified by the caller (but don't do this
+        # after the first time the user changes the parameters - otherwise his
+        # settings will keep getting reset which he will find annoying).
 
-	if ($parameters->{new} && $parameters->{from_date} ne "")
-	{
-	    my ($from_date,
-		$to_date);
-	    $from_date = mtn_time_string_to_time($parameters->{from_date});
-	    $to_date = ($parameters->{to_date} ne "")
-		? mtn_time_string_to_time($parameters->{to_date}) : time();
-	    set_date_range($instance, $from_date, $to_date)
-		if (defined($from_date) && defined($to_date));
-	    $parameters->{new} = 0;
-	}
+        if ($parameters->{new} && $parameters->{from_date} ne "")
+        {
+            my ($from_date,
+                $to_date);
+            $from_date = mtn_time_string_to_time($parameters->{from_date});
+            $to_date = ($parameters->{to_date} ne "")
+                ? mtn_time_string_to_time($parameters->{to_date}) : time();
+            set_date_range($instance, $from_date, $to_date)
+                if (defined($from_date) && defined($to_date));
+            $parameters->{new} = 0;
+        }
 
     }
 
@@ -3224,16 +3224,16 @@ sub change_history_graph_parameters($$)
     $wm->make_busy($instance, 1, 1);
     while (! $instance->{done})
     {
-	while (! $instance->{done})
-	{
-	    Gtk2->main_iteration();
-	}
-	if ($instance->{changed})
-	{
-	    local $instance->{in_cb} = 1;
-	    $instance->{done} = $instance->{changed} =
-		get_date_range($instance, \$from_date, \$to_date);
-	}
+        while (! $instance->{done})
+        {
+            Gtk2->main_iteration();
+        }
+        if ($instance->{changed})
+        {
+            local $instance->{in_cb} = 1;
+            $instance->{done} = $instance->{changed} =
+                get_date_range($instance, \$from_date, \$to_date);
+        }
     }
     $wm->make_busy($instance, 0);
     local $instance->{in_cb} = 1;
@@ -3244,42 +3244,42 @@ sub change_history_graph_parameters($$)
     if ($instance->{changed})
     {
 
-	my ($branch_list,
-	    @certs_list,
-	    $found);
+        my ($branch_list,
+            @certs_list,
+            $found);
 
-	# Get the selected branches.
+        # Get the selected branches.
 
-	$parameters->{branches} = [];
-	$instance->{branches_liststore}->foreach
-	    (sub {
-		 my ($widget, $path, $iter) = @_;
-		 my ($selected, $branch) =
-		     $instance->{branches_liststore}->get($iter);
-		 push(@{$parameters->{branches}}, $branch) if ($selected);
-		 return FALSE;
-	     });
+        $parameters->{branches} = [];
+        $instance->{branches_liststore}->foreach
+            (sub {
+                 my ($widget, $path, $iter) = @_;
+                 my ($selected, $branch) =
+                     $instance->{branches_liststore}->get($iter);
+                 push(@{$parameters->{branches}}, $branch) if ($selected);
+                 return FALSE;
+             });
 
-	# Get any date range, making sure that the dates are either valid or an
-	# empty string.
+        # Get any date range, making sure that the dates are either valid or an
+        # empty string.
 
-	$parameters->{from_date} = defined($from_date) ? $from_date : "";
-	$parameters->{to_date} = defined($to_date) ? $to_date : "";
+        $parameters->{from_date} = defined($from_date) ? $from_date : "";
+        $parameters->{to_date} = defined($to_date) ? $to_date : "";
 
-	# Get the settings.
+        # Get the settings.
 
-	$parameters->{draw_left_to_right} = $draw_left_to_right =
-	    $instance->{draw_graph_left_to_right_checkbutton}->get_active()
-	    ? 1 : 0;
-	$parameters->{show_all_propagate_nodes} = $show_all_propagate_nodes =
-	    $instance->{show_all_propagate_revisions_checkbutton}->get_active()
-	    ? 1 : 0;
-	$parameters->{colour_by_author} = $colour_by_author =
-	    $instance->{colour_by_author_radiobutton}->get_active() ? 1 : 0;
+        $parameters->{draw_left_to_right} = $draw_left_to_right =
+            $instance->{draw_graph_left_to_right_checkbutton}->get_active()
+            ? 1 : 0;
+        $parameters->{show_all_propagate_nodes} = $show_all_propagate_nodes =
+            $instance->{show_all_propagate_revisions_checkbutton}->get_active()
+            ? 1 : 0;
+        $parameters->{colour_by_author} = $colour_by_author =
+            $instance->{colour_by_author_radiobutton}->get_active() ? 1 : 0;
 
-	# Leave the revision id parameter alone.
+        # Leave the revision id parameter alone.
 
-	$ret_val = 1;
+        $ret_val = 1;
 
     }
 
@@ -3314,16 +3314,16 @@ sub select_pattern_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($case_sensitive,
-	$expr,
-	$scroll_to_path,
-	$search_term,
-	$selection,
-	$use_regexp);
+        $expr,
+        $scroll_to_path,
+        $search_term,
+        $selection,
+        $use_regexp);
 
     # Get the search parameters.
 
     $search_term =
-	$instance->{branch_pattern_comboboxentry}->child()->get_text();
+        $instance->{branch_pattern_comboboxentry}->child()->get_text();
     $case_sensitive = $instance->{case_sensitive_checkbutton}->get_active();
     $use_regexp = $instance->{regular_expression_checkbutton}->get_active();
 
@@ -3332,83 +3332,83 @@ sub select_pattern_button_clicked_cb($$)
 
     if ($use_regexp)
     {
-	eval
-	{
-	    if ($case_sensitive)
-	    {
-		$expr = qr/$search_term/;
-	    }
-	    else
-	    {
-		$expr = qr/$search_term/i;
-	    }
-	};
-	if ($@)
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("`{pattern}' is an invalid\nbranch search pattern.",
-		     pattern => $search_term));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
+        eval
+        {
+            if ($case_sensitive)
+            {
+                $expr = qr/$search_term/;
+            }
+            else
+            {
+                $expr = qr/$search_term/i;
+            }
+        };
+        if ($@)
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($instance->{window},
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __x("`{pattern}' is an invalid\nbranch search pattern.",
+                     pattern => $search_term));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
     }
     else
     {
-	if ($case_sensitive)
-	{
-	    $expr = qr/\Q$search_term\E/;
-	}
-	else
-	{
-	    $expr = qr/\Q$search_term\E/i;
-	}
+        if ($case_sensitive)
+        {
+            $expr = qr/\Q$search_term\E/;
+        }
+        else
+        {
+            $expr = qr/\Q$search_term\E/i;
+        }
     }
 
     # Store the search term in the history.
 
     handle_comboxentry_history($instance->{branch_pattern_comboboxentry},
-			       "change_history_graph_branch_patterns",
-			       $search_term);
+                               "change_history_graph_branch_patterns",
+                               $search_term);
 
     # Go through all the branches in the list store, selecting those that
     # match and then scroll to the first match.
 
     $selection = $instance->{branches_treeview}->get_selection();
     $instance->{branches_liststore}->foreach
-	(sub {
-	     my ($widget, $path, $iter) = @_;
-	     if ($widget->get($iter, BLS_BRANCH_COLUMN) =~ m/$expr/)
-	     {
-		 $selection->select_iter($iter);
-		 $scroll_to_path =
-		     $instance->{branches_liststore}->get_path($iter)
-		     unless (defined($scroll_to_path));
-	     }
-	     return FALSE;
-	 });
+        (sub {
+             my ($widget, $path, $iter) = @_;
+             if ($widget->get($iter, BLS_BRANCH_COLUMN) =~ m/$expr/)
+             {
+                 $selection->select_iter($iter);
+                 $scroll_to_path =
+                     $instance->{branches_liststore}->get_path($iter)
+                     unless (defined($scroll_to_path));
+             }
+             return FALSE;
+         });
     if (defined($scroll_to_path))
     {
-	$instance->{branches_treeview}->scroll_to_cell($scroll_to_path,
-						       undef,
-						       TRUE);
+        $instance->{branches_treeview}->scroll_to_cell($scroll_to_path,
+                                                       undef,
+                                                       TRUE);
     }
     else
     {
-	my $dialog;
-	$dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "info",
-	     "close",
-	     __x("Could not find\n`{search_term}'.",
-		 search_term => $search_term));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
+        my $dialog;
+        $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "info",
+             "close",
+             __x("Could not find\n`{search_term}'.",
+                 search_term => $search_term));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
     }
 
 }
@@ -3440,10 +3440,10 @@ sub tick_untick_branches_button_clicked_cb($$)
     my $set = ($instance->{tick_branches_button} == $widget) ? TRUE: FALSE;
 
     $instance->{branches_treeview}->get_selection()->selected_foreach
-	(sub {
-	     my ($model, $path, $iter) = @_;
-	     $model->set($iter, BLS_SELECTED_COLUMN, $set);
-	 });
+        (sub {
+             my ($model, $path, $iter) = @_;
+             $model->set($iter, BLS_SELECTED_COLUMN, $set);
+         });
 
 }
 #
@@ -3480,165 +3480,165 @@ sub get_change_history_graph_window($)
     if (! defined($instance = $wm->find_unused($change_window_type)))
     {
 
-	my ($glade,
-	    $image,
-	    $renderer,
-	    $tv_column);
+        my ($glade,
+            $image,
+            $renderer,
+            $tv_column);
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $change_window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $change_window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($change_window_type);
-	foreach my $widget ("branch_pattern_comboboxentry",
-			    "tick_branches_button",
-			    "case_sensitive_checkbutton",
-			    "regular_expression_checkbutton",
-			    "branches_treeview",
-			    "date_range_checkbutton",
-			    "between_range_radiobutton",
-			    "older_date_dateedit",
-			    "and_label",
-			    "younger_date_dateedit",
-			    "during_range_radiobutton",
-			    "time_spinbutton",
-			    "time_units_combobox",
-			    "draw_graph_left_to_right_checkbutton",
-			    "show_all_propagate_revisions_checkbutton",
-			    "colour_by_branch_radiobutton",
-			    "colour_by_author_radiobutton")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($change_window_type);
+        foreach my $widget ("branch_pattern_comboboxentry",
+                            "tick_branches_button",
+                            "case_sensitive_checkbutton",
+                            "regular_expression_checkbutton",
+                            "branches_treeview",
+                            "date_range_checkbutton",
+                            "between_range_radiobutton",
+                            "older_date_dateedit",
+                            "and_label",
+                            "younger_date_dateedit",
+                            "during_range_radiobutton",
+                            "time_spinbutton",
+                            "time_units_combobox",
+                            "draw_graph_left_to_right_checkbutton",
+                            "show_all_propagate_revisions_checkbutton",
+                            "colour_by_branch_radiobutton",
+                            "colour_by_author_radiobutton")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup the change history graph callbacks.
+        # Setup the change history graph callbacks.
 
-	$instance->{window}->signal_connect
-	    ("delete_event",
-	     sub { $_[2]->{done} = 1 unless ($_[2]->{in_cb}); return TRUE; },
-	     $instance);
-	$glade->get_widget("cancel_button")->signal_connect
-	    ("clicked",
-	     sub { $_[1]->{done} = 1 unless ($_[1]->{in_cb}); },
-	     $instance);
-	$glade->get_widget("ok_button")->signal_connect
-	    ("clicked",
-	     sub { $_[1]->{done} = $_[1]->{changed} = 1
-		       unless ($_[1]->{in_cb}); },
-	     $instance);
+        $instance->{window}->signal_connect
+            ("delete_event",
+             sub { $_[2]->{done} = 1 unless ($_[2]->{in_cb}); return TRUE; },
+             $instance);
+        $glade->get_widget("cancel_button")->signal_connect
+            ("clicked",
+             sub { $_[1]->{done} = 1 unless ($_[1]->{in_cb}); },
+             $instance);
+        $glade->get_widget("ok_button")->signal_connect
+            ("clicked",
+             sub { $_[1]->{done} = $_[1]->{changed} = 1
+                       unless ($_[1]->{in_cb}); },
+             $instance);
 
-	# Setup the combobox.
+        # Setup the combobox.
 
-	$instance->{branch_pattern_comboboxentry}->
-	    set_model(Gtk2::ListStore->new("Glib::String"));
-	$instance->{branch_pattern_comboboxentry}->set_text_column(0);
+        $instance->{branch_pattern_comboboxentry}->
+            set_model(Gtk2::ListStore->new("Glib::String"));
+        $instance->{branch_pattern_comboboxentry}->set_text_column(0);
 
-	# Setup the branches list browser.
+        # Setup the branches list browser.
 
-	$instance->{branches_liststore} =
-	    Gtk2::ListStore->new(BLS_COLUMN_TYPES);
-	$instance->{branches_treeview}->
-	    set_model($instance->{branches_liststore});
-	$instance->{branches_treeview}->get_selection()->set_mode("multiple");
+        $instance->{branches_liststore} =
+            Gtk2::ListStore->new(BLS_COLUMN_TYPES);
+        $instance->{branches_treeview}->
+            set_model($instance->{branches_liststore});
+        $instance->{branches_treeview}->get_selection()->set_mode("multiple");
 
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$image = Gtk2::Image->new_from_stock("gtk-yes", "menu");
-	$image->show_all();
-	$tv_column->set_widget($image);
-	$tv_column->set_resizable(FALSE);
-	$tv_column->set_sort_column_id(BLS_SELECTED_COLUMN);
-	$renderer = Gtk2::CellRendererToggle->new();
-	$renderer->set(activatable => TRUE);
-	$renderer->signal_connect
-	    ("toggled",
-	     sub {
-		 my ($widget, $path, $instance) = @_;
-		 return if ($instance->{in_cb});
-		 local $instance->{in_cb} = 1;
-		 $instance->{branches_liststore}->
-		     set($instance->{branches_liststore}->
-			     get_iter_from_string($path),
-			 BLS_SELECTED_COLUMN, ! $widget->get_active());
-	     },
-	     $instance);
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "active" => BLS_SELECTED_COLUMN);
-	$instance->{branches_treeview}->append_column($tv_column);
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $image = Gtk2::Image->new_from_stock("gtk-yes", "menu");
+        $image->show_all();
+        $tv_column->set_widget($image);
+        $tv_column->set_resizable(FALSE);
+        $tv_column->set_sort_column_id(BLS_SELECTED_COLUMN);
+        $renderer = Gtk2::CellRendererToggle->new();
+        $renderer->set(activatable => TRUE);
+        $renderer->signal_connect
+            ("toggled",
+             sub {
+                 my ($widget, $path, $instance) = @_;
+                 return if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 $instance->{branches_liststore}->
+                     set($instance->{branches_liststore}->
+                             get_iter_from_string($path),
+                         BLS_SELECTED_COLUMN, ! $widget->get_active());
+             },
+             $instance);
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "active" => BLS_SELECTED_COLUMN);
+        $instance->{branches_treeview}->append_column($tv_column);
 
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$tv_column->set_title(__("Branch"));
-	$tv_column->set_resizable(FALSE);
-	$tv_column->set_sizing("grow-only");
-	$tv_column->set_sort_column_id(BLS_BRANCH_COLUMN);
-	$renderer = Gtk2::CellRendererText->new();
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "text" => BLS_BRANCH_COLUMN);
-	$instance->{branches_treeview}->append_column($tv_column);
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $tv_column->set_title(__("Branch"));
+        $tv_column->set_resizable(FALSE);
+        $tv_column->set_sizing("grow-only");
+        $tv_column->set_sort_column_id(BLS_BRANCH_COLUMN);
+        $renderer = Gtk2::CellRendererText->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "text" => BLS_BRANCH_COLUMN);
+        $instance->{branches_treeview}->append_column($tv_column);
 
-	$instance->{branches_treeview}->set_search_column(BLS_BRANCH_COLUMN);
-	$instance->{branches_treeview}->
-	    set_search_equal_func(\&treeview_column_searcher);
+        $instance->{branches_treeview}->set_search_column(BLS_BRANCH_COLUMN);
+        $instance->{branches_treeview}->
+            set_search_equal_func(\&treeview_column_searcher);
 
-	# Setup the date range widgets.
+        # Setup the date range widgets.
 
-	setup_date_range_widgets($instance);
+        setup_date_range_widgets($instance);
 
-	# Reparent the change history graph window to the specified window.
+        # Reparent the change history graph window to the specified window.
 
-	$instance->{window}->set_transient_for($parent_instance->{window});
+        $instance->{window}->set_transient_for($parent_instance->{window});
 
-	# Display the window.
+        # Display the window.
 
-	$instance->{window}->show_all();
-	$instance->{window}->present();
+        $instance->{window}->show_all();
+        $instance->{window}->present();
 
-	# Register the window for management and set up the help callbacks.
+        # Register the window for management and set up the help callbacks.
 
-	$wm->manage($instance, $change_window_type, $instance->{window});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => "graph_button_vbox",
-	      help_ref => __("mtnb-lachc-history-buttons")},
-	     {widget   => undef,
-	      help_ref => __("mtnb-lachc-the-revision-and-file-history-"
-			     . "windows")});
+        $wm->manage($instance, $change_window_type, $instance->{window});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => "graph_button_vbox",
+              help_ref => __("mtnb-lachc-history-buttons")},
+             {widget   => undef,
+              help_ref => __("mtnb-lachc-the-revision-and-file-history-"
+                             . "windows")});
 
     }
     else
     {
 
-	my ($height,
-	    $width);
+        my ($height,
+            $width);
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Reset the change history graph dialog's state.
+        # Reset the change history graph dialog's state.
 
-	($width, $height) = $instance->{window}->get_default_size();
-	$instance->{window}->resize($width, $height);
-	$instance->{window}->set_transient_for($parent_instance->{window});
-	$instance->{branches_liststore}->clear();
-	$instance->{branches_liststore} =
-	    Gtk2::ListStore->new(BLS_COLUMN_TYPES);
-	$instance->{branches_treeview}->
-	    set_model($instance->{branches_liststore});
-	$instance->{branches_treeview}->set_search_column(BLS_BRANCH_COLUMN);
-	$instance->{window}->show_all();
-	$instance->{window}->present();
+        ($width, $height) = $instance->{window}->get_default_size();
+        $instance->{window}->resize($width, $height);
+        $instance->{window}->set_transient_for($parent_instance->{window});
+        $instance->{branches_liststore}->clear();
+        $instance->{branches_liststore} =
+            Gtk2::ListStore->new(BLS_COLUMN_TYPES);
+        $instance->{branches_treeview}->
+            set_model($instance->{branches_liststore});
+        $instance->{branches_treeview}->set_search_column(BLS_BRANCH_COLUMN);
+        $instance->{window}->show_all();
+        $instance->{window}->present();
 
     }
 
@@ -3652,7 +3652,7 @@ sub get_change_history_graph_window($)
     # Load in the comboboxentry history.
 
     handle_comboxentry_history($instance->{branch_pattern_comboboxentry},
-			       "change_history_graph_branch_patterns");
+                               "change_history_graph_branch_patterns");
 
     # Make sure that the branch pattern has the focus and not the cancel
     # button.

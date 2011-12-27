@@ -84,16 +84,16 @@ sub display_annotation($$$)
     my ($mtn, $revision_id, $file_name) = @_;
 
     my ($i,
-	$instance,
-	$iter,
-	$len,
-	@lines,
-	$max_len,
-	$padding,
-	@prefix,
-	$prefix_tag,
-	$template,
-	$text_tag);
+        $instance,
+        $iter,
+        $len,
+        @lines,
+        $max_len,
+        $padding,
+        @prefix,
+        $prefix_tag,
+        $template,
+        $text_tag);
     my $wm = WindowManager->instance();
 
     $instance = get_annotation_window();
@@ -103,7 +103,7 @@ sub display_annotation($$$)
     $instance->{file_name} = $file_name;
     $instance->{revision_id} = $revision_id;
     $instance->{window}->set_title(__x("Annotated Listing Of {file}",
-				       file => $instance->{file_name}));
+                                       file => $instance->{file_name}));
     $instance->{window}->show_all();
     $instance->{window}->present();
 
@@ -116,9 +116,9 @@ sub display_annotation($$$)
     $instance->{appbar}->set_status(__("Annotating file"));
     $wm->update_gui();
     mtn_annotate(\@lines,
-		 $mtn->get_db_name(),
-		 $revision_id,
-		 $instance->{file_name});
+                 $mtn->get_db_name(),
+                 $revision_id,
+                 $instance->{file_name});
 
     # Find the longest line for future padding and also split each line into
     # their prefix and text parts. Please note that the use of unpack un-utf8s
@@ -127,71 +127,71 @@ sub display_annotation($$$)
     $max_len = 0;
     if (scalar(@lines) > 0)
     {
-	$instance->{prefix_length} = length(($lines[0] =~ m/^([^:]+):.*$/)[0]);
+        $instance->{prefix_length} = length(($lines[0] =~ m/^([^:]+):.*$/)[0]);
     }
     else
     {
-	$instance->{prefix_length} = 0;
+        $instance->{prefix_length} = 0;
     }
     $template = sprintf("a%da2a*", $instance->{prefix_length});
     for ($i = 0; $i < scalar(@lines); ++ $i)
     {
-	($prefix[$i], $lines[$i]) = (unpack($template, $lines[$i]))[0, 2];
-	eval
-	{
-	    $lines[$i] = decode($file_encoding, $lines[$i], Encode::FB_CROAK);
-	};
-	$lines[$i] =~ s/\s+$//;
-	$lines[$i] = expand($lines[$i]);
-	$max_len = $len if (($len = length($lines[$i])) > $max_len);
+        ($prefix[$i], $lines[$i]) = (unpack($template, $lines[$i]))[0, 2];
+        eval
+        {
+            $lines[$i] = decode($file_encoding, $lines[$i], Encode::FB_CROAK);
+        };
+        $lines[$i] =~ s/\s+$//;
+        $lines[$i] = expand($lines[$i]);
+        $max_len = $len if (($len = length($lines[$i])) > $max_len);
     }
 
     # Display the result, highlighting according to the annotate output.
 
     $instance->{appbar}->set_status
-	(__("Formatting and displaying annotated file"));
+        (__("Formatting and displaying annotated file"));
     $wm->update_gui();
     $padding = " " x $max_len;
     $prefix_tag = $text_tag = "";
     for ($i = 0; $i < scalar(@lines); ++ $i)
     {
 
-	# Change the colours if there is a new prefix.
+        # Change the colours if there is a new prefix.
 
-	if ($prefix[$i] !~ m/^\s+$/)
-	{
-	    if ($prefix_tag ne "annotate-prefix-1")
-	    {
-		$prefix_tag = "annotate-prefix-1";
-		$text_tag = "annotate-text-1";
-	    }
-	    else
-	    {
-		$prefix_tag = "annotate-prefix-2";
-		$text_tag = "annotate-text-2";
-	    }
-	}
+        if ($prefix[$i] !~ m/^\s+$/)
+        {
+            if ($prefix_tag ne "annotate-prefix-1")
+            {
+                $prefix_tag = "annotate-prefix-1";
+                $text_tag = "annotate-text-1";
+            }
+            else
+            {
+                $prefix_tag = "annotate-prefix-2";
+                $text_tag = "annotate-text-2";
+            }
+        }
 
-	# Print out the prefix.
+        # Print out the prefix.
 
-	$instance->{annotation_buffer}->insert_with_tags_by_name
-	    ($instance->{annotation_buffer}->get_end_iter(),
-	     $prefix[$i] . " ",
-	     $prefix_tag);
+        $instance->{annotation_buffer}->insert_with_tags_by_name
+            ($instance->{annotation_buffer}->get_end_iter(),
+             $prefix[$i] . " ",
+             $prefix_tag);
 
-	# Print out the text.
+        # Print out the text.
 
-	$instance->{annotation_buffer}->insert_with_tags_by_name
-	    ($instance->{annotation_buffer}->get_end_iter(),
-	     substr($lines[$i] . $padding, 0, $max_len) . "\n",
-	     $text_tag);
+        $instance->{annotation_buffer}->insert_with_tags_by_name
+            ($instance->{annotation_buffer}->get_end_iter(),
+             substr($lines[$i] . $padding, 0, $max_len) . "\n",
+             $text_tag);
 
-	if (($i % 100) == 0)
-	{
-	    $instance->{appbar}->set_progress_percentage
-		(($i + 1) / scalar(@lines));
-	    $wm->update_gui();
-	}
+        if (($i % 100) == 0)
+        {
+            $instance->{appbar}->set_progress_percentage
+                (($i + 1) / scalar(@lines));
+            $wm->update_gui();
+        }
 
     }
     $instance->{appbar}->set_progress_percentage(1);
@@ -201,13 +201,13 @@ sub display_annotation($$$)
 
     $iter = $instance->{annotation_buffer}->get_end_iter();
     $instance->{annotation_buffer}->delete
-	($iter, $instance->{annotation_buffer}->get_end_iter())
-	if ($iter->backward_char());
+        ($iter, $instance->{annotation_buffer}->get_end_iter())
+        if ($iter->backward_char());
 
     # Make sure we are at the top.
 
     $instance->{annotation_buffer}->
-	place_cursor($instance->{annotation_buffer}->get_start_iter());
+        place_cursor($instance->{annotation_buffer}->get_start_iter());
     $instance->{annotation_scrolledwindow}->get_vadjustment()->set_value(0);
     $instance->{annotation_scrolledwindow}->get_hadjustment()->set_value(0);
     $instance->{appbar}->set_progress_percentage(0);
@@ -244,11 +244,11 @@ sub annotation_textview_populate_popup_cb($$$)
     local $instance->{in_cb} = 1;
 
     my ($menu_item,
-	$revision_part,
-	$separator,
-	$start_iter,
-	$x,
-	$y);
+        $revision_part,
+        $separator,
+        $start_iter,
+        $x,
+        $y);
 
     # Extract the revision id relating to the block of text directly under the
     # mouse cursor.
@@ -257,34 +257,34 @@ sub annotation_textview_populate_popup_cb($$$)
     ($x, $y) = $widget->window_to_buffer_coords("widget", $x, $y);
     if (defined($start_iter = ($widget->get_line_at_y($y))[0]))
     {
-	my ($end_iter,
-	    $prefix,
-	    $no_more,
-	    $text_buffer);
-	$end_iter = ($widget->get_line_at_y($y))[0];
-	$end_iter->forward_to_line_end();
-	$text_buffer = $widget->get_buffer();
-	$prefix = substr($text_buffer->get_text($start_iter, $end_iter, TRUE),
-			 0,
-			 $instance->{prefix_length});
-	while ($prefix !~ m/^ *[0-9a-f]+\.+.*$/)
-	{
-	    if (! $start_iter->backward_line())
-	    {
-		$no_more = 1;
-		last;
-	    }
-	    $end_iter->backward_line();
-	    $end_iter->forward_to_line_end()
-		unless ($end_iter->ends_line());
-	    $prefix = substr($text_buffer->get_text($start_iter,
-						    $end_iter,
-						    TRUE),
-			     0,
-			     $instance->{prefix_length});
-	}
-	($revision_part) = ($prefix =~ m/^ *([0-9a-f]+)\.+.*$/)
-	    unless ($no_more);
+        my ($end_iter,
+            $prefix,
+            $no_more,
+            $text_buffer);
+        $end_iter = ($widget->get_line_at_y($y))[0];
+        $end_iter->forward_to_line_end();
+        $text_buffer = $widget->get_buffer();
+        $prefix = substr($text_buffer->get_text($start_iter, $end_iter, TRUE),
+                         0,
+                         $instance->{prefix_length});
+        while ($prefix !~ m/^ *[0-9a-f]+\.+.*$/)
+        {
+            if (! $start_iter->backward_line())
+            {
+                $no_more = 1;
+                last;
+            }
+            $end_iter->backward_line();
+            $end_iter->forward_to_line_end()
+                unless ($end_iter->ends_line());
+            $prefix = substr($text_buffer->get_text($start_iter,
+                                                    $end_iter,
+                                                    TRUE),
+                             0,
+                             $instance->{prefix_length});
+        }
+        ($revision_part) = ($prefix =~ m/^ *([0-9a-f]+)\.+.*$/)
+            unless ($no_more);
     }
 
     # Add a number of display, browse and comparison options to the right-click
@@ -298,23 +298,23 @@ sub annotation_textview_populate_popup_cb($$$)
     $menu_item = Gtk2::MenuItem->new(__("Display Change _Log"));
     if (! defined($revision_part))
     {
-	$menu_item->set_sensitive(FALSE);
+        $menu_item->set_sensitive(FALSE);
     }
     else
     {
-	$menu_item->signal_connect
-	    ("activate",
-	     \&annotation_textview_popup_menu_item_cb,
-	     {instance         => $instance,
-	      cb               => sub {
-		                      my ($instance, $revision_id) = @_;
-				      display_change_log($instance->{mtn},
-							 $revision_id,
-							 "",
-							 undef);
-				  },
-	      progress_message => __("Displaying change log"),
-	      revision_part    => $revision_part});
+        $menu_item->signal_connect
+            ("activate",
+             \&annotation_textview_popup_menu_item_cb,
+             {instance         => $instance,
+              cb               => sub {
+                                      my ($instance, $revision_id) = @_;
+                                      display_change_log($instance->{mtn},
+                                                         $revision_id,
+                                                         "",
+                                                         undef);
+                                  },
+              progress_message => __("Displaying change log"),
+              revision_part    => $revision_part});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -322,29 +322,29 @@ sub annotation_textview_populate_popup_cb($$$)
     $menu_item = Gtk2::MenuItem->new(__("Display File _History"));
     if (! defined($revision_part))
     {
-	$menu_item->set_sensitive(FALSE);
+        $menu_item->set_sensitive(FALSE);
     }
     else
     {
-	$menu_item->signal_connect
-	    ("activate",
-	     \&annotation_textview_popup_menu_item_cb,
-	     {instance         => $instance,
-	      cb               => sub {
-		                      my ($instance, $revision_id) = @_;
-				      my $old_file_name;
-				      $instance->{mtn}->get_corresponding_path
-					  (\$old_file_name,
-					   $instance->{revision_id},
-					   $instance->{file_name},
-					   $revision_id);
-				      display_file_change_history
-					  ($instance->{mtn},
-					   $revision_id,
-					   $old_file_name);
-				  },
-	      progress_message => __("Displaying file history"),
-	      revision_part    => $revision_part});
+        $menu_item->signal_connect
+            ("activate",
+             \&annotation_textview_popup_menu_item_cb,
+             {instance         => $instance,
+              cb               => sub {
+                                      my ($instance, $revision_id) = @_;
+                                      my $old_file_name;
+                                      $instance->{mtn}->get_corresponding_path
+                                          (\$old_file_name,
+                                           $instance->{revision_id},
+                                           $instance->{file_name},
+                                           $revision_id);
+                                      display_file_change_history
+                                          ($instance->{mtn},
+                                           $revision_id,
+                                           $old_file_name);
+                                  },
+              progress_message => __("Displaying file history"),
+              revision_part    => $revision_part});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -352,23 +352,23 @@ sub annotation_textview_populate_popup_cb($$$)
     $menu_item = Gtk2::MenuItem->new(__("Display _Revision History"));
     if (! defined($revision_part))
     {
-	$menu_item->set_sensitive(FALSE);
+        $menu_item->set_sensitive(FALSE);
     }
     else
     {
-	$menu_item->signal_connect
-	    ("activate",
-	     \&annotation_textview_popup_menu_item_cb,
-	     {instance         => $instance,
-	      cb               => sub {
-		                      my ($instance, $revision_id) = @_;
-				      display_revision_change_history
-					  ($instance->{mtn},
-					   undef,
-					   $revision_id);
-				  },
-	      progress_message => __("Displaying revision history"),
-	      revision_part    => $revision_part});
+        $menu_item->signal_connect
+            ("activate",
+             \&annotation_textview_popup_menu_item_cb,
+             {instance         => $instance,
+              cb               => sub {
+                                      my ($instance, $revision_id) = @_;
+                                      display_revision_change_history
+                                          ($instance->{mtn},
+                                           undef,
+                                           $revision_id);
+                                  },
+              progress_message => __("Displaying revision history"),
+              revision_part    => $revision_part});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -380,36 +380,36 @@ sub annotation_textview_populate_popup_cb($$$)
     $menu_item = Gtk2::MenuItem->new(__("_Browse Revision"));
     if (! defined($revision_part))
     {
-	$menu_item->set_sensitive(FALSE);
+        $menu_item->set_sensitive(FALSE);
     }
     else
     {
-	$menu_item->signal_connect
-	    ("activate",
-	     \&annotation_textview_popup_menu_item_cb,
-	     {instance         => $instance,
-	      cb               => sub {
-		                      my ($instance, $revision_id) = @_;
-				      my @certs;
-				      my $branch = "";
-				      $instance->{mtn}->certs(\@certs,
-							      $revision_id);
-				      foreach my $cert (@certs)
-				      {
-					  if ($cert->{name} eq "branch"
-					      && ($branch eq ""
-						  || $cert->{value}
-						      lt $branch))
-					  {
-					      $branch = $cert->{value};
-					  }
-				      }
-				      get_browser_window($instance->{mtn},
-							 $branch,
-							 $revision_id);
-				  },
-	      progress_message => __("Displaying revision in a new browser"),
-	      revision_part    => $revision_part});
+        $menu_item->signal_connect
+            ("activate",
+             \&annotation_textview_popup_menu_item_cb,
+             {instance         => $instance,
+              cb               => sub {
+                                      my ($instance, $revision_id) = @_;
+                                      my @certs;
+                                      my $branch = "";
+                                      $instance->{mtn}->certs(\@certs,
+                                                              $revision_id);
+                                      foreach my $cert (@certs)
+                                      {
+                                          if ($cert->{name} eq "branch"
+                                              && ($branch eq ""
+                                                  || $cert->{value}
+                                                      lt $branch))
+                                          {
+                                              $branch = $cert->{value};
+                                          }
+                                      }
+                                      get_browser_window($instance->{mtn},
+                                                         $branch,
+                                                         $revision_id);
+                                  },
+              progress_message => __("Displaying revision in a new browser"),
+              revision_part    => $revision_part});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -419,47 +419,47 @@ sub annotation_textview_populate_popup_cb($$$)
     $menu->append($separator);
 
     $menu_item =
-	Gtk2::MenuItem->new(__("Compare File With Previous _Version"));
+        Gtk2::MenuItem->new(__("Compare File With Previous _Version"));
     if (! defined($revision_part))
     {
-	$menu_item->set_sensitive(FALSE);
+        $menu_item->set_sensitive(FALSE);
     }
     else
     {
-	$menu_item->signal_connect
-	    ("activate",
-	     \&annotation_textview_popup_menu_item_cb,
-	     {instance         => $instance,
-	      cb               => sub {
-		                      my ($instance, $revision_id) = @_;
-				      compare_file_with_previous($instance,
-								 $revision_id);
-				  },
-	      progress_message => __("Doing file comparison"),
-	      revision_part    => $revision_part});
+        $menu_item->signal_connect
+            ("activate",
+             \&annotation_textview_popup_menu_item_cb,
+             {instance         => $instance,
+              cb               => sub {
+                                      my ($instance, $revision_id) = @_;
+                                      compare_file_with_previous($instance,
+                                                                 $revision_id);
+                                  },
+              progress_message => __("Doing file comparison"),
+              revision_part    => $revision_part});
     }
     $menu_item->show();
     $menu->append($menu_item);
 
     $menu_item =
-	Gtk2::MenuItem->new(__("Compare Revision _With Parent"));
+        Gtk2::MenuItem->new(__("Compare Revision _With Parent"));
     if (! defined($revision_part))
     {
-	$menu_item->set_sensitive(FALSE);
+        $menu_item->set_sensitive(FALSE);
     }
     else
     {
-	$menu_item->signal_connect
-	    ("activate",
-	     \&annotation_textview_popup_menu_item_cb,
-	     {instance         => $instance,
-	      cb               => sub {
-		                      my ($instance, $revision_id) = @_;
-				      compare_revision_with_parent
-					  ($instance, $revision_id);
-				  },
-	      progress_message => __("Doing revision comparison"),
-	      revision_part    => $revision_part});
+        $menu_item->signal_connect
+            ("activate",
+             \&annotation_textview_popup_menu_item_cb,
+             {instance         => $instance,
+              cb               => sub {
+                                      my ($instance, $revision_id) = @_;
+                                      compare_revision_with_parent
+                                          ($instance, $revision_id);
+                                  },
+              progress_message => __("Doing revision comparison"),
+              revision_part    => $revision_part});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -497,26 +497,26 @@ sub annotation_textview_popup_menu_item_cb($$)
 
     $wm->make_busy($details->{instance}, 1);
     $details->{instance}->{appbar}->
-	push($details->{instance}->{appbar}->get_status()->get_text());
+        push($details->{instance}->{appbar}->get_status()->get_text());
     $details->{instance}->{appbar}->set_status($details->{progress_message});
     $wm->update_gui();
 
     $details->{instance}->{mtn}->
-	select(\@revision_ids, "i:" . $details->{revision_part});
+        select(\@revision_ids, "i:" . $details->{revision_part});
     if (scalar(@revision_ids) == 1)
     {
-	$details->{cb}($details->{instance}, $revision_ids[0]);
+        $details->{cb}($details->{instance}, $revision_ids[0]);
     }
     else
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($details->{instance}->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __("Cannot access a unique revision id."));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
+        my $dialog = Gtk2::MessageDialog->new
+            ($details->{instance}->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __("Cannot access a unique revision id."));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
     }
 
     $details->{instance}->{appbar}->pop();
@@ -545,92 +545,92 @@ sub compare_file_with_previous($$)
     my ($instance, $revision_id) = @_;
 
     my (@chg_ancestors,
-	$file_name,
-	$old_file_name,
-	@parents);
+        $file_name,
+        $old_file_name,
+        @parents);
 
     # Remember that a warning is generated when one goes back beyond a file's
     # addition revision, so temporarily disable the warning handler.
 
     {
 
-	local $suppress_mtn_warnings = 1;
+        local $suppress_mtn_warnings = 1;
 
-	# First get the name of the file at the specified revision (it might
-	# have been moved or renamed).
+        # First get the name of the file at the specified revision (it might
+        # have been moved or renamed).
 
-	$instance->{mtn}->get_corresponding_path(\$file_name,
-						 $instance->{revision_id},
-						 $instance->{file_name},
-						 $revision_id);
+        $instance->{mtn}->get_corresponding_path(\$file_name,
+                                                 $instance->{revision_id},
+                                                 $instance->{file_name},
+                                                 $revision_id);
 
-	# Get the revision's parent and then find out when the file last
-	# changed.
+        # Get the revision's parent and then find out when the file last
+        # changed.
 
-	$instance->{mtn}->parents(\@parents, $revision_id);
-	if (scalar(@parents) > 1)
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "info",
-		 "close",
-		 __("The selected revision has more than one parent.\n"
-		    . "I will display the file's history so you can select\n"
-		    . "the specific parent revision."));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    display_file_change_history($instance->{mtn},
-					$revision_id,
-					$file_name);
-	    return;
-	}
-	elsif (scalar(@parents) == 0)
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "info",
-		 "close",
-		 __("The selected revision has no parents."));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
-	$instance->{mtn}->get_content_changed(\@chg_ancestors,
-					      $parents[0],
-					      $file_name);
-	if (scalar(@chg_ancestors) > 1)
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "info",
-		 "close",
-		 __("The current version of the file probably\n"
-		    . "resulted from a merge as it is directly\n"
-		    . "descended from multiple versions.\n"
-		    . "I will display the file's history so you\n"
-		    . "can select the specific parent revision."));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    display_file_change_history($instance->{mtn},
-					$revision_id,
-					$file_name);
-	    return;
-	}
-	elsif (scalar(@chg_ancestors) == 0)
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "info",
-		 "close",
-		 __("The selected file version has no ancestors."));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
+        $instance->{mtn}->parents(\@parents, $revision_id);
+        if (scalar(@parents) > 1)
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($instance->{window},
+                 ["modal"],
+                 "info",
+                 "close",
+                 __("The selected revision has more than one parent.\n"
+                    . "I will display the file's history so you can select\n"
+                    . "the specific parent revision."));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            display_file_change_history($instance->{mtn},
+                                        $revision_id,
+                                        $file_name);
+            return;
+        }
+        elsif (scalar(@parents) == 0)
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($instance->{window},
+                 ["modal"],
+                 "info",
+                 "close",
+                 __("The selected revision has no parents."));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
+        $instance->{mtn}->get_content_changed(\@chg_ancestors,
+                                              $parents[0],
+                                              $file_name);
+        if (scalar(@chg_ancestors) > 1)
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($instance->{window},
+                 ["modal"],
+                 "info",
+                 "close",
+                 __("The current version of the file probably\n"
+                    . "resulted from a merge as it is directly\n"
+                    . "descended from multiple versions.\n"
+                    . "I will display the file's history so you\n"
+                    . "can select the specific parent revision."));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            display_file_change_history($instance->{mtn},
+                                        $revision_id,
+                                        $file_name);
+            return;
+        }
+        elsif (scalar(@chg_ancestors) == 0)
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($instance->{window},
+                 ["modal"],
+                 "info",
+                 "close",
+                 __("The selected file version has no ancestors."));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
 
     }
 
@@ -638,24 +638,24 @@ sub compare_file_with_previous($$)
     # external differences tool.
 
     $instance->{mtn}->get_corresponding_path(\$old_file_name,
-					     $revision_id,
-					     $file_name,
-					     $chg_ancestors[0]);
+                                             $revision_id,
+                                             $file_name,
+                                             $chg_ancestors[0]);
     if ($old_file_name ne $file_name)
     {
-	display_renamed_file_comparison($instance->{window},
-					$instance->{mtn},
-					$chg_ancestors[0],
-					$old_file_name,
-					$revision_id,
-					$file_name);
+        display_renamed_file_comparison($instance->{window},
+                                        $instance->{mtn},
+                                        $chg_ancestors[0],
+                                        $old_file_name,
+                                        $revision_id,
+                                        $file_name);
     }
     else
     {
-	display_revision_comparison($instance->{mtn},
-				    $chg_ancestors[0],
-				    $revision_id,
-				    $file_name);
+        display_revision_comparison($instance->{mtn},
+                                    $chg_ancestors[0],
+                                    $revision_id,
+                                    $file_name);
     }
 
 }
@@ -688,30 +688,30 @@ sub compare_revision_with_parent($$)
     $instance->{mtn}->parents(\@parents, $revision_id);
     if (scalar(@parents) > 1)
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "info",
-	     "close",
-	     __("The selected revision has more than one parent.\n"
-		. "I will display the revision's history so you can select\n"
-		. "the specific parent revision."));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	display_revision_change_history($instance->{mtn}, undef, $revision_id);
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "info",
+             "close",
+             __("The selected revision has more than one parent.\n"
+                . "I will display the revision's history so you can select\n"
+                . "the specific parent revision."));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        display_revision_change_history($instance->{mtn}, undef, $revision_id);
+        return;
     }
     elsif (scalar(@parents) == 0)
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "info",
-	     "close",
-	     __("The selected revision has no parents."));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "info",
+             "close",
+             __("The selected revision has no parents."));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Ok now compare the revisions and display the results.
@@ -746,78 +746,78 @@ sub get_annotation_window()
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my $glade;
+        my $glade;
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("appbar",
-			    "annotation_textview",
-			    "annotation_scrolledwindow")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("appbar",
+                            "annotation_textview",
+                            "annotation_scrolledwindow")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup the annotation window deletion handler.
+        # Setup the annotation window deletion handler.
 
-	$instance->{window}->signal_connect
-	    ("delete_event",
-	     sub {
-		 my ($widget, $event, $instance) = @_;
-		 return TRUE if ($instance->{in_cb});
-		 local $instance->{in_cb} = 1;
-		 hide_find_text($instance->{annotation_textview});
-		 $widget->hide();
-		 $instance->{annotation_buffer}->set_text("");
-		 $instance->{mtn} = undef;
-		 return TRUE;
-	     },
-	     $instance);
+        $instance->{window}->signal_connect
+            ("delete_event",
+             sub {
+                 my ($widget, $event, $instance) = @_;
+                 return TRUE if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 hide_find_text($instance->{annotation_textview});
+                 $widget->hide();
+                 $instance->{annotation_buffer}->set_text("");
+                 $instance->{mtn} = undef;
+                 return TRUE;
+             },
+             $instance);
 
-	# Setup the revision annotation viewer.
+        # Setup the revision annotation viewer.
 
-	$instance->{annotation_buffer} =
-	    $instance->{annotation_textview}->get_buffer();
-	create_format_tags($instance->{annotation_buffer});
-	$instance->{annotation_textview}->modify_font($mono_font);
+        $instance->{annotation_buffer} =
+            $instance->{annotation_textview}->get_buffer();
+        create_format_tags($instance->{annotation_buffer});
+        $instance->{annotation_textview}->modify_font($mono_font);
 
-	# Register the window for management and set up the help callbacks.
+        # Register the window for management and set up the help callbacks.
 
-	$wm->manage($instance, $window_type, $instance->{window});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => undef,
-	      help_ref => __("mtnb-lachc-the-annotated-listing-window")});
+        $wm->manage($instance, $window_type, $instance->{window});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => undef,
+              help_ref => __("mtnb-lachc-the-annotated-listing-window")});
 
     }
     else
     {
 
-	my ($height,
-	    $width);
+        my ($height,
+            $width);
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	($width, $height) = $instance->{window}->get_default_size();
-	$instance->{window}->resize($width, $height);
-	$instance->{appbar}->set_progress_percentage(0);
-	$instance->{appbar}->clear_stack();
+        ($width, $height) = $instance->{window}->get_default_size();
+        $instance->{window}->resize($width, $height);
+        $instance->{appbar}->set_progress_percentage(0);
+        $instance->{appbar}->clear_stack();
 
     }
 
@@ -858,10 +858,10 @@ sub mtn_annotate($$$$)
     my ($list, $mtn_db, $revision_id, $file_name) = @_;
 
     my ($buffer,
-	@cmd,
-	$cwd,
-	$exception,
-	$ret_val);
+        @cmd,
+        $cwd,
+        $exception,
+        $ret_val);
 
     # Run mtn annotate in the root directory so as to avoid any workspace
     # conflicts.
@@ -876,25 +876,25 @@ sub mtn_annotate($$$$)
     $cwd = getcwd();
     eval
     {
-	die("chdir failed: " . $!) unless (chdir(File::Spec->rootdir()));
-	$ret_val = run_command(\$buffer, undef, undef, undef, @cmd);
+        die("chdir failed: " . $!) unless (chdir(File::Spec->rootdir()));
+        $ret_val = run_command(\$buffer, undef, undef, undef, @cmd);
     };
     $exception = $@;
     chdir($cwd);
     if ($exception)
     {
-	my $dialog = Gtk2::MessageDialog->new_with_markup
-	    (undef,
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("Problem running mtn annotate, got:\n"
-		     . "<b><i>{error_message}</i></b>\n"
-		     . "This should not be happening!",
-		 error_message => Glib::Markup::escape_text($exception)));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new_with_markup
+            (undef,
+             ["modal"],
+             "warning",
+             "close",
+             __x("Problem running mtn annotate, got:\n"
+                     . "<b><i>{error_message}</i></b>\n"
+                     . "This should not be happening!",
+                 error_message => Glib::Markup::escape_text($exception)));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Break up the input into a list of lines.

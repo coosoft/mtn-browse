@@ -82,7 +82,7 @@ use IO::File;
 use IPC::Open3;
 use List::Util qw(max);
 use Locale::TextDomain (APPLICATION_NAME,
-			File::Spec->catfile(PREFIX_DIR, "share", "locale"));
+                        File::Spec->catfile(PREFIX_DIR, "share", "locale"));
 use POSIX qw(:errno_h :locale_h :sys_wait_h floor strftime);
 use Symbol qw(gensym);
 use Text::Tabs;
@@ -123,10 +123,10 @@ use WindowManager;
 # Constants for the columns within the manifest liststore widget.
 
 use constant MLS_COLUMN_TYPES          => ("Glib::String",
-					   "Glib::String",
-					   "Glib::String",
-					   "Glib::String",
-					   "Glib::Scalar");
+                                           "Glib::String",
+                                           "Glib::String",
+                                           "Glib::String",
+                                           "Glib::Scalar");
 use constant MLS_ICON_COLUMN           => 0;
 use constant MLS_NAME_COLUMN           => 1;
 use constant MLS_DATE_COLUMN           => 2;
@@ -136,9 +136,9 @@ use constant MLS_MANIFEST_ENTRY_COLUMN => 4;
 # Constant for user interface directory.
 
 use constant UI_DIR => File::Spec->catfile(PREFIX_DIR,
-					   "share",
-					   APPLICATION_NAME,
-					   "glade");
+                                           "share",
+                                           APPLICATION_NAME,
+                                           "glade");
 
 # The type of window that is going to be managed by this module.
 
@@ -212,29 +212,29 @@ sub view_button_clicked_cb($$);
 {
 
     my ($branch,
-	$browser,
-	$icon_factory,
-	$icon_set,
-	$mtn,
-	$revision_id);
+        $browser,
+        $icon_factory,
+        $icon_set,
+        $mtn,
+        $revision_id);
 
     # Initialise stuff.
 
     Gnome2::Program->init
-	(APPLICATION_NAME,
-	 APPLICATION_VERSION,
-	 undef,
-	 app_datadir => File::Spec->catfile(PREFIX_DIR, "share"));
+        (APPLICATION_NAME,
+         APPLICATION_VERSION,
+         undef,
+         app_datadir => File::Spec->catfile(PREFIX_DIR, "share"));
     setup_sigchld_handler(\&sigchld_handler);
     $glade_file = File::Spec->catfile(UI_DIR, "mtn-browse.glade");
     $tooltips = Gtk2::Tooltips->new();
     $line_image = Gtk2::Gdk::Pixbuf->
-	new_from_file(File::Spec->catfile(UI_DIR, "line.png"));
+        new_from_file(File::Spec->catfile(UI_DIR, "line.png"));
     Gtk2::Stock->add({stock_id => "mtnb-weighting",
-		      label    => __("Weighting")});
+                      label    => __("Weighting")});
     $icon_set = Gtk2::IconSet->new_from_pixbuf
-	(Gtk2::Gdk::Pixbuf->new_from_file(File::Spec->catfile
-					  (UI_DIR, "weightings.png")));
+        (Gtk2::Gdk::Pixbuf->new_from_file(File::Spec->catfile
+                                          (UI_DIR, "weightings.png")));
     $icon_factory = Gtk2::IconFactory->new();
     $icon_factory->add("mtnb-weighting", $icon_set);
     $icon_factory->add_default();
@@ -245,53 +245,53 @@ sub view_button_clicked_cb($$);
 
     CachingAutomateStdio->register_db_locked_handler(\&mtn_db_locked_handler);
     CachingAutomateStdio->register_io_wait_handler
-	(sub { WindowManager->instance()->update_gui(); }, 1);
+        (sub { WindowManager->instance()->update_gui(); }, 1);
 
     # Load in user preferences.
 
     eval
     {
-	$user_preferences = load_preferences();
-	$mime_match_table =
-	    build_mime_match_table($user_preferences->{mime_table});
+        $user_preferences = load_preferences();
+        $mime_match_table =
+            build_mime_match_table($user_preferences->{mime_table});
     };
     if ($@)
     {
-	chomp($@);
-	my $dialog = Gtk2::MessageDialog->new
-	    ($browser->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("Your preferences cannot be loaded:\n{error_message}",
-		 error_message => $@));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	exit(1);
+        chomp($@);
+        my $dialog = Gtk2::MessageDialog->new
+            ($browser->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("Your preferences cannot be loaded:\n{error_message}",
+                 error_message => $@));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        exit(1);
     }
     $mono_font = Gtk2::Pango::FontDescription->
-	from_string($user_preferences->{fixed_font});
+        from_string($user_preferences->{fixed_font});
 
     # Create the temporary working directory.
 
     eval
     {
-	$tmp_dir = tempdir(APPLICATION_NAME . "_XXXXXXXXXX",
-			   TMPDIR => 1,
-			   CLEANUP => 1);
+        $tmp_dir = tempdir(APPLICATION_NAME . "_XXXXXXXXXX",
+                           TMPDIR => 1,
+                           CLEANUP => 1);
     };
     if ($@)
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    (undef,
-	     ["modal"],
-	     "error",
-	     "close",
-	     __x("{error_message}\nThis is fatal, I am going to exit.",
-		 error_message => $@));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	exit(1);
+        my $dialog = Gtk2::MessageDialog->new
+            (undef,
+             ["modal"],
+             "error",
+             "close",
+             __x("{error_message}\nThis is fatal, I am going to exit.",
+                 error_message => $@));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        exit(1);
     }
 
     # Open a Monotone database. First attempt to open the current workspace's
@@ -302,63 +302,63 @@ sub view_button_clicked_cb($$);
     if ($user_preferences->{workspace}->{takes_precedence})
     {
 
-	# Attempt to open the current workspace's database. If this works then
-	# get the workspace's details and then re-open the database but this
-	# time explicitly specifying the database itself. When given a database
-	# name, Monotone::AutomateStdio will make sure any current workspace
-	# will not `interfere' the  with the mtn subprocess. One could use the
-	# "--no-workspace" option but this is only supported on later versions.
+        # Attempt to open the current workspace's database. If this works then
+        # get the workspace's details and then re-open the database but this
+        # time explicitly specifying the database itself. When given a database
+        # name, Monotone::AutomateStdio will make sure any current workspace
+        # will not `interfere' the  with the mtn subprocess. One could use the
+        # "--no-workspace" option but this is only supported on later versions.
 
-	eval
-	{
-	    my $db;
-	    $mtn = CachingAutomateStdio->new();
-	    $mtn->get_option(\$db, "database");
-	    if ($user_preferences->{workspace}->{auto_select})
-	    {
-		$mtn->get_option(\$branch, "branch");
-		$mtn->get_base_revision_id(\$revision_id);
+        eval
+        {
+            my $db;
+            $mtn = CachingAutomateStdio->new();
+            $mtn->get_option(\$db, "database");
+            if ($user_preferences->{workspace}->{auto_select})
+            {
+                $mtn->get_option(\$branch, "branch");
+                $mtn->get_base_revision_id(\$revision_id);
 
-		# Unset the branch name if there is no revision associated with
-		# it (this can happen if we are in a new workspace on a new
-		# branch that doesn't exist in the database yet).
+                # Unset the branch name if there is no revision associated with
+                # it (this can happen if we are in a new workspace on a new
+                # branch that doesn't exist in the database yet).
 
-		$branch = undef if (! defined($revision_id));
-	    }
-	    $mtn = undef;
-	    $mtn = CachingAutomateStdio->new($db);
-	};
+                $branch = undef if (! defined($revision_id));
+            }
+            $mtn = undef;
+            $mtn = CachingAutomateStdio->new($db);
+        };
 
     }
     if (! defined($mtn) && $user_preferences->{default_mtn_db} ne "")
     {
 
-	# Attempt to open the database specified in the user's preferences.
+        # Attempt to open the database specified in the user's preferences.
 
-	eval
-	{
-	    $mtn = CachingAutomateStdio->
-		new($user_preferences->{default_mtn_db});
-	};
-	if ($@)
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		(undef,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("Cannot open database {database_name}.",
-		     database_name => $user_preferences->{default_mtn_db}));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	}
+        eval
+        {
+            $mtn = CachingAutomateStdio->
+                new($user_preferences->{default_mtn_db});
+        };
+        if ($@)
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                (undef,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __x("Cannot open database {database_name}.",
+                     database_name => $user_preferences->{default_mtn_db}));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+        }
 
     }
 
     # Set up the error handlers for the Monotone class.
 
     CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
-						 \&mtn_error_handler);
+                                                 \&mtn_error_handler);
 
     # Setup the character encodings and Monotone authentication keys lists,
     # these both need to be set up before creating any windows.
@@ -366,67 +366,67 @@ sub view_button_clicked_cb($$);
     @encodings = sort(Encode->encodings(":all"));
     if (defined($mtn))
     {
-	my @list;
-	$mtn->keys(\@list);
-	foreach my $key (@list)
-	{
-	    my $keystore;
-	    foreach my $location (@{$key->{private_location}})
-	    {
-		if ($location eq "keystore")
-		{
-		    $keystore = 1;
-		    last;
-		}
-	    }
-	    if ($keystore)
-	    {
-		my $name;
-		if (exists($key->{name}))
-		{
-		    $name = $key->{name};
-		}
-		else
-		{
-		    $name = $key->{local_name};
-		}
-		eval
-		{
-		    $name = decode_utf8($name, Encode::FB_CROAK);
-		};
-		push(@keys, $name);
-	    }
-	}
+        my @list;
+        $mtn->keys(\@list);
+        foreach my $key (@list)
+        {
+            my $keystore;
+            foreach my $location (@{$key->{private_location}})
+            {
+                if ($location eq "keystore")
+                {
+                    $keystore = 1;
+                    last;
+                }
+            }
+            if ($keystore)
+            {
+                my $name;
+                if (exists($key->{name}))
+                {
+                    $name = $key->{name};
+                }
+                else
+                {
+                    $name = $key->{local_name};
+                }
+                eval
+                {
+                    $name = decode_utf8($name, Encode::FB_CROAK);
+                };
+                push(@keys, $name);
+            }
+        }
     }
     else
     {
-	my $buffer;
-	if (run_command(\$buffer,
-			undef,
-			undef,
-			undef,
-			"mtn",
-			"automate",
-			"keys"))
-	{
-	    my $name;
-	    my @lines = split(/\n/, $buffer);
-	    foreach my $line (@lines)
-	    {
-		if ($line =~ m/^\s+(local_)?name\s+\"(.+)\"$/)
-		{
-		    $name = $2;
-		}
-		elsif ($line =~ m/^\s*private_location\s+\"keystore\"$/)
-		{
-		    eval
-		    {
-			$name = decode_utf8($name, Encode::FB_CROAK);
-		    };
-		    push(@keys, $name);
-		}
-	    }
-	}
+        my $buffer;
+        if (run_command(\$buffer,
+                        undef,
+                        undef,
+                        undef,
+                        "mtn",
+                        "automate",
+                        "keys"))
+        {
+            my $name;
+            my @lines = split(/\n/, $buffer);
+            foreach my $line (@lines)
+            {
+                if ($line =~ m/^\s+(local_)?name\s+\"(.+)\"$/)
+                {
+                    $name = $2;
+                }
+                elsif ($line =~ m/^\s*private_location\s+\"keystore\"$/)
+                {
+                    eval
+                    {
+                        $name = decode_utf8($name, Encode::FB_CROAK);
+                    };
+                    push(@keys, $name);
+                }
+            }
+        }
     }
 
     # Create the browser window and display it. Please note that updating the
@@ -437,39 +437,39 @@ sub view_button_clicked_cb($$);
     $browser = get_browser_window();
     if (defined($mtn))
     {
-	setup_mtn_object($mtn, $browser->{window});
-	$browser->{mtn} = $mtn;
-	$browser->{connect_to_server_menutiem}->set_sensitive(FALSE)
-	    if (! $user_preferences->{remote_connections});
-	Glib::Idle->add
-	    (sub {
-		 my $browser = $_[0];
+        setup_mtn_object($mtn, $browser->{window});
+        $browser->{mtn} = $mtn;
+        $browser->{connect_to_server_menutiem}->set_sensitive(FALSE)
+            if (! $user_preferences->{remote_connections});
+        Glib::Idle->add
+            (sub {
+                 my $browser = $_[0];
 
-		 return if ($browser->{in_cb});
-		 local $browser->{in_cb} = 1;
+                 return if ($browser->{in_cb});
+                 local $browser->{in_cb} = 1;
 
-		 if (defined($branch))
-		 {
-		     $browser->{branch_combo_details}->{preset} = 1;
-		     $browser->{branch_combo_details}->{value} = $branch;
-		     $browser->{revision_combo_details}->{preset} = 1;
-		     $browser->{revision_combo_details}->{value} =
-			 $revision_id;
-		     $browser->{tagged_checkbutton}->set_active(FALSE);
-		 }
-		 &{$browser->{update_handler}}($browser, DATABASE_CHANGED);
+                 if (defined($branch))
+                 {
+                     $browser->{branch_combo_details}->{preset} = 1;
+                     $browser->{branch_combo_details}->{value} = $branch;
+                     $browser->{revision_combo_details}->{preset} = 1;
+                     $browser->{revision_combo_details}->{value} =
+                         $revision_id;
+                     $browser->{tagged_checkbutton}->set_active(FALSE);
+                 }
+                 &{$browser->{update_handler}}($browser, DATABASE_CHANGED);
 
-		 return FALSE;
-	     },
-	     $browser);
+                 return FALSE;
+             },
+             $browser);
     }
     $mtn = undef;
 
     # Setup the callback for the <F1> accelerator key for all windows.
 
     WindowManager->instance()->help_connect(undef,
-					    undef,
-					    sub { display_help(); });
+                                            undef,
+                                            sub { display_help(); });
 
     # Hand control over to Gtk2.
 
@@ -510,8 +510,8 @@ sub connect_to_server_activate_cb($$)
     local $details->{browser}->{in_cb} = 1;
 
     my ($exception,
-	$host,
-	$mtn);
+        $host,
+        $mtn);
     my $browser = $details->{browser};
     my $wm = WindowManager->instance();
 
@@ -524,64 +524,64 @@ sub connect_to_server_activate_cb($$)
     $host = $details->{server};
     $host =~ s/:\d+$//g;
     CachingAutomateStdio->register_error_handler
-	(MTN_SEVERITY_ALL,
-	 sub {
-	     my ($severity, $message) = @_;
-	     my $dialog;
-	     $message =~ s/mtn: warning: //g;
-	     $message =~ s/mtn: error: //g;
-	     $message =~ s/mtn: //g;
-	     $message =~ s/^Corrupt\/missing mtn [^\n]+\n//g;
-	     $message =~ s/ at .+ line \d+$//g;
-	     $message =~ s/\s+$//g;
-	     $message =~ s/\n/ /g;
-	     $message .= "." unless ($message =~ m/.+\.$/);
-	     $dialog = Gtk2::MessageDialog->new_with_markup
-		 ($browser->{window},
-		  ["modal"],
-		  "warning",
-		  "close",
-		  __x("There is a problem connecting to the server, the "
-			  . "details are:\n<b><i>{error_message}</i></b>",
-		      error_message =>
-		      Glib::Markup::escape_text($message)));
-	     busy_dialog_run($dialog);
-	     $dialog->destroy();
-	     die("Bad open");
-	 });
+        (MTN_SEVERITY_ALL,
+         sub {
+             my ($severity, $message) = @_;
+             my $dialog;
+             $message =~ s/mtn: warning: //g;
+             $message =~ s/mtn: error: //g;
+             $message =~ s/mtn: //g;
+             $message =~ s/^Corrupt\/missing mtn [^\n]+\n//g;
+             $message =~ s/ at .+ line \d+$//g;
+             $message =~ s/\s+$//g;
+             $message =~ s/\n/ /g;
+             $message .= "." unless ($message =~ m/.+\.$/);
+             $dialog = Gtk2::MessageDialog->new_with_markup
+                 ($browser->{window},
+                  ["modal"],
+                  "warning",
+                  "close",
+                  __x("There is a problem connecting to the server, the "
+                          . "details are:\n<b><i>{error_message}</i></b>",
+                      error_message =>
+                      Glib::Markup::escape_text($message)));
+             busy_dialog_run($dialog);
+             $dialog->destroy();
+             die("Bad open");
+         });
     $browser->{appbar}->set_status(__x("Connecting to server `{server}'",
-				       server => $host));
+                                       server => $host));
     eval
     {
-	if (defined($mtn_key))
-	{
-	    $mtn = CachingAutomateStdio->new_from_service
-		($details->{server}, ["--key" => $mtn_key]);
-	}
-	else
-	{
-	    $mtn = CachingAutomateStdio->new_from_service($details->{server});
-	}
+        if (defined($mtn_key))
+        {
+            $mtn = CachingAutomateStdio->new_from_service
+                ($details->{server}, ["--key" => $mtn_key]);
+        }
+        else
+        {
+            $mtn = CachingAutomateStdio->new_from_service($details->{server});
+        }
 
     };
     $exception = $@;
     CachingAutomateStdio->register_error_handler
-	(MTN_SEVERITY_ALL, \&mtn_error_handler);
+        (MTN_SEVERITY_ALL, \&mtn_error_handler);
     if (! $exception)
     {
 
-	# Seems to be ok so set up the browser.
+        # Seems to be ok so set up the browser.
 
-	setup_mtn_object($mtn, $browser->{window});
-	$browser->{mtn} = $mtn;
-	$browser->{appbar}->pop();
-	$browser->{appbar}->clear_stack();
-	&{$browser->{update_handler}}($browser, DATABASE_CHANGED);
+        setup_mtn_object($mtn, $browser->{window});
+        $browser->{mtn} = $mtn;
+        $browser->{appbar}->pop();
+        $browser->{appbar}->clear_stack();
+        &{$browser->{update_handler}}($browser, DATABASE_CHANGED);
 
     }
     else
     {
-	$browser->{appbar}->pop();
+        $browser->{appbar}->pop();
     }
 
     $wm->make_busy($browser, 0);
@@ -612,35 +612,35 @@ sub manage_server_bookmarks_activate_cb($$)
     local $browser->{in_cb} = 1;
 
     if (manage_server_bookmarks($browser->{window},
-				$user_preferences->{server_bookmarks}))
+                                $user_preferences->{server_bookmarks}))
     {
 
-	eval
-	{
-	    save_preferences($user_preferences);
-	};
-	if ($@)
-	{
-	    chomp($@);
-	    my $dialog = Gtk2::MessageDialog->new
-		(undef,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __("Your preferences could not be saved:\n") . $@);
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	}
+        eval
+        {
+            save_preferences($user_preferences);
+        };
+        if ($@)
+        {
+            chomp($@);
+            my $dialog = Gtk2::MessageDialog->new
+                (undef,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __("Your preferences could not be saved:\n") . $@);
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+        }
 
-	# We now need to update all server bookmark menus.
+        # We now need to update all server bookmark menus.
 
-	WindowManager->instance()->cond_find
-	    ($window_type,
-	     sub {
-		 my $browser = $_[0];
-		 update_server_bookmarks_menu($browser);
-		 return;
-	     });
+        WindowManager->instance()->cond_find
+            ($window_type,
+             sub {
+                 my $browser = $_[0];
+                 update_server_bookmarks_menu($browser);
+                 return;
+             });
 
     }
 
@@ -779,21 +779,21 @@ sub home_page_activate_cb($$)
 
     eval
     {
-	display_html("http://www.coosoft.plus.com/software.html");
+        display_html("http://www.coosoft.plus.com/software.html");
     };
     if ($@)
     {
-	my $dialog = Gtk2::MessageDialog->new_with_markup
-	    ($browser->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("Gnome cannot display Monotone Browser's\n"
-		     . "home page. Gnome gave:\n"
-		 . "<b><i>{gnome_error_message}</i></b>",
-		 gnome_error_message => $@));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
+        my $dialog = Gtk2::MessageDialog->new_with_markup
+            ($browser->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("Gnome cannot display Monotone Browser's\n"
+                     . "home page. Gnome gave:\n"
+                 . "<b><i>{gnome_error_message}</i></b>",
+                 gnome_error_message => $@));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
     }
 
 }
@@ -822,17 +822,17 @@ sub about_activate_cb($$)
     local $browser->{in_cb} = 1;
 
     $large_logo = Gtk2::Gdk::Pixbuf->new_from_file
-	(File::Spec->catfile(UI_DIR, "mtn-browse-large.png"))
-	if (! defined($large_logo));
+        (File::Spec->catfile(UI_DIR, "mtn-browse-large.png"))
+        if (! defined($large_logo));
     Gnome2::About->new
-	(APPLICATION_NAME,
-	 APPLICATION_VERSION,
-	 __("Copyright \xa9 2007-2010 Anthony Cooper"),
-	 __("A graphical front-end browser for Monotone VCS databases"),
-	 ["Anthony Cooper <support\@coosoft.plus.com>"],
-	 __("Anthony Cooper <support\@coosoft.plus.com>"),
-	 __("Thomas Keller <me\@thomaskeller.biz> (German translation)"),
-	 $large_logo)->run();
+        (APPLICATION_NAME,
+         APPLICATION_VERSION,
+         __("Copyright \xa9 2007-2010 Anthony Cooper"),
+         __("A graphical front-end browser for Monotone VCS databases"),
+         ["Anthony Cooper <support\@coosoft.plus.com>"],
+         __("Anthony Cooper <support\@coosoft.plus.com>"),
+         __("Thomas Keller <me\@thomaskeller.biz> (German translation)"),
+         $large_logo)->run();
 
 }
 #
@@ -865,23 +865,23 @@ sub new_toolbutton_clicked_cb($$)
 
     if (! defined($browser->{mtn}))
     {
-	get_browser_window();
+        get_browser_window();
     }
     elsif (! $browser->{branch_combo_details}->{complete})
     {
-	get_browser_window($browser->{mtn});
+        get_browser_window($browser->{mtn});
     }
     elsif (! $browser->{revision_combo_details}->{complete})
     {
-	get_browser_window($browser->{mtn},
-			   $browser->{branch_combo_details}->{value});
+        get_browser_window($browser->{mtn},
+                           $browser->{branch_combo_details}->{value});
     }
     else
     {
-	get_revision_ids($browser, \@revision_ids);
-	get_browser_window($browser->{mtn},
-			   $browser->{branch_combo_details}->{value},
-			   $revision_ids[0]);
+        get_revision_ids($browser, \@revision_ids);
+        get_browser_window($browser->{mtn},
+                           $browser->{branch_combo_details}->{value},
+                           $revision_ids[0]);
     }
 
 }
@@ -942,10 +942,10 @@ sub open_toolbutton_clicked_cb($$)
 
     if (open_database($browser->{window}, \$mtn, undef))
     {
-	setup_mtn_object($mtn, $browser->{window});
-	$browser->{mtn} = $mtn;
-	$browser->{appbar}->clear_stack();
-	&{$browser->{update_handler}}($browser, DATABASE_CHANGED);
+        setup_mtn_object($mtn, $browser->{window});
+        $browser->{mtn} = $mtn;
+        $browser->{appbar}->clear_stack();
+        &{$browser->{update_handler}}($browser, DATABASE_CHANGED);
     }
 
 }
@@ -1008,20 +1008,20 @@ sub reload_toolbutton_clicked_cb($$)
 
     if ($browser->{branch_combo_details}->{complete})
     {
-	$browser->{branch_combo_details}->{preset} = 1;
-	if ($browser->{revision_combo_details}->{complete})
-	{
-	    $browser->{revision_combo_details}->{preset} = 1;
-	    if ($browser->{directory_combo_details}->{complete})
-	    {
-		$browser->{directory_combo_details}->{preset} = 1;
-		if (exists($browser->{file_being_viewed}->{manifest_entry}))
-		{
-		    $browser->{file_being_viewed_preset_value} =
-			$browser->{file_being_viewed}->{short_name};
-		}
-	    }
-	}
+        $browser->{branch_combo_details}->{preset} = 1;
+        if ($browser->{revision_combo_details}->{complete})
+        {
+            $browser->{revision_combo_details}->{preset} = 1;
+            if ($browser->{directory_combo_details}->{complete})
+            {
+                $browser->{directory_combo_details}->{preset} = 1;
+                if (exists($browser->{file_being_viewed}->{manifest_entry}))
+                {
+                    $browser->{file_being_viewed_preset_value} =
+                        $browser->{file_being_viewed}->{short_name};
+                }
+            }
+        }
     }
     $browser->{mtn}->closedown();
     $browser->{appbar}->clear_stack();
@@ -1054,9 +1054,9 @@ sub preferences_toolbutton_clicked_cb($$)
 
     if (preferences($browser))
     {
-	$user_preferences = load_preferences();
-	$mime_match_table =
-	    build_mime_match_table($user_preferences->{mime_table});
+        $user_preferences = load_preferences();
+        $mime_match_table =
+            build_mime_match_table($user_preferences->{mime_table});
     }
 
 }
@@ -1139,10 +1139,10 @@ sub history_graph_button_clicked_cb($$)
     local $browser->{in_cb} = 1;
 
     my (@branches,
-	$from_date,
-	$revision_id,
-	@revision_ids,
-	$to_date);
+        $from_date,
+        $revision_id,
+        @revision_ids,
+        $to_date);
 
     # No point in proceeding if dot isn't available.
 
@@ -1154,9 +1154,9 @@ sub history_graph_button_clicked_cb($$)
     # Get the details that the user has selected in the browser window.
 
     push(@branches, $browser->{branch_combo_details}->{value})
-	if ($browser->{branch_combo_details}->{complete});
+        if ($browser->{branch_combo_details}->{complete});
     get_revision_ids($browser, \@revision_ids)
-	if ($browser->{revision_combo_details}->{complete});
+        if ($browser->{revision_combo_details}->{complete});
 
     # If we don't have a revision but we do have a branch then use it's head
     # revision, otherwise the user has explicitly selected a revision so make a
@@ -1164,12 +1164,12 @@ sub history_graph_button_clicked_cb($$)
 
     if (scalar(@revision_ids) == 0)
     {
-	$browser->{mtn}->heads(\@revision_ids, $branches[0])
-	    if (scalar(@branches) > 0);
+        $browser->{mtn}->heads(\@revision_ids, $branches[0])
+            if (scalar(@branches) > 0);
     }
     else
     {
-	$revision_id = $revision_ids[0];
+        $revision_id = $revision_ids[0];
     }
 
     # Ok if we now have a revision then get its date and adjust that back by
@@ -1179,21 +1179,21 @@ sub history_graph_button_clicked_cb($$)
 
     if (scalar(@revision_ids) > 0)
     {
-	my (@certs,
-	    @local_time);
-	$browser->{mtn}->certs(\@certs, $revision_ids[0]);
-	foreach my $cert (@certs)
-	{
-	    if ($cert->{name} eq "date")
-	    {
-		$from_date = $cert->{value};
-		$to_date = $from_date if (defined($revision_id));
-		last;
-	    }
-	}
-	@local_time = localtime(mtn_time_string_to_time($from_date));
-	adjust_time(\@local_time, 6, DURATION_MONTHS);
-	$from_date = strftime(MTN_TIME_STRING, @local_time);
+        my (@certs,
+            @local_time);
+        $browser->{mtn}->certs(\@certs, $revision_ids[0]);
+        foreach my $cert (@certs)
+        {
+            if ($cert->{name} eq "date")
+            {
+                $from_date = $cert->{value};
+                $to_date = $from_date if (defined($revision_id));
+                last;
+            }
+        }
+        @local_time = localtime(mtn_time_string_to_time($from_date));
+        adjust_time(\@local_time, 6, DURATION_MONTHS);
+        $from_date = strftime(MTN_TIME_STRING, @local_time);
     }
 
     # Now graph it. If the user explicitly specified the revision then we give
@@ -1201,10 +1201,10 @@ sub history_graph_button_clicked_cb($$)
     # pre-selected in the graph.
 
     display_history_graph($browser->{mtn},
-			  \@branches,
-			  $from_date,
-			  $to_date,
-			  $revision_id);
+                          \@branches,
+                          $from_date,
+                          $to_date,
+                          $revision_id);
 
 }
 #
@@ -1232,7 +1232,7 @@ sub revision_change_history_button_clicked_cb($$)
     local $browser->{in_cb} = 1;
 
     my (@revision_ids,
-	$tag);
+        $tag);
 
     get_revision_ids($browser, \@revision_ids, \$tag);
     display_revision_change_history($browser->{mtn}, $tag, $revision_ids[0]);
@@ -1263,7 +1263,7 @@ sub revision_change_log_button_clicked_cb($$)
     local $browser->{in_cb} = 1;
 
     my (@revision_ids,
-	$tag);
+        $tag);
 
     # Get the currently selected revision id and then display its change log.
 
@@ -1304,70 +1304,70 @@ sub directory_up_button_clicked_cb($$)
     if ($value ne "")
     {
 
-	my $wm = WindowManager->instance();
+        my $wm = WindowManager->instance();
 
-	$wm->make_busy($browser, 1);
-	$browser->{appbar}->set_status("");
-	$wm->update_gui();
+        $wm->make_busy($browser, 1);
+        $browser->{appbar}->set_status("");
+        $wm->update_gui();
 
-	$value = dirname($value);
-	$value = "" if ($value eq ".");
-	$browser->{directory_combo_details}->{value} = $value;
-	$browser->{directory_combo_details}->{complete} = 1;
+        $value = dirname($value);
+        $value = "" if ($value eq ".");
+        $browser->{directory_combo_details}->{value} = $value;
+        $browser->{directory_combo_details}->{complete} = 1;
 
-	# Only update the comboboxentry's pulldown list if that is what the
-	# user wants.
+        # Only update the comboboxentry's pulldown list if that is what the
+        # user wants.
 
-	if (! $user_preferences->{static_lists})
-	{
+        if (! $user_preferences->{static_lists})
+        {
 
-	    my ($counter,
-		@directory_list,
-		$len,
-		$update_interval);
+            my ($counter,
+                @directory_list,
+                $len,
+                $update_interval);
 
-	    $len = length($value);
-	    $browser->{appbar}->set_progress_percentage(0);
-	    $browser->{appbar}->set_status(__("Populating directory list"));
-	    $wm->update_gui();
-	    foreach my $item (@{$browser->{directory_combo_details}->{list}})
-	    {
-		push(@directory_list, $item)
-		    if ($value eq substr($item, 0, $len));
-	    }
-	    $counter = 1;
-	    $update_interval = calculate_update_interval(\@directory_list);
-	    $browser->{directory_comboboxentry}->get_model()->clear();
-	    $browser->{directory_comboboxentry}->child()->set_text($value);
-	    $browser->{directory_comboboxentry}->child()->set_position(-1);
-	    foreach my $item (@directory_list)
-	    {
-		$browser->{directory_comboboxentry}->append_text($item);
-		if (($counter % $update_interval) == 0)
-		{
-		    $browser->{appbar}->set_progress_percentage
-			($counter / scalar(@directory_list));
-		    $wm->update_gui();
-		}
-		++ $counter;
-	    }
-	    $browser->{appbar}->set_progress_percentage(1);
-	    $wm->update_gui();
-	    $browser->{appbar}->set_progress_percentage(0);
+            $len = length($value);
+            $browser->{appbar}->set_progress_percentage(0);
+            $browser->{appbar}->set_status(__("Populating directory list"));
+            $wm->update_gui();
+            foreach my $item (@{$browser->{directory_combo_details}->{list}})
+            {
+                push(@directory_list, $item)
+                    if ($value eq substr($item, 0, $len));
+            }
+            $counter = 1;
+            $update_interval = calculate_update_interval(\@directory_list);
+            $browser->{directory_comboboxentry}->get_model()->clear();
+            $browser->{directory_comboboxentry}->child()->set_text($value);
+            $browser->{directory_comboboxentry}->child()->set_position(-1);
+            foreach my $item (@directory_list)
+            {
+                $browser->{directory_comboboxentry}->append_text($item);
+                if (($counter % $update_interval) == 0)
+                {
+                    $browser->{appbar}->set_progress_percentage
+                        ($counter / scalar(@directory_list));
+                    $wm->update_gui();
+                }
+                ++ $counter;
+            }
+            $browser->{appbar}->set_progress_percentage(1);
+            $wm->update_gui();
+            $browser->{appbar}->set_progress_percentage(0);
 
-	}
-	else
-	{
-	    $browser->{directory_comboboxentry}->child()->set_text($value);
-	    $browser->{directory_comboboxentry}->child()->set_position(-1);
-	}
+        }
+        else
+        {
+            $browser->{directory_comboboxentry}->child()->set_text($value);
+            $browser->{directory_comboboxentry}->child()->set_position(-1);
+        }
 
-	$browser->{appbar}->clear_stack();
-	$wm->update_gui();
+        $browser->{appbar}->clear_stack();
+        $wm->update_gui();
 
-	&{$browser->{update_handler}}($browser, DIRECTORY_CHANGED);
+        &{$browser->{update_handler}}($browser, DIRECTORY_CHANGED);
 
-	$wm->make_busy($browser, 0);
+        $wm->make_busy($browser, 0);
 
     }
 
@@ -1397,14 +1397,14 @@ sub find_files_button_clicked_cb($$)
     local $browser->{in_cb} = 1;
 
     my (@revision_ids,
-	$tag);
+        $tag);
 
     get_revision_ids($browser, \@revision_ids, \$tag);
     display_find_files($browser->{mtn},
-		       $tag,
-		       $revision_ids[0],
-		       $browser->{manifest},
-		       $browser->{directory_combo_details}->{value});
+                       $tag,
+                       $revision_ids[0],
+                       $browser->{manifest},
+                       $browser->{directory_combo_details}->{value});
 
 }
 #
@@ -1488,11 +1488,11 @@ sub save_as_button_clicked_cb($$)
     my $data;
 
     $browser->{mtn}->get_file(\$data,
-			      $browser->{file_being_viewed}->{manifest_entry}->
-			          {file_id});
+                              $browser->{file_being_viewed}->{manifest_entry}->
+                                  {file_id});
     save_as_file($browser->{window},
-		 $browser->{file_being_viewed}->{short_name},
-		 \$data);
+                 $browser->{file_being_viewed}->{short_name},
+                 \$data);
 
 }
 #
@@ -1520,50 +1520,50 @@ sub view_button_clicked_cb($$)
     local $browser->{in_cb} = 1;
 
     my ($app,
-	$data,
-	$fh,
-	$file_name,
-	$helper,
-	$mime_details,
-	$mime_obj,
-	$mime_type);
+        $data,
+        $fh,
+        $file_name,
+        $helper,
+        $mime_details,
+        $mime_obj,
+        $mime_type);
 
     # Generate temporary disk file name.
 
     if (! defined($file_name =
-		  generate_tmp_path($browser->{file_being_viewed}->
-				    {short_name})))
+                  generate_tmp_path($browser->{file_being_viewed}->
+                                    {short_name})))
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($browser->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("Cannot generate temporary file name:\n{error_message}.",
-		 error_message => $!));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($browser->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("Cannot generate temporary file name:\n{error_message}.",
+                 error_message => $!));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Attempt to save the contents to the file.
 
     if (! defined($fh = IO::File->new($file_name, "w")))
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($browser->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("{error_message}.", error_message => $!));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($browser->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("{error_message}.", error_message => $!));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
     binmode($fh);
     $browser->{mtn}->get_file(\$data,
-			      $browser->{file_being_viewed}->{manifest_entry}->
-			          {file_id});
+                              $browser->{file_being_viewed}->{manifest_entry}->
+                                  {file_id});
     $fh->print($data);
     $fh->close();
     $fh = undef;
@@ -1571,9 +1571,9 @@ sub view_button_clicked_cb($$)
     # Get the user preference settings for this type of file.
 
     determine_mime_type($browser->{file_being_viewed}->{short_name},
-			\$data,
-			\$mime_type,
-			\$mime_details);
+                        \$data,
+                        \$mime_type,
+                        \$mime_details);
 
     # If the user has specified a helper application then use that to view the
     # file, otherwise use the default desktop settings.
@@ -1581,93 +1581,93 @@ sub view_button_clicked_cb($$)
     if (defined($mime_details) && $mime_details->{helper_application} ne "")
     {
 
-	# Use the specified helper application (having validated it first),
-	# replacing `{file}' with the real file name.
+        # Use the specified helper application (having validated it first),
+        # replacing `{file}' with the real file name.
 
-	$helper = $mime_details->{helper_application};
-	return unless (program_valid((split(/[[:blank:]]/, $helper))[0],
-				     $browser->{window}));
-	if ($helper =~ m/\{file\}/)
-	{
-	    $helper =~ s/\{file\}/$file_name/g;
-	}
-	else
-	{
-	    $helper .= " " . $file_name;
-	}
+        $helper = $mime_details->{helper_application};
+        return unless (program_valid((split(/[[:blank:]]/, $helper))[0],
+                                     $browser->{window}));
+        if ($helper =~ m/\{file\}/)
+        {
+            $helper =~ s/\{file\}/$file_name/g;
+        }
+        else
+        {
+            $helper .= " " . $file_name;
+        }
 
-	# Launch it.
+        # Launch it.
 
-	system($helper . " &");
+        system($helper . " &");
 
     }
     else
     {
 
-	# Use the desktop to load the file.
+        # Use the desktop to load the file.
 
-	# Use the appropriate application for this type of file, defaulting to
-	# Vi if necessary.
+        # Use the appropriate application for this type of file, defaulting to
+        # Vi if necessary.
 
-	if (! defined($mime_type =
-		      Gnome2::VFS->get_mime_type("file://" . $file_name)))
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($browser->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __("Unknown file type, not viewing."));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
-	$app = $mime_obj->get_default_application()
-	    if (defined($mime_obj = Gnome2::VFS::Mime::Type->new($mime_type)));
-	if (defined($app))
-	{
+        if (! defined($mime_type =
+                      Gnome2::VFS->get_mime_type("file://" . $file_name)))
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($browser->{window},
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __("Unknown file type, not viewing."));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
+        $app = $mime_obj->get_default_application()
+            if (defined($mime_obj = Gnome2::VFS::Mime::Type->new($mime_type)));
+        if (defined($app))
+        {
 
-	    # Use the command attribute if it is present rather than the
-	    # launch() method as this can crash on some systems.
+            # Use the command attribute if it is present rather than the
+            # launch() method as this can crash on some systems.
 
-	    if (exists($app->{command}))
-	    {
-		system($app->{command} . " " . $file_name . " &");
-	    }
-	    else
-	    {
-		my $status;
-		if (($status = $app->launch("file://" . $file_name)) ne "ok")
-		{
-		    my $dialog = Gtk2::MessageDialog->new_with_markup
-			($browser->{window},
-			 ["modal"],
-			 "warning",
-			 "close",
-			 __x("Gnome cannot launch the helper application\n"
-				 . "for MIME type {mime_type}.\nGnome gave:\n"
-				 . "<b><i>{gnome_error_message}</i></b>",
-			     mime_type           => $mime_type,
-			     gnome_error_message => $status));
-		    busy_dialog_run($dialog);
-		    $dialog->destroy();
-		}
-	    }
-	}
-	else
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($browser->{window},
-		 ["modal"],
-		 "info",
-		 "close",
-		 __x("No application is associated with\n"
-		         . "MIME type {mime_type},\nusing Vi instead.",
-		     mime_type => $mime_type));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    system("xterm -e vi " . $file_name . " &");
-	}
+            if (exists($app->{command}))
+            {
+                system($app->{command} . " " . $file_name . " &");
+            }
+            else
+            {
+                my $status;
+                if (($status = $app->launch("file://" . $file_name)) ne "ok")
+                {
+                    my $dialog = Gtk2::MessageDialog->new_with_markup
+                        ($browser->{window},
+                         ["modal"],
+                         "warning",
+                         "close",
+                         __x("Gnome cannot launch the helper application\n"
+                                 . "for MIME type {mime_type}.\nGnome gave:\n"
+                                 . "<b><i>{gnome_error_message}</i></b>",
+                             mime_type           => $mime_type,
+                             gnome_error_message => $status));
+                    busy_dialog_run($dialog);
+                    $dialog->destroy();
+                }
+            }
+        }
+        else
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($browser->{window},
+                 ["modal"],
+                 "info",
+                 "close",
+                 __x("No application is associated with\n"
+                         . "MIME type {mime_type},\nusing Vi instead.",
+                     mime_type => $mime_type));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            system("xterm -e vi " . $file_name . " &");
+        }
 
     }
 
@@ -1700,9 +1700,9 @@ sub annotate_button_clicked_cb($$)
 
     get_revision_ids($browser, \@revision_ids);
     display_annotation($browser->{mtn},
-		       $revision_ids[0],
-		       $browser->{file_being_viewed}->{manifest_entry}->
-		           {name});
+                       $revision_ids[0],
+                       $browser->{file_being_viewed}->{manifest_entry}->
+                           {name});
 
 }
 #
@@ -1733,9 +1733,9 @@ sub file_change_history_button_clicked_cb($$)
 
     get_revision_ids($browser, \@revision_ids);
     display_file_change_history($browser->{mtn},
-				$revision_ids[0],
-				$browser->{file_being_viewed}->
-				    {manifest_entry}->{name});
+                                $revision_ids[0],
+                                $browser->{file_being_viewed}->
+                                    {manifest_entry}->{name});
 
 }
 #
@@ -1763,17 +1763,17 @@ sub manifest_browser_treeselection_changed_cb($$)
     local $browser->{in_cb} = 1;
 
     my ($manifest_entry,
-	$short_name);
+        $short_name);
 
     # Get the manifest entry details for the item that was selected.
 
     if ($widget->count_selected_rows() > 0)
     {
-	my ($iter,
-	    $model);
-	($model, $iter) = $widget->get_selected();
-	$short_name = $model->get($iter, MLS_NAME_COLUMN);
-	$manifest_entry = $model->get($iter, MLS_MANIFEST_ENTRY_COLUMN);
+        my ($iter,
+            $model);
+        ($model, $iter) = $widget->get_selected();
+        $short_name = $model->get($iter, MLS_NAME_COLUMN);
+        $manifest_entry = $model->get($iter, MLS_MANIFEST_ENTRY_COLUMN);
     }
 
     # If the item is a file then display its contents, otherwise if it is a
@@ -1781,10 +1781,10 @@ sub manifest_browser_treeselection_changed_cb($$)
 
     if (defined($manifest_entry) && $manifest_entry->{type} eq "file")
     {
-	$browser->{file_being_viewed} = {short_name     => $short_name,
-					 manifest_entry => $manifest_entry};
-	$browser->{appbar}->clear_stack();
-	&{$browser->{update_handler}}($browser, FILE_CHANGED);
+        $browser->{file_being_viewed} = {short_name     => $short_name,
+                                         manifest_entry => $manifest_entry};
+        $browser->{appbar}->clear_stack();
+        &{$browser->{update_handler}}($browser, FILE_CHANGED);
     }
 
 }
@@ -1822,23 +1822,23 @@ sub manifest_browser_treeview_row_activated_cb($$$$)
     # Get the manifest entry details for the item that was double-clicked.
 
     $widget->get_selection()->selected_foreach
-	(sub {
-	     my ($model, $path, $iter) = @_;
-	     $manifest_entry = $model->get($iter, MLS_MANIFEST_ENTRY_COLUMN);
-	 });
+        (sub {
+             my ($model, $path, $iter) = @_;
+             $manifest_entry = $model->get($iter, MLS_MANIFEST_ENTRY_COLUMN);
+         });
 
     # If the item is a directory then change to it, otherwise if it is a file
     # then just ignore it.
 
     if (defined($manifest_entry) && $manifest_entry->{type} eq "directory")
     {
-	$browser->{directory_combo_details}->{value} = $manifest_entry->{name};
-	$browser->{directory_combo_details}->{complete} = 1;
-	$browser->{directory_comboboxentry}->child()->
-	    set_text($manifest_entry->{name});
-	$browser->{directory_comboboxentry}->child()->set_position(-1);
-	$browser->{appbar}->clear_stack();
-	&{$browser->{update_handler}}($browser, DIRECTORY_CHANGED);
+        $browser->{directory_combo_details}->{value} = $manifest_entry->{name};
+        $browser->{directory_combo_details}->{complete} = 1;
+        $browser->{directory_comboboxentry}->child()->
+            set_text($manifest_entry->{name});
+        $browser->{directory_comboboxentry}->child()->set_position(-1);
+        $browser->{appbar}->clear_stack();
+        &{$browser->{update_handler}}($browser, DIRECTORY_CHANGED);
     }
 
 }
@@ -1878,16 +1878,16 @@ sub main_window_delete_event_cb($$$)
 
     $others_mapped = 0;
     WindowManager->instance()->cond_find
-	($window_type,
-	 sub {
-	     my $instance = $_[0];
-	     if ($instance != $browser && $instance->{window}->mapped())
-	     {
-		 $others_mapped = 1;
-		 return 1;
-	     }
-	     return;
-	 });
+        ($window_type,
+         sub {
+             my $instance = $_[0];
+             if ($instance != $browser && $instance->{window}->mapped())
+             {
+                 $others_mapped = 1;
+                 return 1;
+             }
+             return;
+         });
 
     hide_find_text($browser->{file_view_sv});
     $browser->{window}->hide();
@@ -1951,426 +1951,426 @@ sub get_browser_window(;$$$$$)
     if (! defined($browser = $wm->find_unused($window_type)))
     {
 
-	my ($cb,
-	    $glade,
-	    $image,
-	    $menu_item,
-	    $renderer,
-	    $submenu,
-	    $subsubmenu,
-	    $tv_column);
+        my ($cb,
+            $glade,
+            $image,
+            $menu_item,
+            $renderer,
+            $submenu,
+            $subsubmenu,
+            $tv_column);
 
-	$browser = {};
-	$browser->{mtn} = $mtn;
-	$glade = create_browser_widgets();
+        $browser = {};
+        $browser->{mtn} = $mtn;
+        $glade = create_browser_widgets();
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$browser->{in_cb} = 0;
-	local $browser->{in_cb} = 1;
+        $browser->{in_cb} = 0;
+        local $browser->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $browser);
+        glade_signal_autoconnect($glade, $browser);
 
-	# Link in the update handler for the browser.
+        # Link in the update handler for the browser.
 
-	$browser->{update_handler} = \&update_browser_state;
+        $browser->{update_handler} = \&update_browser_state;
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$browser->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("appbar",
-			    "connect_to_server_menutiem",
-			    "close_menuitem",
-			    "file_encoding_menuitem",
-			    "choose_authentication_key_menuitem",
-			    "compare_arbitrary_revisions_menuitem",
-			    "main_vbox",
-			    "browser_hpaned",
-			    "close_toolbutton",
-			    "reload_toolbutton",
-			    "branch_comboboxentry",
-			    "revision_comboboxentry",
-			    "tagged_checkbutton",
-			    "history_graph_button",
-			    "directory_comboboxentry",
-			    "directory_up_button",
-			    "find_files_button",
-			    "show_line_numbers_togglebutton",
-			    "annotate_button",
-			    "manifest_browser_treeview",
-			    "file_view_scrolledwindow",
-			    "file_name_value_label",
-			    "file_author_value_label",
-			    "last_update_value_label",
-			    "file_revision_id_value_label",
-			    "file_button_vbox",
-			    "database_name_value_label",
-			    "date_value_label",
-			    "author_value_label",
-			    "change_log_value_label")
-	{
-	    $browser->{$widget} = $glade->get_widget($widget);
-	}
+        $browser->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("appbar",
+                            "connect_to_server_menutiem",
+                            "close_menuitem",
+                            "file_encoding_menuitem",
+                            "choose_authentication_key_menuitem",
+                            "compare_arbitrary_revisions_menuitem",
+                            "main_vbox",
+                            "browser_hpaned",
+                            "close_toolbutton",
+                            "reload_toolbutton",
+                            "branch_comboboxentry",
+                            "revision_comboboxentry",
+                            "tagged_checkbutton",
+                            "history_graph_button",
+                            "directory_comboboxentry",
+                            "directory_up_button",
+                            "find_files_button",
+                            "show_line_numbers_togglebutton",
+                            "annotate_button",
+                            "manifest_browser_treeview",
+                            "file_view_scrolledwindow",
+                            "file_name_value_label",
+                            "file_author_value_label",
+                            "last_update_value_label",
+                            "file_revision_id_value_label",
+                            "file_button_vbox",
+                            "database_name_value_label",
+                            "date_value_label",
+                            "author_value_label",
+                            "change_log_value_label")
+        {
+            $browser->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup button sensitivity groups.
+        # Setup button sensitivity groups.
 
-	$browser->{text_file_sensitive_group} = [];
-	foreach my $item ("search_text", "annotate")
-	{
-	    push(@{$browser->{text_file_sensitive_group}},
-		 $glade->get_widget($item . "_button"));
-	}
-	$browser->{revision_sensitive_group} = [];
-	foreach my $item ("revision_change_history", "revision_change_log")
-	{
-	    push(@{$browser->{revision_sensitive_group}},
-		 $glade->get_widget($item . "_button"));
-	}
+        $browser->{text_file_sensitive_group} = [];
+        foreach my $item ("search_text", "annotate")
+        {
+            push(@{$browser->{text_file_sensitive_group}},
+                 $glade->get_widget($item . "_button"));
+        }
+        $browser->{revision_sensitive_group} = [];
+        foreach my $item ("revision_change_history", "revision_change_log")
+        {
+            push(@{$browser->{revision_sensitive_group}},
+                 $glade->get_widget($item . "_button"));
+        }
 
-	# Setup the connect to server submenu.
+        # Setup the connect to server submenu.
 
-	update_server_bookmarks_menu($browser);
+        update_server_bookmarks_menu($browser);
 
-	# Setup the file encodings submenu.
+        # Setup the file encodings submenu.
 
-	$submenu = Gtk2::Menu->new();
-	$cb = sub
-	{
-	    my ($widget, $details) = @_;
-	    return if ($details->{instance}->{in_cb});
-	    local $details->{instance}->{in_cb} = 1;
-	    $details->{instance}->{appbar}->set_status
-		(__x("Changed file encoding from `{old_encoding}' to "
-		         . "`{new_encoding}'",
-		     old_encoding => __($file_encoding),
-		     new_encoding => __($details->{encoding})));
-	    $file_encoding = $details->{encoding};
-	};
-	foreach my $encoding ("ascii", "utf8", "UTF-16")
-	{
-	    $menu_item = Gtk2::MenuItem->new_with_label(__($encoding));
-	    $menu_item->signal_connect("activate",
-				       $cb,
-				       {instance => $browser,
-					encoding => $encoding});
-	    $menu_item->show();
-	    $submenu->append($menu_item);
-	}
-	$subsubmenu = Gtk2::Menu->new();
-	foreach my $encoding (@encodings)
-	{
-	    $menu_item = Gtk2::MenuItem->new_with_label(__($encoding));
-	    $menu_item->signal_connect("activate",
-				       $cb,
-				       {instance => $browser,
-					encoding => $encoding});
-	    $menu_item->show();
-	    $subsubmenu->append($menu_item);
-	}
-	$subsubmenu->show();
-	$menu_item = Gtk2::MenuItem->new(__("All Encodings"));
-	$menu_item->set_submenu($subsubmenu);
-	$menu_item->show();
-	$submenu->append($menu_item);
-	$submenu->show();
-	$browser->{file_encoding_menuitem}->set_submenu($submenu);
+        $submenu = Gtk2::Menu->new();
+        $cb = sub
+        {
+            my ($widget, $details) = @_;
+            return if ($details->{instance}->{in_cb});
+            local $details->{instance}->{in_cb} = 1;
+            $details->{instance}->{appbar}->set_status
+                (__x("Changed file encoding from `{old_encoding}' to "
+                         . "`{new_encoding}'",
+                     old_encoding => __($file_encoding),
+                     new_encoding => __($details->{encoding})));
+            $file_encoding = $details->{encoding};
+        };
+        foreach my $encoding ("ascii", "utf8", "UTF-16")
+        {
+            $menu_item = Gtk2::MenuItem->new_with_label(__($encoding));
+            $menu_item->signal_connect("activate",
+                                       $cb,
+                                       {instance => $browser,
+                                        encoding => $encoding});
+            $menu_item->show();
+            $submenu->append($menu_item);
+        }
+        $subsubmenu = Gtk2::Menu->new();
+        foreach my $encoding (@encodings)
+        {
+            $menu_item = Gtk2::MenuItem->new_with_label(__($encoding));
+            $menu_item->signal_connect("activate",
+                                       $cb,
+                                       {instance => $browser,
+                                        encoding => $encoding});
+            $menu_item->show();
+            $subsubmenu->append($menu_item);
+        }
+        $subsubmenu->show();
+        $menu_item = Gtk2::MenuItem->new(__("All Encodings"));
+        $menu_item->set_submenu($subsubmenu);
+        $menu_item->show();
+        $submenu->append($menu_item);
+        $submenu->show();
+        $browser->{file_encoding_menuitem}->set_submenu($submenu);
 
-	# Setup the authentication keys submenu.
+        # Setup the authentication keys submenu.
 
-	$submenu = Gtk2::Menu->new();
-	$cb = sub
-	{
-	    my ($widget, $details) = @_;
-	    return if ($details->{instance}->{in_cb});
-	    local $details->{instance}->{in_cb} = 1;
-	    $details->{instance}->{appbar}->set_status
-		(__x("Changed authentication key from `{old_key}' to "
-		         . "`{new_key}'",
-		     old_key => defined($mtn_key)
-		                    ? $mtn_key : __("Unspecified"),
-		     new_key => defined($details->{key})
-		                    ? $details->{key} : __("Unspecified")));
-	    $mtn_key = $details->{key};
-	};
-	$menu_item = Gtk2::MenuItem->new(__("Unspecified"));
-	$menu_item->signal_connect("activate",
-				   $cb,
-				   {instance => $browser,
-				    key      => undef});
-	$menu_item->show();
-	$submenu->append($menu_item);
-	$menu_item = Gtk2::SeparatorMenuItem->new();
-	$menu_item->show();
-	$submenu->append($menu_item);
-	if (scalar(@keys) > 0)
-	{
-	    foreach my $key (@keys)
-	    {
-		$menu_item = Gtk2::MenuItem->new_with_label($key);
-		$menu_item->signal_connect("activate",
-					   $cb,
-					   {instance => $browser,
-					    key      => $key});
-		$menu_item->show();
-		$submenu->append($menu_item);
-	    }
-	}
-	else
-	{
-	    $menu_item = Gtk2::MenuItem->new(__("No Keys"));
-	    $menu_item->set_sensitive(FALSE);
-	    $menu_item->show();
-	    $submenu->append($menu_item);
-	}
-	$submenu->show();
-	$browser->{choose_authentication_key_menuitem}->set_submenu($submenu);
+        $submenu = Gtk2::Menu->new();
+        $cb = sub
+        {
+            my ($widget, $details) = @_;
+            return if ($details->{instance}->{in_cb});
+            local $details->{instance}->{in_cb} = 1;
+            $details->{instance}->{appbar}->set_status
+                (__x("Changed authentication key from `{old_key}' to "
+                         . "`{new_key}'",
+                     old_key => defined($mtn_key)
+                                    ? $mtn_key : __("Unspecified"),
+                     new_key => defined($details->{key})
+                                    ? $details->{key} : __("Unspecified")));
+            $mtn_key = $details->{key};
+        };
+        $menu_item = Gtk2::MenuItem->new(__("Unspecified"));
+        $menu_item->signal_connect("activate",
+                                   $cb,
+                                   {instance => $browser,
+                                    key      => undef});
+        $menu_item->show();
+        $submenu->append($menu_item);
+        $menu_item = Gtk2::SeparatorMenuItem->new();
+        $menu_item->show();
+        $submenu->append($menu_item);
+        if (scalar(@keys) > 0)
+        {
+            foreach my $key (@keys)
+            {
+                $menu_item = Gtk2::MenuItem->new_with_label($key);
+                $menu_item->signal_connect("activate",
+                                           $cb,
+                                           {instance => $browser,
+                                            key      => $key});
+                $menu_item->show();
+                $submenu->append($menu_item);
+            }
+        }
+        else
+        {
+            $menu_item = Gtk2::MenuItem->new(__("No Keys"));
+            $menu_item->set_sensitive(FALSE);
+            $menu_item->show();
+            $submenu->append($menu_item);
+        }
+        $submenu->show();
+        $browser->{choose_authentication_key_menuitem}->set_submenu($submenu);
 
-	# Setup button sensitivity groups.
+        # Setup button sensitivity groups.
 
-	$browser->{text_file_sensitive_group} = [];
-	foreach my $item ("search_text", "annotate")
-	{
-	    push(@{$browser->{text_file_sensitive_group}},
-		 $glade->get_widget($item . "_button"));
-	}
-	$browser->{revision_sensitive_group} = [];
-	foreach my $item ("revision_change_history", "revision_change_log")
-	{
-	    push(@{$browser->{revision_sensitive_group}},
-		 $glade->get_widget($item . "_button"));
-	}
+        $browser->{text_file_sensitive_group} = [];
+        foreach my $item ("search_text", "annotate")
+        {
+            push(@{$browser->{text_file_sensitive_group}},
+                 $glade->get_widget($item . "_button"));
+        }
+        $browser->{revision_sensitive_group} = [];
+        foreach my $item ("revision_change_history", "revision_change_log")
+        {
+            push(@{$browser->{revision_sensitive_group}},
+                 $glade->get_widget($item . "_button"));
+        }
 
-	# Setup the comboboxes.
+        # Setup the comboboxes.
 
-	$browser->{branch_comboboxentry}->
-	    set_model(Gtk2::ListStore->new("Glib::String"));
-	$browser->{branch_comboboxentry}->set_text_column(0);
-	$browser->{branch_comboboxentry}->set_wrap_width(2);
-	$browser->{revision_comboboxentry}->
-	    set_model(Gtk2::ListStore->new("Glib::String"));
-	$browser->{revision_comboboxentry}->set_text_column(0);
-	$browser->{revision_comboboxentry}->set_wrap_width(2);
-	$browser->{directory_comboboxentry}->
-	    set_model(Gtk2::ListStore->new("Glib::String"));
-	$browser->{directory_comboboxentry}->set_text_column(0);
-	$browser->{directory_comboboxentry}->set_wrap_width(2);
+        $browser->{branch_comboboxentry}->
+            set_model(Gtk2::ListStore->new("Glib::String"));
+        $browser->{branch_comboboxentry}->set_text_column(0);
+        $browser->{branch_comboboxentry}->set_wrap_width(2);
+        $browser->{revision_comboboxentry}->
+            set_model(Gtk2::ListStore->new("Glib::String"));
+        $browser->{revision_comboboxentry}->set_text_column(0);
+        $browser->{revision_comboboxentry}->set_wrap_width(2);
+        $browser->{directory_comboboxentry}->
+            set_model(Gtk2::ListStore->new("Glib::String"));
+        $browser->{directory_comboboxentry}->set_text_column(0);
+        $browser->{directory_comboboxentry}->set_wrap_width(2);
 
-	# Setup the tree view manifest file browser.
+        # Setup the tree view manifest file browser.
 
-	$browser->{manifest_liststore} =
-	    Gtk2::ListStore->new(MLS_COLUMN_TYPES);
-	$browser->{manifest_browser_treeview}->
-	    set_model($browser->{manifest_liststore});
+        $browser->{manifest_liststore} =
+            Gtk2::ListStore->new(MLS_COLUMN_TYPES);
+        $browser->{manifest_browser_treeview}->
+            set_model($browser->{manifest_liststore});
 
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$image = Gtk2::Image->new_from_stock("gtk-file", "menu");
-	$image->show_all();
-	$tv_column->set_widget($image);
-	$tv_column->set_resizable(FALSE);
-	$tv_column->set_sort_column_id(MLS_ICON_COLUMN);
-	$renderer = Gtk2::CellRendererPixbuf->new();
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "stock-id" => MLS_ICON_COLUMN);
-	$browser->{manifest_browser_treeview}->append_column($tv_column);
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $image = Gtk2::Image->new_from_stock("gtk-file", "menu");
+        $image->show_all();
+        $tv_column->set_widget($image);
+        $tv_column->set_resizable(FALSE);
+        $tv_column->set_sort_column_id(MLS_ICON_COLUMN);
+        $renderer = Gtk2::CellRendererPixbuf->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "stock-id" => MLS_ICON_COLUMN);
+        $browser->{manifest_browser_treeview}->append_column($tv_column);
 
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$tv_column->set_title(__("File Name"));
-	if ($user_preferences->{show_file_details})
-	{
-	    $tv_column->set_resizable(TRUE);
-	    $tv_column->set_sizing("fixed");
-	    $tv_column->set_fixed_width(180);
-	}
-	else
-	{
-	    $tv_column->set_resizable(FALSE);
-	    $tv_column->set_sizing("grow-only");
-	}
-	$tv_column->set_sort_column_id(MLS_NAME_COLUMN);
-	$renderer = Gtk2::CellRendererText->new();
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "text" => MLS_NAME_COLUMN);
-	$browser->{manifest_browser_treeview}->append_column($tv_column);
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $tv_column->set_title(__("File Name"));
+        if ($user_preferences->{show_file_details})
+        {
+            $tv_column->set_resizable(TRUE);
+            $tv_column->set_sizing("fixed");
+            $tv_column->set_fixed_width(180);
+        }
+        else
+        {
+            $tv_column->set_resizable(FALSE);
+            $tv_column->set_sizing("grow-only");
+        }
+        $tv_column->set_sort_column_id(MLS_NAME_COLUMN);
+        $renderer = Gtk2::CellRendererText->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "text" => MLS_NAME_COLUMN);
+        $browser->{manifest_browser_treeview}->append_column($tv_column);
 
-	# Only set up the remaining columns if that is what the user wants.
+        # Only set up the remaining columns if that is what the user wants.
 
-	if ($user_preferences->{show_file_details})
-	{
-	    $tv_column = Gtk2::TreeViewColumn->new();
-	    $tv_column->set_title(__("Last Update"));
-	    $tv_column->set_resizable(TRUE);
-	    $tv_column->set_sizing("grow-only");
-	    $tv_column->set_sort_column_id(MLS_DATE_COLUMN);
-	    $renderer = Gtk2::CellRendererText->new();
-	    $tv_column->pack_start($renderer, TRUE);
-	    $tv_column->set_attributes($renderer, "text" => MLS_DATE_COLUMN);
-	    $browser->{manifest_browser_treeview}->append_column($tv_column);
+        if ($user_preferences->{show_file_details})
+        {
+            $tv_column = Gtk2::TreeViewColumn->new();
+            $tv_column->set_title(__("Last Update"));
+            $tv_column->set_resizable(TRUE);
+            $tv_column->set_sizing("grow-only");
+            $tv_column->set_sort_column_id(MLS_DATE_COLUMN);
+            $renderer = Gtk2::CellRendererText->new();
+            $tv_column->pack_start($renderer, TRUE);
+            $tv_column->set_attributes($renderer, "text" => MLS_DATE_COLUMN);
+            $browser->{manifest_browser_treeview}->append_column($tv_column);
 
-	    $tv_column = Gtk2::TreeViewColumn->new();
-	    $tv_column->set_title(__("Author"));
-	    $tv_column->set_resizable(TRUE);
-	    $tv_column->set_sizing("grow-only");
-	    $tv_column->set_sort_column_id(MLS_AUTHOR_COLUMN);
-	    $renderer = Gtk2::CellRendererText->new();
-	    $tv_column->pack_start($renderer, TRUE);
-	    $tv_column->set_attributes($renderer, "text" => MLS_AUTHOR_COLUMN);
-	    $browser->{manifest_browser_treeview}->append_column($tv_column);
+            $tv_column = Gtk2::TreeViewColumn->new();
+            $tv_column->set_title(__("Author"));
+            $tv_column->set_resizable(TRUE);
+            $tv_column->set_sizing("grow-only");
+            $tv_column->set_sort_column_id(MLS_AUTHOR_COLUMN);
+            $renderer = Gtk2::CellRendererText->new();
+            $tv_column->pack_start($renderer, TRUE);
+            $tv_column->set_attributes($renderer, "text" => MLS_AUTHOR_COLUMN);
+            $browser->{manifest_browser_treeview}->append_column($tv_column);
 
-	    treeview_setup_search_column_selection
-		($browser->{manifest_browser_treeview}, 1 .. 3);
-	}
-	$browser->{show_file_details} = $user_preferences->{show_file_details};
+            treeview_setup_search_column_selection
+                ($browser->{manifest_browser_treeview}, 1 .. 3);
+        }
+        $browser->{show_file_details} = $user_preferences->{show_file_details};
 
-	$browser->{manifest_browser_treeview}->
-	    set_search_column(MLS_NAME_COLUMN);
-	$browser->{manifest_browser_treeview}->
-	    set_search_equal_func(\&treeview_column_searcher);
+        $browser->{manifest_browser_treeview}->
+            set_search_column(MLS_NAME_COLUMN);
+        $browser->{manifest_browser_treeview}->
+            set_search_equal_func(\&treeview_column_searcher);
 
-	$browser->{manifest_browser_treeview}->get_selection()->
-	    signal_connect("changed",
-			   \&manifest_browser_treeselection_changed_cb,
-			   $browser);
+        $browser->{manifest_browser_treeview}->get_selection()->
+            signal_connect("changed",
+                           \&manifest_browser_treeselection_changed_cb,
+                           $browser);
 
-	# Setup the file file viewer (with syntax highlighting).
+        # Setup the file file viewer (with syntax highlighting).
 
-	$browser->{file_view_svbuffer} = Gtk2::SourceView::Buffer->new(undef);
-	$browser->{file_view_svbuffer}->set_check_brackets(FALSE);
-	$browser->{file_view_svbuffer}->set_max_undo_levels(0);
-	$browser->{file_view_svbuffer}->begin_not_undoable_action();
-	$browser->{file_view_svlangmgr} =
-	    Gtk2::SourceView::LanguagesManager->new();
-	$browser->{file_view_sv} = Gtk2::SourceView::View->
-	    new_with_buffer($browser->{file_view_svbuffer});
-	$browser->{file_view_sv}->modify_font($mono_font);
-	$browser->{file_view_sv}->set_cursor_visible(FALSE);
-	$browser->{file_view_sv}->set_editable(FALSE);
-	$browser->{file_view_scrolledwindow}->add($browser->{file_view_sv});
-	$browser->{file_view_sv_populate_popup_handler} =
-	    $browser->{file_view_sv}->signal_connect
-	        ("populate_popup",
-		 \&find_text_textview_populate_popup_cb,
-		 $browser);
-	$browser->{file_view_sv_key_press_handler} =
-	    $browser->{file_view_sv}->signal_connect
-	        ("key_press_event",
-		 \&find_text_textview_key_press_event_cb,
-		 $browser);
-	$browser->{file_view_sv}->show_all();
+        $browser->{file_view_svbuffer} = Gtk2::SourceView::Buffer->new(undef);
+        $browser->{file_view_svbuffer}->set_check_brackets(FALSE);
+        $browser->{file_view_svbuffer}->set_max_undo_levels(0);
+        $browser->{file_view_svbuffer}->begin_not_undoable_action();
+        $browser->{file_view_svlangmgr} =
+            Gtk2::SourceView::LanguagesManager->new();
+        $browser->{file_view_sv} = Gtk2::SourceView::View->
+            new_with_buffer($browser->{file_view_svbuffer});
+        $browser->{file_view_sv}->modify_font($mono_font);
+        $browser->{file_view_sv}->set_cursor_visible(FALSE);
+        $browser->{file_view_sv}->set_editable(FALSE);
+        $browser->{file_view_scrolledwindow}->add($browser->{file_view_sv});
+        $browser->{file_view_sv_populate_popup_handler} =
+            $browser->{file_view_sv}->signal_connect
+                ("populate_popup",
+                 \&find_text_textview_populate_popup_cb,
+                 $browser);
+        $browser->{file_view_sv_key_press_handler} =
+            $browser->{file_view_sv}->signal_connect
+                ("key_press_event",
+                 \&find_text_textview_key_press_event_cb,
+                 $browser);
+        $browser->{file_view_sv}->show_all();
 
-	# Enable the showing of line numbers by default if that is what the
-	# user wants.
+        # Enable the showing of line numbers by default if that is what the
+        # user wants.
 
-	if ($user_preferences->{show_line_numbers})
-	{
-	    $browser->{show_line_numbers_togglebutton}->set_active(TRUE);
-	    $browser->{file_view_sv}->set_show_line_numbers(TRUE);
-	}
+        if ($user_preferences->{show_line_numbers})
+        {
+            $browser->{show_line_numbers_togglebutton}->set_active(TRUE);
+            $browser->{file_view_sv}->set_show_line_numbers(TRUE);
+        }
 
-	# Display the window.
+        # Display the window.
 
-	$browser->{window}->show_all();
-	$browser->{window}->present();
+        $browser->{window}->show_all();
+        $browser->{window}->present();
 
-	# Register the window for management and set up the help callbacks.
+        # Register the window for management and set up the help callbacks.
 
-	$wm->manage($browser, $window_type, $browser->{window});
-	register_help_callbacks
-	    ($browser,
-	     $glade,
-	     {widget   => "menubar_bonobodockitem",
-	      help_ref => __("mtnb-gsc-menus")},
-	     {widget   => "toolbar_bonobodockitem",
-	      help_ref => __("mtnb-gsc-tool-bar")},
-	     {widget   => "view_frame",
-	      help_ref => __("mtnb-gsc-selecting-a-branch-and-revision")},
-	     {widget   => "view_button_hbox",
-	      help_ref => __("mtnb-gsc-browser-buttons")},
-	     {widget   => "revision_browser_frame",
-	      help_ref => __("mtnb-gsc-selecting-a-file-to-display")},
-	     {widget   => "directory_button_hbox",
-	      help_ref => __("mtnb-gsc-browser-buttons")},
-	     {widget   => "file_viewer_frame",
-	      help_ref => __("mtnb-gsc-selecting-a-file-to-display")},
-	     {widget   => "file_details_hbox",
-	      help_ref => __("mtnb-gsc-information-fields")},
-	     {widget   => "file_button_vbox",
-	      help_ref => __("mtnb-gsc-browser-buttons")},
-	     {widget   => "details_frame",
-	      help_ref => __("mtnb-gsc-information-fields")},
-	     {widget   => undef,
-	      help_ref => __("mtnb-gsc-monotone-browser-window-at-a-glance")});
+        $wm->manage($browser, $window_type, $browser->{window});
+        register_help_callbacks
+            ($browser,
+             $glade,
+             {widget   => "menubar_bonobodockitem",
+              help_ref => __("mtnb-gsc-menus")},
+             {widget   => "toolbar_bonobodockitem",
+              help_ref => __("mtnb-gsc-tool-bar")},
+             {widget   => "view_frame",
+              help_ref => __("mtnb-gsc-selecting-a-branch-and-revision")},
+             {widget   => "view_button_hbox",
+              help_ref => __("mtnb-gsc-browser-buttons")},
+             {widget   => "revision_browser_frame",
+              help_ref => __("mtnb-gsc-selecting-a-file-to-display")},
+             {widget   => "directory_button_hbox",
+              help_ref => __("mtnb-gsc-browser-buttons")},
+             {widget   => "file_viewer_frame",
+              help_ref => __("mtnb-gsc-selecting-a-file-to-display")},
+             {widget   => "file_details_hbox",
+              help_ref => __("mtnb-gsc-information-fields")},
+             {widget   => "file_button_vbox",
+              help_ref => __("mtnb-gsc-browser-buttons")},
+             {widget   => "details_frame",
+              help_ref => __("mtnb-gsc-information-fields")},
+             {widget   => undef,
+              help_ref => __("mtnb-gsc-monotone-browser-window-at-a-glance")});
 
-	# Update the browser's internal state.
+        # Update the browser's internal state.
 
-	$browser->{branch_combo_details}->{preset} = 0;
-	$browser->{revision_combo_details}->{preset} = 0;
-	$browser->{directory_combo_details}->{preset} = 0;
-	$browser->{file_being_viewed_preset_value} = "";
-	$browser->{file_displayed_id} = "";
-	&{$browser->{update_handler}}($browser, ALL_CHANGED);
+        $browser->{branch_combo_details}->{preset} = 0;
+        $browser->{revision_combo_details}->{preset} = 0;
+        $browser->{directory_combo_details}->{preset} = 0;
+        $browser->{file_being_viewed_preset_value} = "";
+        $browser->{file_displayed_id} = "";
+        &{$browser->{update_handler}}($browser, ALL_CHANGED);
 
-	# Now the browser instance is completely initialised, set up the
-	# branch, revision and directory comboboxentry widgets for
-	# auto-completion.
+        # Now the browser instance is completely initialised, set up the
+        # branch, revision and directory comboboxentry widgets for
+        # auto-completion.
 
-	activate_auto_completion($browser->{branch_comboboxentry}, $browser);
-	activate_auto_completion($browser->{revision_comboboxentry}, $browser);
-	activate_auto_completion($browser->{directory_comboboxentry},
-				 $browser);
+        activate_auto_completion($browser->{branch_comboboxentry}, $browser);
+        activate_auto_completion($browser->{revision_comboboxentry}, $browser);
+        activate_auto_completion($browser->{directory_comboboxentry},
+                                 $browser);
 
     }
     else
     {
 
-	my ($height,
-	    $width);
+        my ($height,
+            $width);
 
-	$browser->{in_cb} = 0;
-	local $browser->{in_cb} = 1;
+        $browser->{in_cb} = 0;
+        local $browser->{in_cb} = 1;
 
-	# Reset the browser's state.
+        # Reset the browser's state.
 
-	($width, $height) = $browser->{window}->get_default_size();
-	$browser->{window}->resize($width, $height);
-	$browser->{browser_hpaned}->set_position(300);
-	$browser->{tagged_checkbutton}->set_active(FALSE);
-	$browser->{appbar}->set_progress_percentage(0);
-	$browser->{appbar}->clear_stack();
-	$browser->{branch_combo_details}->{preset} = 0;
-	$browser->{revision_combo_details}->{preset} = 0;
-	$browser->{directory_combo_details}->{preset} = 0;
-	$browser->{file_being_viewed_preset_value} = "";
-	$browser->{file_displayed_id} = "";
-	$browser->{manifest_liststore}->clear();
-	$browser->{manifest_liststore} =
-	    Gtk2::ListStore->new(MLS_COLUMN_TYPES);
-	$browser->{manifest_browser_treeview}->
-	    set_model($browser->{manifest_liststore});
-	$browser->{manifest_browser_treeview}->
-	    set_search_column(MLS_NAME_COLUMN);
-	if ($user_preferences->{show_line_numbers})
-	{
-	    $browser->{show_line_numbers_togglebutton}->set_active(TRUE);
-	    $browser->{file_view_sv}->set_show_line_numbers(TRUE);
-	}
-	else
-	{
-	    $browser->{show_line_numbers_togglebutton}->set_active(FALSE);
-	    $browser->{file_view_sv}->set_show_line_numbers(FALSE);
-	}
-	&{$browser->{update_handler}}($browser, ALL_CHANGED);
-	$browser->{window}->show_all();
-	$browser->{window}->present();
+        ($width, $height) = $browser->{window}->get_default_size();
+        $browser->{window}->resize($width, $height);
+        $browser->{browser_hpaned}->set_position(300);
+        $browser->{tagged_checkbutton}->set_active(FALSE);
+        $browser->{appbar}->set_progress_percentage(0);
+        $browser->{appbar}->clear_stack();
+        $browser->{branch_combo_details}->{preset} = 0;
+        $browser->{revision_combo_details}->{preset} = 0;
+        $browser->{directory_combo_details}->{preset} = 0;
+        $browser->{file_being_viewed_preset_value} = "";
+        $browser->{file_displayed_id} = "";
+        $browser->{manifest_liststore}->clear();
+        $browser->{manifest_liststore} =
+            Gtk2::ListStore->new(MLS_COLUMN_TYPES);
+        $browser->{manifest_browser_treeview}->
+            set_model($browser->{manifest_liststore});
+        $browser->{manifest_browser_treeview}->
+            set_search_column(MLS_NAME_COLUMN);
+        if ($user_preferences->{show_line_numbers})
+        {
+            $browser->{show_line_numbers_togglebutton}->set_active(TRUE);
+            $browser->{file_view_sv}->set_show_line_numbers(TRUE);
+        }
+        else
+        {
+            $browser->{show_line_numbers_togglebutton}->set_active(FALSE);
+            $browser->{file_view_sv}->set_show_line_numbers(FALSE);
+        }
+        &{$browser->{update_handler}}($browser, ALL_CHANGED);
+        $browser->{window}->show_all();
+        $browser->{window}->present();
 
-	# Now update with the details of the specified database.
+        # Now update with the details of the specified database.
 
-	if (defined($mtn))
-	{
-	    $browser->{mtn} = $mtn;
-	    &{$browser->{update_handler}}($browser, DATABASE_CHANGED);
-	}
+        if (defined($mtn))
+        {
+            $browser->{mtn} = $mtn;
+            &{$browser->{update_handler}}($browser, DATABASE_CHANGED);
+        }
 
     }
 
@@ -2380,23 +2380,23 @@ sub get_browser_window(;$$$$$)
 
     if (defined($branch))
     {
-	$browser->{branch_combo_details}->{preset} = 1;
-	$browser->{branch_combo_details}->{value} = $branch;
-	if (defined($revision_id))
-	{
-	    $browser->{revision_combo_details}->{preset} = 1;
-	    $browser->{revision_combo_details}->{value} = $revision_id;
-	    if (defined($directory))
-	    {
-		$browser->{directory_combo_details}->{preset} = 1;
-		$browser->{directory_combo_details}->{value} = $directory;
-		if (defined($file))
-		{
-		    $browser->{file_being_viewed_preset_value} = $file;
-		}
-	    }
-	}
-	&{$browser->{update_handler}}($browser, ALL_CHANGED);
+        $browser->{branch_combo_details}->{preset} = 1;
+        $browser->{branch_combo_details}->{value} = $branch;
+        if (defined($revision_id))
+        {
+            $browser->{revision_combo_details}->{preset} = 1;
+            $browser->{revision_combo_details}->{value} = $revision_id;
+            if (defined($directory))
+            {
+                $browser->{directory_combo_details}->{preset} = 1;
+                $browser->{directory_combo_details}->{value} = $directory;
+                if (defined($file))
+                {
+                    $browser->{file_being_viewed_preset_value} = $file;
+                }
+            }
+        }
+        &{$browser->{update_handler}}($browser, ALL_CHANGED);
     }
 
     # Make sure that the branch comboboxentry has the focus and not the bonobo
@@ -2433,81 +2433,81 @@ sub create_browser_widgets()
     # otherwise proceed as normal.
 
     if ($user_preferences->{toolbar_settings}->{hide_text}
-	|| $user_preferences->{toolbar_settings}->{fixed})
+        || $user_preferences->{toolbar_settings}->{fixed})
     {
 
-	my ($file,
-	    @glade_data,
-	    $seen_toolbar);
-	my $fixed     = $user_preferences->{toolbar_settings}->{fixed};
-	my $hide_text = $user_preferences->{toolbar_settings}->{hide_text};
+        my ($file,
+            @glade_data,
+            $seen_toolbar);
+        my $fixed     = $user_preferences->{toolbar_settings}->{fixed};
+        my $hide_text = $user_preferences->{toolbar_settings}->{hide_text};
 
-	# Open the Glade file and read it into an array.
+        # Open the Glade file and read it into an array.
 
-	die(__x("open failed: {error_message}\n", error_message => $!))
-	    unless (defined($file = IO::File->new($glade_file, "r")));
-	@glade_data = $file->getlines();
-	$file->close();
+        die(__x("open failed: {error_message}\n", error_message => $!))
+            unless (defined($file = IO::File->new($glade_file, "r")));
+        @glade_data = $file->getlines();
+        $file->close();
 
-	# Change the XML data depending upon the user's preferences.
+        # Change the XML data depending upon the user's preferences.
 
-	foreach my $line (@glade_data)
-	{
+        foreach my $line (@glade_data)
+        {
 
-	    # Deal with the toolbar's icon only or both setting.
+            # Deal with the toolbar's icon only or both setting.
 
-	    if ($hide_text && $line =~ m/>GTK_TOOLBAR_BOTH</)
-	    {
-		$line =~ s/>GTK_TOOLBAR_BOTH</>GTK_TOOLBAR_ICONS</g;
-		$hide_text = undef;
-	    }
-	    if ($fixed)
-	    {
-		if ($seen_toolbar)
-		{
-		    if ($line =~ m/BONOBO_DOCK_ITEM_BEH_EXCLUSIVE/)
-		    {
-			$line =~
-			    s/<\/prop/|BONOBO_DOCK_ITEM_BEH_LOCKED<\/prop/g;
-			$fixed = undef;
-		    }
-		}
-		elsif ($line =~ m/id="toolbar_bonobodockitem">/)
-		{
-		    $seen_toolbar = 1;
-		}
-	    }
+            if ($hide_text && $line =~ m/>GTK_TOOLBAR_BOTH</)
+            {
+                $line =~ s/>GTK_TOOLBAR_BOTH</>GTK_TOOLBAR_ICONS</g;
+                $hide_text = undef;
+            }
+            if ($fixed)
+            {
+                if ($seen_toolbar)
+                {
+                    if ($line =~ m/BONOBO_DOCK_ITEM_BEH_EXCLUSIVE/)
+                    {
+                        $line =~
+                            s/<\/prop/|BONOBO_DOCK_ITEM_BEH_LOCKED<\/prop/g;
+                        $fixed = undef;
+                    }
+                }
+                elsif ($line =~ m/id="toolbar_bonobodockitem">/)
+                {
+                    $seen_toolbar = 1;
+                }
+            }
 
-	    # Deal with the toolbar's fixed or floating setting.
+            # Deal with the toolbar's fixed or floating setting.
 
-	    if ($hide_text && $line =~ m/>GTK_TOOLBAR_BOTH</)
-	    {
-		$line =~ s/>GTK_TOOLBAR_BOTH</>GTK_TOOLBAR_ICONS</g;
-		$hide_text = undef;
-	    }
+            if ($hide_text && $line =~ m/>GTK_TOOLBAR_BOTH</)
+            {
+                $line =~ s/>GTK_TOOLBAR_BOTH</>GTK_TOOLBAR_ICONS</g;
+                $hide_text = undef;
+            }
 
-	    # We need to include the full path for any custom image files (this
-	    # is needed as Gtk2::GladeXML assumes that the image files are
-	    # relative to the XML file otherwise, but we didn't give it an XML
-	    # file and so it doesn't know where the directory is).
+            # We need to include the full path for any custom image files (this
+            # is needed as Gtk2::GladeXML assumes that the image files are
+            # relative to the XML file otherwise, but we didn't give it an XML
+            # file and so it doesn't know where the directory is).
 
-	    $line = $1 . File::Spec->catfile(UI_DIR, $2) . $3
-		if ($line =~ m/^(.*>)([^<>]+\.png)(<.*)$/);
+            $line = $1 . File::Spec->catfile(UI_DIR, $2) . $3
+                if ($line =~ m/^(.*>)([^<>]+\.png)(<.*)$/);
 
-	}
+        }
 
-	# Create and return the Glade object.
+        # Create and return the Glade object.
 
-	return Gtk2::GladeXML->new_from_buffer(join("", @glade_data),
-					       $window_type,
-					       APPLICATION_NAME);
+        return Gtk2::GladeXML->new_from_buffer(join("", @glade_data),
+                                               $window_type,
+                                               APPLICATION_NAME);
 
     }
     else
     {
-	return Gtk2::GladeXML->new($glade_file,
-				   $window_type,
-				   APPLICATION_NAME);
+        return Gtk2::GladeXML->new($glade_file,
+                                   $window_type,
+                                   APPLICATION_NAME);
     }
 
 }
@@ -2532,39 +2532,39 @@ sub update_server_bookmarks_menu($)
     my $browser = $_[0];
 
     my ($menu_item,
-	$old_menu,
-	$submenu);
+        $old_menu,
+        $submenu);
 
     # Create a new connect to server submenu.
 
     $submenu = Gtk2::Menu->new();
     if (scalar(@{$user_preferences->{server_bookmarks}}) > 0)
     {
-	foreach my $server (@{$user_preferences->{server_bookmarks}})
-	{
-	    $menu_item = Gtk2::MenuItem->new_with_label($server);
-	    $menu_item->signal_connect("activate",
-				       \&connect_to_server_activate_cb,
-				       {browser => $browser,
-					server  => $server});
-	    $menu_item->show();
-	    $submenu->append($menu_item);
-	}
+        foreach my $server (@{$user_preferences->{server_bookmarks}})
+        {
+            $menu_item = Gtk2::MenuItem->new_with_label($server);
+            $menu_item->signal_connect("activate",
+                                       \&connect_to_server_activate_cb,
+                                       {browser => $browser,
+                                        server  => $server});
+            $menu_item->show();
+            $submenu->append($menu_item);
+        }
     }
     else
     {
-	$menu_item = Gtk2::MenuItem->new(__("No Bookmarks"));
-	$menu_item->set_sensitive(FALSE);
-	$menu_item->show();
-	$submenu->append($menu_item);
+        $menu_item = Gtk2::MenuItem->new(__("No Bookmarks"));
+        $menu_item->set_sensitive(FALSE);
+        $menu_item->show();
+        $submenu->append($menu_item);
     }
     $menu_item = Gtk2::SeparatorMenuItem->new();
     $menu_item->show();
     $submenu->append($menu_item);
     $menu_item = Gtk2::MenuItem->new(__("Manage Server Bookmarks"));
     $menu_item->signal_connect("activate",
-			       \&manage_server_bookmarks_activate_cb,
-			       $browser);
+                               \&manage_server_bookmarks_activate_cb,
+                               $browser);
     $menu_item->show();
     $submenu->append($menu_item);
     $submenu->show();
@@ -2575,7 +2575,7 @@ sub update_server_bookmarks_menu($)
     $browser->{connect_to_server_menutiem}->set_submenu($submenu);
     if (defined($old_menu))
     {
-	$old_menu->destroy()
+        $old_menu->destroy()
     }
 
 }
@@ -2612,65 +2612,65 @@ sub update_browser_state($$)
     if ($changed == DATABASE_CHANGED)
     {
 
-	my $db_name;
+        my $db_name;
 
-	if (! defined($browser->{mtn}))
-	{
+        if (! defined($browser->{mtn}))
+        {
 
-	    # Disable the browser as no database is associated with it.
+            # Disable the browser as no database is associated with it.
 
-	    $browser->{close_menuitem}->set_sensitive(FALSE);
-	    $browser->{compare_arbitrary_revisions_menuitem}->
-		set_sensitive(FALSE);
-	    $browser->{close_toolbutton}->set_sensitive(FALSE);
-	    $browser->{reload_toolbutton}->set_sensitive(FALSE);
-	    $browser->{main_vbox}->set_sensitive(FALSE);
-	    set_label_value($browser->{database_name_value_label}, "");
+            $browser->{close_menuitem}->set_sensitive(FALSE);
+            $browser->{compare_arbitrary_revisions_menuitem}->
+                set_sensitive(FALSE);
+            $browser->{close_toolbutton}->set_sensitive(FALSE);
+            $browser->{reload_toolbutton}->set_sensitive(FALSE);
+            $browser->{main_vbox}->set_sensitive(FALSE);
+            set_label_value($browser->{database_name_value_label}, "");
 
-	}
-	else
-	{
+        }
+        else
+        {
 
-	    # Enable the browser as there is a database associated with it.
+            # Enable the browser as there is a database associated with it.
 
-	    $browser->{close_menuitem}->set_sensitive(TRUE);
-	    $browser->{compare_arbitrary_revisions_menuitem}->
-		set_sensitive(TRUE);
-	    $browser->{close_toolbutton}->set_sensitive(TRUE);
-	    $browser->{reload_toolbutton}->set_sensitive(TRUE);
-	    $browser->{main_vbox}->set_sensitive(TRUE);
-	    if (defined($browser->{mtn}->get_service_name()))
-	    {
-		set_label_value
-		    ($browser->{database_name_value_label},
-		     __x("<Service> ({service_name})",
-			 service_name => $browser->{mtn}->get_service_name()));
-		$browser->{history_graph_button}->set_sensitive(FALSE);
-	    }
-	    else
-	    {
-		if (defined($browser->{mtn}->get_db_name()))
-		{
-		    set_label_value($browser->{database_name_value_label},
-				    $browser->{mtn}->get_db_name());
-		}
-		else
-		{
-		    $browser->{mtn}->get_option(\$db_name, "database");
-		    set_label_value($browser->{database_name_value_label},
-				    __x("<WorkSpace> ({database_name})",
-					database_name => $db_name));
-		}
-		$browser->{history_graph_button}->set_sensitive(TRUE);
-	    }
+            $browser->{close_menuitem}->set_sensitive(TRUE);
+            $browser->{compare_arbitrary_revisions_menuitem}->
+                set_sensitive(TRUE);
+            $browser->{close_toolbutton}->set_sensitive(TRUE);
+            $browser->{reload_toolbutton}->set_sensitive(TRUE);
+            $browser->{main_vbox}->set_sensitive(TRUE);
+            if (defined($browser->{mtn}->get_service_name()))
+            {
+                set_label_value
+                    ($browser->{database_name_value_label},
+                     __x("<Service> ({service_name})",
+                         service_name => $browser->{mtn}->get_service_name()));
+                $browser->{history_graph_button}->set_sensitive(FALSE);
+            }
+            else
+            {
+                if (defined($browser->{mtn}->get_db_name()))
+                {
+                    set_label_value($browser->{database_name_value_label},
+                                    $browser->{mtn}->get_db_name());
+                }
+                else
+                {
+                    $browser->{mtn}->get_option(\$db_name, "database");
+                    set_label_value($browser->{database_name_value_label},
+                                    __x("<WorkSpace> ({database_name})",
+                                        database_name => $db_name));
+                }
+                $browser->{history_graph_button}->set_sensitive(TRUE);
+            }
 
-	    # Make sure that the branch comboboxentry has the focus and not the
-	    # bonobo dock.
+            # Make sure that the branch comboboxentry has the focus and not the
+            # bonobo dock.
 
-	    $browser->{branch_comboboxentry}->child()->grab_focus();
-	    $browser->{branch_comboboxentry}->child()->set_position(-1);
+            $browser->{branch_comboboxentry}->child()->grab_focus();
+            $browser->{branch_comboboxentry}->child()->set_position(-1);
 
-	}
+        }
 
     }
 
@@ -2679,57 +2679,57 @@ sub update_browser_state($$)
     if ($changed & BRANCH)
     {
 
-	my (@branch_list,
-	    $counter,
-	    $update_interval);
+        my (@branch_list,
+            $counter,
+            $update_interval);
 
-	# Reset the branch selection.
+        # Reset the branch selection.
 
-	$browser->{branch_combo_details}->{completion} = undef;
-	if ($browser->{branch_combo_details}->{preset})
-	{
-	    $browser->{branch_combo_details}->{complete} = 1;
-	    $browser->{branch_combo_details}->{preset} = 0;
-	}
-	else
-	{
-	    $browser->{branch_combo_details}->{complete} = 0;
-	    $browser->{branch_combo_details}->{value} = "";
-	}
+        $browser->{branch_combo_details}->{completion} = undef;
+        if ($browser->{branch_combo_details}->{preset})
+        {
+            $browser->{branch_combo_details}->{complete} = 1;
+            $browser->{branch_combo_details}->{preset} = 0;
+        }
+        else
+        {
+            $browser->{branch_combo_details}->{complete} = 0;
+            $browser->{branch_combo_details}->{value} = "";
+        }
 
-	# Get the new list of branches.
+        # Get the new list of branches.
 
-	$browser->{appbar}->set_status(__("Fetching branch list"));
-	$wm->update_gui();
-	$browser->{mtn}->branches(\@branch_list) if (defined($browser->{mtn}));
-	$browser->{branch_combo_details}->{list} = \@branch_list;
+        $browser->{appbar}->set_status(__("Fetching branch list"));
+        $wm->update_gui();
+        $browser->{mtn}->branches(\@branch_list) if (defined($browser->{mtn}));
+        $browser->{branch_combo_details}->{list} = \@branch_list;
 
-	# Update the branch list combobox.
+        # Update the branch list combobox.
 
-	$browser->{appbar}->set_status(__("Populating branch list"));
-	$wm->update_gui();
-	$counter = 1;
-	$update_interval = calculate_update_interval(\@branch_list);
-	$browser->{branch_comboboxentry}->get_model()->clear();
-	foreach my $branch (@branch_list)
-	{
-	    $browser->{branch_comboboxentry}->append_text($branch);
-	    if (($counter % $update_interval) == 0)
-	    {
-		$browser->{appbar}->set_progress_percentage
-		    ($counter / scalar(@branch_list));
-		$wm->update_gui();
-	    }
-	    ++ $counter;
-	}
-	$browser->{appbar}->set_progress_percentage(1);
-	$wm->update_gui();
-	$browser->{branch_comboboxentry}->child()->
-	    set_text($browser->{branch_combo_details}->{value});
-	$browser->{branch_comboboxentry}->child()->set_position(-1);
-	$browser->{appbar}->set_progress_percentage(0);
-	$browser->{appbar}->set_status("");
-	$wm->update_gui();
+        $browser->{appbar}->set_status(__("Populating branch list"));
+        $wm->update_gui();
+        $counter = 1;
+        $update_interval = calculate_update_interval(\@branch_list);
+        $browser->{branch_comboboxentry}->get_model()->clear();
+        foreach my $branch (@branch_list)
+        {
+            $browser->{branch_comboboxentry}->append_text($branch);
+            if (($counter % $update_interval) == 0)
+            {
+                $browser->{appbar}->set_progress_percentage
+                    ($counter / scalar(@branch_list));
+                $wm->update_gui();
+            }
+            ++ $counter;
+        }
+        $browser->{appbar}->set_progress_percentage(1);
+        $wm->update_gui();
+        $browser->{branch_comboboxentry}->child()->
+            set_text($browser->{branch_combo_details}->{value});
+        $browser->{branch_comboboxentry}->child()->set_position(-1);
+        $browser->{appbar}->set_progress_percentage(0);
+        $browser->{appbar}->set_status("");
+        $wm->update_gui();
 
     }
 
@@ -2738,168 +2738,168 @@ sub update_browser_state($$)
     if ($changed & REVISION)
     {
 
-	my ($counter,
-	    @revision_list,
-	    $update_interval);
+        my ($counter,
+            @revision_list,
+            $update_interval);
 
-	# If auto-selection of the head revision is wanted by the user and it
-	# is appropriate then preset the revision id.
+        # If auto-selection of the head revision is wanted by the user and it
+        # is appropriate then preset the revision id.
 
-	if ($user_preferences->{auto_select_head}
-	    && ! $browser->{tagged_checkbutton}->get_active()
-	    && $browser->{branch_combo_details}->{complete}
-	    && ! $browser->{revision_combo_details}->{preset})
-	{
+        if ($user_preferences->{auto_select_head}
+            && ! $browser->{tagged_checkbutton}->get_active()
+            && $browser->{branch_combo_details}->{complete}
+            && ! $browser->{revision_combo_details}->{preset})
+        {
 
-	    my @revision_ids;
+            my @revision_ids;
 
-	    # Get the head revision(s) for the branch.
+            # Get the head revision(s) for the branch.
 
-	    $browser->{appbar}->set_status(__("Auto selecting head revision"));
-	    $wm->update_gui();
-	    $browser->{mtn}->select
-		(\@revision_ids,
-		 "h:" . $browser->{branch_combo_details}->{value});
+            $browser->{appbar}->set_status(__("Auto selecting head revision"));
+            $wm->update_gui();
+            $browser->{mtn}->select
+                (\@revision_ids,
+                 "h:" . $browser->{branch_combo_details}->{value});
 
-	    # One head on the branch.
+            # One head on the branch.
 
-	    if (scalar(@revision_ids) == 1)
-	    {
-		$browser->{revision_combo_details}->{preset} = 1;
-		$browser->{revision_combo_details}->{value} = $revision_ids[0];
-		$browser->{tagged_checkbutton}->set_active(FALSE);
-	    }
+            if (scalar(@revision_ids) == 1)
+            {
+                $browser->{revision_combo_details}->{preset} = 1;
+                $browser->{revision_combo_details}->{value} = $revision_ids[0];
+                $browser->{tagged_checkbutton}->set_active(FALSE);
+            }
 
-	    # Multiple heads on the branch.
+            # Multiple heads on the branch.
 
-	    elsif (scalar(@revision_ids) > 1)
-	    {
+            elsif (scalar(@revision_ids) > 1)
+            {
 
-		my ($response,
-		    $revision_id);
+                my ($response,
+                    $revision_id);
 
-		# Ask the user what they want to do.
+                # Ask the user what they want to do.
 
-		$response = multiple_revisions_selection
-		    ($browser->{window},
-		     __x("The `{branch}' branch\n"
-			     . "has multiple heads and <i>Auto select head "
-			     . "revision</i> is switched\n"
-			     . "on. Please either select the revision by its "
-			     . "id using the combobox\n"
-			     . "below or use the <i>Advanced Find</i> "
-			     . "feature.",
-			 branch => $browser->{branch_combo_details}->{value}),
-		     \$revision_id,
-		     @revision_ids);
+                $response = multiple_revisions_selection
+                    ($browser->{window},
+                     __x("The `{branch}' branch\n"
+                             . "has multiple heads and <i>Auto select head "
+                             . "revision</i> is switched\n"
+                             . "on. Please either select the revision by its "
+                             . "id using the combobox\n"
+                             . "below or use the <i>Advanced Find</i> "
+                             . "feature.",
+                         branch => $browser->{branch_combo_details}->{value}),
+                     \$revision_id,
+                     @revision_ids);
 
-		# Deal with their response (either they have selected a
-		# revision, they have asked to use the advanced find dialog
-		# window or they have aborted in some way).
+                # Deal with their response (either they have selected a
+                # revision, they have asked to use the advanced find dialog
+                # window or they have aborted in some way).
 
-		if ($response eq "ok")
-		{
+                if ($response eq "ok")
+                {
 
-		    # We have single revision id so simply preset the revision
-		    # selection to that revision.
+                    # We have single revision id so simply preset the revision
+                    # selection to that revision.
 
-		    $browser->{revision_combo_details}->{preset} = 1;
-		    $browser->{revision_combo_details}->{value} = $revision_id;
-		    $browser->{tagged_checkbutton}->set_active(FALSE);
+                    $browser->{revision_combo_details}->{preset} = 1;
+                    $browser->{revision_combo_details}->{value} = $revision_id;
+                    $browser->{tagged_checkbutton}->set_active(FALSE);
 
-		}
-		else
-		{
+                }
+                else
+                {
 
-		    # The user has either selected advanced find or aborted in
-		    # some way.
+                    # The user has either selected advanced find or aborted in
+                    # some way.
 
-		    # If necessary flag the fact that the user wants to use
-		    # advanced find.
+                    # If necessary flag the fact that the user wants to use
+                    # advanced find.
 
-		    $use_advanced_find = 1 if ($response eq "advanced-find");
+                    $use_advanced_find = 1 if ($response eq "advanced-find");
 
-		    # Either way, no revision is currently selected so we need
-		    # to blank out all the revision selection details and
-		    # proceed as normal (this will blank out the rest of the
-		    # browser).
+                    # Either way, no revision is currently selected so we need
+                    # to blank out all the revision selection details and
+                    # proceed as normal (this will blank out the rest of the
+                    # browser).
 
-		    $browser->{revision_combo_details}->{complete} = 0;
-		    $browser->{revision_combo_details}->{value} = "";
-		    $browser->{tagged_checkbutton}->set_active(FALSE);
+                    $browser->{revision_combo_details}->{complete} = 0;
+                    $browser->{revision_combo_details}->{value} = "";
+                    $browser->{tagged_checkbutton}->set_active(FALSE);
 
-		}
+                }
 
-	    }
+            }
 
-	    # No heads or revisions on the branch.
+            # No heads or revisions on the branch.
 
-	    else
-	    {
-		$browser->{revision_combo_details}->{complete} = 0;
-		$browser->{revision_combo_details}->{value} = "";
-		$browser->{tagged_checkbutton}->set_active(FALSE);
-	    }
+            else
+            {
+                $browser->{revision_combo_details}->{complete} = 0;
+                $browser->{revision_combo_details}->{value} = "";
+                $browser->{tagged_checkbutton}->set_active(FALSE);
+            }
 
-	    $browser->{appbar}->set_status("");
-	    $wm->update_gui();
+            $browser->{appbar}->set_status("");
+            $wm->update_gui();
 
-	}
+        }
 
-	# Reset the revision selection.
+        # Reset the revision selection.
 
-	$browser->{revision_combo_details}->{completion} = undef;
-	if ($browser->{revision_combo_details}->{preset})
-	{
-	    $browser->{revision_combo_details}->{complete} = 1;
-	    $browser->{revision_combo_details}->{preset} = 0;
-	}
-	else
-	{
-	    $browser->{revision_combo_details}->{complete} = 0;
-	    $browser->{revision_combo_details}->{value} = "";
-	}
+        $browser->{revision_combo_details}->{completion} = undef;
+        if ($browser->{revision_combo_details}->{preset})
+        {
+            $browser->{revision_combo_details}->{complete} = 1;
+            $browser->{revision_combo_details}->{preset} = 0;
+        }
+        else
+        {
+            $browser->{revision_combo_details}->{complete} = 0;
+            $browser->{revision_combo_details}->{value} = "";
+        }
 
-	# Get the new list of revisions.
+        # Get the new list of revisions.
 
-	if ($browser->{branch_combo_details}->{complete})
-	{
-	    $browser->{appbar}->set_status(__("Fetching revision list"));
-	    $wm->update_gui();
-	    get_branch_revisions($browser->{mtn},
-				 $browser->{branch_combo_details}->{value},
-				 $browser->{tagged_checkbutton}->get_active(),
-				 $browser->{appbar},
-				 \@revision_list);
-	}
-	$browser->{revision_combo_details}->{list} = \@revision_list;
+        if ($browser->{branch_combo_details}->{complete})
+        {
+            $browser->{appbar}->set_status(__("Fetching revision list"));
+            $wm->update_gui();
+            get_branch_revisions($browser->{mtn},
+                                 $browser->{branch_combo_details}->{value},
+                                 $browser->{tagged_checkbutton}->get_active(),
+                                 $browser->{appbar},
+                                 \@revision_list);
+        }
+        $browser->{revision_combo_details}->{list} = \@revision_list;
 
-	# Update the revision list combobox.
+        # Update the revision list combobox.
 
-	$browser->{appbar}->set_progress_percentage(0);
-	$browser->{appbar}->set_status(__("Populating revision list"));
-	$wm->update_gui();
-	$counter = 1;
-	$update_interval = calculate_update_interval(\@revision_list);
-	$browser->{revision_comboboxentry}->get_model()->clear();
-	foreach my $revision (@revision_list)
-	{
-	    $browser->{revision_comboboxentry}->append_text($revision);
-	    if (($counter % $update_interval) == 0)
-	    {
-		$browser->{appbar}->set_progress_percentage
-		    ($counter / scalar(@revision_list));
-		$wm->update_gui();
-	    }
-	    ++ $counter;
-	}
-	$browser->{appbar}->set_progress_percentage(1);
-	$wm->update_gui();
-	$browser->{revision_comboboxentry}->child()->
-	    set_text($browser->{revision_combo_details}->{value});
-	$browser->{appbar}->set_progress_percentage(0);
-	$browser->{appbar}->set_status("");
-	$wm->update_gui();
+        $browser->{appbar}->set_progress_percentage(0);
+        $browser->{appbar}->set_status(__("Populating revision list"));
+        $wm->update_gui();
+        $counter = 1;
+        $update_interval = calculate_update_interval(\@revision_list);
+        $browser->{revision_comboboxentry}->get_model()->clear();
+        foreach my $revision (@revision_list)
+        {
+            $browser->{revision_comboboxentry}->append_text($revision);
+            if (($counter % $update_interval) == 0)
+            {
+                $browser->{appbar}->set_progress_percentage
+                    ($counter / scalar(@revision_list));
+                $wm->update_gui();
+            }
+            ++ $counter;
+        }
+        $browser->{appbar}->set_progress_percentage(1);
+        $wm->update_gui();
+        $browser->{revision_comboboxentry}->child()->
+            set_text($browser->{revision_combo_details}->{value});
+        $browser->{appbar}->set_progress_percentage(0);
+        $browser->{appbar}->set_status("");
+        $wm->update_gui();
 
     }
 
@@ -2908,214 +2908,214 @@ sub update_browser_state($$)
     if ($changed & DIRECTORY)
     {
 
-	my ($counter,
-	    @directory_list,
-	    @manifest_list,
-	    $update_interval);
+        my ($counter,
+            @directory_list,
+            @manifest_list,
+            $update_interval);
 
-	# Reset the directory combo.
+        # Reset the directory combo.
 
-	$browser->{directory_combo_details}->{completion} = undef;
-	if ($browser->{directory_combo_details}->{preset})
-	{
-	    $browser->{directory_combo_details}->{complete} = 1;
-	    $browser->{directory_combo_details}->{preset} = 0;
-	}
-	else
-	{
-	    $browser->{directory_combo_details}->{complete} = 1;
-	    $browser->{directory_combo_details}->{value} = "";
-	}
-	set_label_value($browser->{date_value_label}, "");
-	set_label_value($browser->{author_value_label}, "");
-	set_label_value($browser->{change_log_value_label}, "");
+        $browser->{directory_combo_details}->{completion} = undef;
+        if ($browser->{directory_combo_details}->{preset})
+        {
+            $browser->{directory_combo_details}->{complete} = 1;
+            $browser->{directory_combo_details}->{preset} = 0;
+        }
+        else
+        {
+            $browser->{directory_combo_details}->{complete} = 1;
+            $browser->{directory_combo_details}->{value} = "";
+        }
+        set_label_value($browser->{date_value_label}, "");
+        set_label_value($browser->{author_value_label}, "");
+        set_label_value($browser->{change_log_value_label}, "");
 
-	# Reset the name of the file being viewed.
+        # Reset the name of the file being viewed.
 
-	$browser->{file_being_viewed} = {};
+        $browser->{file_being_viewed} = {};
 
-	# Get the new manifest.
+        # Get the new manifest.
 
-	$browser->{appbar}->set_status(__("Fetching manifest"));
-	$wm->update_gui();
-	if ($browser->{revision_combo_details}->{complete})
-	{
+        $browser->{appbar}->set_status(__("Fetching manifest"));
+        $wm->update_gui();
+        if ($browser->{revision_combo_details}->{complete})
+        {
 
-	    my ($revision_id,
-		@revision_ids);
+            my ($revision_id,
+                @revision_ids);
 
-	    # Get the revision id(s) that match what the user has selected.
-	    # More than one revision id may be returned if the selected tag
-	    # isn't unique on that branch.
+            # Get the revision id(s) that match what the user has selected.
+            # More than one revision id may be returned if the selected tag
+            # isn't unique on that branch.
 
-	    get_revision_ids($browser, \@revision_ids);
+            get_revision_ids($browser, \@revision_ids);
 
-	    # Deal with more than one revision id being selected.
+            # Deal with more than one revision id being selected.
 
-	    if (scalar(@revision_ids) > 1)
-	    {
+            if (scalar(@revision_ids) > 1)
+            {
 
-		my $response;
+                my $response;
 
-		# More than one revision matches the tag that was selected by
-		# the user. Ask them what they want to do.
+                # More than one revision matches the tag that was selected by
+                # the user. Ask them what they want to do.
 
-		$response = multiple_revisions_selection
-		    ($browser->{window},
-		     __x("The `{tag_name}' tag is not unique on this\n"
-			     . "branch. Please either select the revision by "
-			     . "its id using the\n"
-			     . "combobox below or use the "
-			     . "<i>Advanced Find</i> feature.",
-			 tag_name =>
-			     $browser->{revision_combo_details}->{value}),
-		     \$revision_id,
-		     @revision_ids);
+                $response = multiple_revisions_selection
+                    ($browser->{window},
+                     __x("The `{tag_name}' tag is not unique on this\n"
+                             . "branch. Please either select the revision by "
+                             . "its id using the\n"
+                             . "combobox below or use the "
+                             . "<i>Advanced Find</i> feature.",
+                         tag_name =>
+                             $browser->{revision_combo_details}->{value}),
+                     \$revision_id,
+                     @revision_ids);
 
-		# Deal with their response (either they have selected a
-		# revision, they have asked to use the advanced find dialog
-		# window or they have aborted in some way).
+                # Deal with their response (either they have selected a
+                # revision, they have asked to use the advanced find dialog
+                # window or they have aborted in some way).
 
-		if ($response eq "ok")
-		{
+                if ($response eq "ok")
+                {
 
-		    # We have a single revision id so we need to redo the
-		    # revision selection bit but with tag names switched off.
-		    # The easiest way to do this is to recursively call this
-		    # routine with $changed set to just REVISION. Afterwards
-		    # just carry on as if a revision id had been selected in
-		    # the first place.
+                    # We have a single revision id so we need to redo the
+                    # revision selection bit but with tag names switched off.
+                    # The easiest way to do this is to recursively call this
+                    # routine with $changed set to just REVISION. Afterwards
+                    # just carry on as if a revision id had been selected in
+                    # the first place.
 
-		    $browser->{revision_combo_details}->{preset} = 1;
-		    $browser->{revision_combo_details}->{value} = $revision_id;
-		    $browser->{tagged_checkbutton}->set_active(FALSE);
-		    &{$browser->{update_handler}}($browser, REVISION);
+                    $browser->{revision_combo_details}->{preset} = 1;
+                    $browser->{revision_combo_details}->{value} = $revision_id;
+                    $browser->{tagged_checkbutton}->set_active(FALSE);
+                    &{$browser->{update_handler}}($browser, REVISION);
 
-		}
-		else
-		{
+                }
+                else
+                {
 
-		    # The user has either selected advanced find or aborted in
-		    # some way.
+                    # The user has either selected advanced find or aborted in
+                    # some way.
 
-		    # If necessary flag the fact that the user wants to use
-		    # advanced find.
+                    # If necessary flag the fact that the user wants to use
+                    # advanced find.
 
-		    $use_advanced_find = 1 if ($response eq "advanced-find");
+                    $use_advanced_find = 1 if ($response eq "advanced-find");
 
-		    # Either way, no revision is currently selected so we need
-		    # to blank out all the revision selection details and
-		    # proceed as normal (this will blank out the rest of the
-		    # browser).
+                    # Either way, no revision is currently selected so we need
+                    # to blank out all the revision selection details and
+                    # proceed as normal (this will blank out the rest of the
+                    # browser).
 
-		    $browser->{revision_combo_details}->{complete} = 0;
-		    $browser->{revision_combo_details}->{value} = "";
-		    $browser->{revision_comboboxentry}->child()->set_text("");
+                    $browser->{revision_combo_details}->{complete} = 0;
+                    $browser->{revision_combo_details}->{value} = "";
+                    $browser->{revision_comboboxentry}->child()->set_text("");
 
-		}
+                }
 
-	    }
-	    else
-	    {
+            }
+            else
+            {
 
-		# Only one revision id was selected. This is the norm.
+                # Only one revision id was selected. This is the norm.
 
-		$revision_id = $revision_ids[0];
+                $revision_id = $revision_ids[0];
 
-	    }
+            }
 
-	    # If we now have one revision selected then get its details.
+            # If we now have one revision selected then get its details.
 
-	    if (defined($revision_id))
-	    {
-		my ($author,
-		    @certs_list,
-		    $change_log,
-		    $date);
-		if ($browser->{mtn}->supports(MTN_GET_EXTENDED_MANIFEST_OF))
-		{
-		    $browser->{mtn}->get_extended_manifest_of(\@manifest_list,
-							      $revision_id);
-		}
-		else
-		{
-		    $browser->{mtn}->get_manifest_of(\@manifest_list,
-						     $revision_id);
-		}
-		$browser->{mtn}->certs(\@certs_list, $revision_id);
-		$author = $change_log = $date = "";
-		foreach my $cert (@certs_list)
-		{
-		    if ($cert->{name} eq "author")
-		    {
-			$author = $cert->{value};
-		    }
-		    elsif ($cert->{name} eq "changelog")
-		    {
-			$change_log = $cert->{value};
-			$change_log =~ s/\s+$//s;
-		    }
-		    elsif ($cert->{name} eq "date")
-		    {
-			$date = $cert->{value};
-			$date =~ s/T/ /;
-		    }
-		}
-		set_label_value($browser->{date_value_label}, $date);
-		set_label_value($browser->{author_value_label}, $author);
-		set_label_value($browser->{change_log_value_label},
-				$change_log);
-	    }
+            if (defined($revision_id))
+            {
+                my ($author,
+                    @certs_list,
+                    $change_log,
+                    $date);
+                if ($browser->{mtn}->supports(MTN_GET_EXTENDED_MANIFEST_OF))
+                {
+                    $browser->{mtn}->get_extended_manifest_of(\@manifest_list,
+                                                              $revision_id);
+                }
+                else
+                {
+                    $browser->{mtn}->get_manifest_of(\@manifest_list,
+                                                     $revision_id);
+                }
+                $browser->{mtn}->certs(\@certs_list, $revision_id);
+                $author = $change_log = $date = "";
+                foreach my $cert (@certs_list)
+                {
+                    if ($cert->{name} eq "author")
+                    {
+                        $author = $cert->{value};
+                    }
+                    elsif ($cert->{name} eq "changelog")
+                    {
+                        $change_log = $cert->{value};
+                        $change_log =~ s/\s+$//s;
+                    }
+                    elsif ($cert->{name} eq "date")
+                    {
+                        $date = $cert->{value};
+                        $date =~ s/T/ /;
+                    }
+                }
+                set_label_value($browser->{date_value_label}, $date);
+                set_label_value($browser->{author_value_label}, $author);
+                set_label_value($browser->{change_log_value_label},
+                                $change_log);
+            }
 
-	}
-	$browser->{manifest} = \@manifest_list;
+        }
+        $browser->{manifest} = \@manifest_list;
 
-	# Generate a simple list of directories for auto completion.
+        # Generate a simple list of directories for auto completion.
 
-	$browser->{appbar}->set_progress_percentage(0.5);
-	$wm->update_gui();
-	foreach my $item (@manifest_list)
-	{
-	    push(@directory_list, $item->{name})
-		if ($item->{type} eq "directory");
-	}
-	$browser->{directory_combo_details}->{list} = \@directory_list;
-	$browser->{appbar}->set_progress_percentage(1);
-	$wm->update_gui();
+        $browser->{appbar}->set_progress_percentage(0.5);
+        $wm->update_gui();
+        foreach my $item (@manifest_list)
+        {
+            push(@directory_list, $item->{name})
+                if ($item->{type} eq "directory");
+        }
+        $browser->{directory_combo_details}->{list} = \@directory_list;
+        $browser->{appbar}->set_progress_percentage(1);
+        $wm->update_gui();
 
-	# Update the directory list combobox.
+        # Update the directory list combobox.
 
-	$browser->{appbar}->set_progress_percentage(0);
-	$browser->{appbar}->set_status(__("Populating directory list"));
-	$wm->update_gui();
-	$counter = 1;
-	$update_interval = calculate_update_interval(\@directory_list);
-	$browser->{directory_comboboxentry}->get_model()->clear();
-	foreach my $item (@directory_list)
-	{
-	    $browser->{directory_comboboxentry}->append_text($item);
-	    if (($counter % $update_interval) == 0)
-	    {
-		$browser->{appbar}->set_progress_percentage
-		    ($counter / scalar(@directory_list));
-		$wm->update_gui();
-	    }
-	    ++ $counter;
-	}
-	$browser->{appbar}->set_progress_percentage(1);
-	$wm->update_gui();
-	$browser->{directory_comboboxentry}->child()->
-	    set_text($browser->{directory_combo_details}->{value});
-	$browser->{directory_comboboxentry}->child()->set_position(-1);
-	$browser->{appbar}->set_progress_percentage(0);
-	$browser->{appbar}->set_status("");
-	foreach my $widget (@{$browser->{revision_sensitive_group}})
-	{
-	    $widget->
-		set_sensitive($browser->{revision_combo_details}->{complete}
-			      ? TRUE : FALSE);
-	}
-	$wm->update_gui();
+        $browser->{appbar}->set_progress_percentage(0);
+        $browser->{appbar}->set_status(__("Populating directory list"));
+        $wm->update_gui();
+        $counter = 1;
+        $update_interval = calculate_update_interval(\@directory_list);
+        $browser->{directory_comboboxentry}->get_model()->clear();
+        foreach my $item (@directory_list)
+        {
+            $browser->{directory_comboboxentry}->append_text($item);
+            if (($counter % $update_interval) == 0)
+            {
+                $browser->{appbar}->set_progress_percentage
+                    ($counter / scalar(@directory_list));
+                $wm->update_gui();
+            }
+            ++ $counter;
+        }
+        $browser->{appbar}->set_progress_percentage(1);
+        $wm->update_gui();
+        $browser->{directory_comboboxentry}->child()->
+            set_text($browser->{directory_combo_details}->{value});
+        $browser->{directory_comboboxentry}->child()->set_position(-1);
+        $browser->{appbar}->set_progress_percentage(0);
+        $browser->{appbar}->set_status("");
+        foreach my $widget (@{$browser->{revision_sensitive_group}})
+        {
+            $widget->
+                set_sensitive($browser->{revision_combo_details}->{complete}
+                              ? TRUE : FALSE);
+        }
+        $wm->update_gui();
 
     }
 
@@ -3124,116 +3124,116 @@ sub update_browser_state($$)
     if ($changed & DIRECTORY_VIEW)
     {
 
-	my ($author,
-	    $counter,
-	    @directory_entry_list,
-	    $last_update,
-	    @revision_ids,
-	    $taking_our_time);
+        my ($author,
+            $counter,
+            @directory_entry_list,
+            $last_update,
+            @revision_ids,
+            $taking_our_time);
 
-	# Reset the manifest tree view.
+        # Reset the manifest tree view.
 
-	$browser->{manifest_liststore}->clear();
+        $browser->{manifest_liststore}->clear();
 
-	# If we are currently at a valid directory then get its contents and
-	# enable the find files button.
+        # If we are currently at a valid directory then get its contents and
+        # enable the find files button.
 
-	if ($browser->{revision_combo_details}->{complete}
-	    && $browser->{directory_combo_details}->{complete})
-	{
-	    get_dir_contents($browser->{directory_combo_details}->{value},
-			     $browser->{manifest},
-			     \@directory_entry_list);
-	    $browser->{find_files_button}->set_sensitive(TRUE);
-	}
-	else
-	{
-	    $browser->{find_files_button}->set_sensitive(FALSE);
-	}
+        if ($browser->{revision_combo_details}->{complete}
+            && $browser->{directory_combo_details}->{complete})
+        {
+            get_dir_contents($browser->{directory_combo_details}->{value},
+                             $browser->{manifest},
+                             \@directory_entry_list);
+            $browser->{find_files_button}->set_sensitive(TRUE);
+        }
+        else
+        {
+            $browser->{find_files_button}->set_sensitive(FALSE);
+        }
 
-	# Disable the directory up button if we are already at the top level,
-	# otherwise make sure it is enabled.
+        # Disable the directory up button if we are already at the top level,
+        # otherwise make sure it is enabled.
 
-	$browser->{directory_up_button}->set_sensitive
-	    (($browser->{directory_combo_details}->{value} eq "")
-	     ? FALSE : TRUE);
+        $browser->{directory_up_button}->set_sensitive
+            (($browser->{directory_combo_details}->{value} eq "")
+             ? FALSE : TRUE);
 
-	# Update the directory tree view.
+        # Update the directory tree view.
 
-	$browser->{appbar}->set_status(__("Populating file details"));
-	$wm->update_gui();
-	$counter = 1;
-	$taking_our_time = 0;
-	get_revision_ids($browser, \@revision_ids);
-	foreach my $item (@directory_entry_list)
-	{
+        $browser->{appbar}->set_status(__("Populating file details"));
+        $wm->update_gui();
+        $counter = 1;
+        $taking_our_time = 0;
+        get_revision_ids($browser, \@revision_ids);
+        foreach my $item (@directory_entry_list)
+        {
 
-	    # Get the latest modification time and the author if that is what
-	    # the user wants and the entry is a file (caching the result in the
-	    # manifest for future reference if we have to work it out).
+            # Get the latest modification time and the author if that is what
+            # the user wants and the entry is a file (caching the result in the
+            # manifest for future reference if we have to work it out).
 
-	    if ($browser->{show_file_details}
-		&& $item->{manifest_entry}->{type} eq "file")
-	    {
-		if (! exists($item->{manifest_entry}->{author}))
-		{
-		    $taking_our_time = 1;
-		    cache_extra_file_info($browser->{mtn},
-					  $revision_ids[0],
-					  $item->{manifest_entry});
-		}
-		$author = $item->{manifest_entry}->{author};
-		$last_update = $item->{manifest_entry}->{last_update};
-		$last_update =~ s/T/ /;
-	    }
-	    else
-	    {
-		$author = "";
-		$last_update = "";
-	    }
+            if ($browser->{show_file_details}
+                && $item->{manifest_entry}->{type} eq "file")
+            {
+                if (! exists($item->{manifest_entry}->{author}))
+                {
+                    $taking_our_time = 1;
+                    cache_extra_file_info($browser->{mtn},
+                                          $revision_ids[0],
+                                          $item->{manifest_entry});
+                }
+                $author = $item->{manifest_entry}->{author};
+                $last_update = $item->{manifest_entry}->{last_update};
+                $last_update =~ s/T/ /;
+            }
+            else
+            {
+                $author = "";
+                $last_update = "";
+            }
 
-	    # Put the entry into the liststore.
+            # Put the entry into the liststore.
 
-	    $browser->{manifest_liststore}->
-		set($browser->{manifest_liststore}->append(),
-		    MLS_ICON_COLUMN,
-		        ($item->{manifest_entry}->{type} eq "directory")
-		        ? "gtk-open" : "gtk-file",
-		    MLS_NAME_COLUMN, $item->{name},
-		    MLS_DATE_COLUMN, $last_update,
-		    MLS_AUTHOR_COLUMN, $author,
-		    MLS_MANIFEST_ENTRY_COLUMN, $item->{manifest_entry});
+            $browser->{manifest_liststore}->
+                set($browser->{manifest_liststore}->append(),
+                    MLS_ICON_COLUMN,
+                        ($item->{manifest_entry}->{type} eq "directory")
+                        ? "gtk-open" : "gtk-file",
+                    MLS_NAME_COLUMN, $item->{name},
+                    MLS_DATE_COLUMN, $last_update,
+                    MLS_AUTHOR_COLUMN, $author,
+                    MLS_MANIFEST_ENTRY_COLUMN, $item->{manifest_entry});
 
-	    if ($browser->{file_being_viewed_preset_value} ne ""
-		&& $browser->{file_being_viewed_preset_value} eq $item->{name})
-	    {
-		$browser->{file_being_viewed} =
-		    {short_name     => $item->{name},
-		     manifest_entry => $item->{manifest_entry}};
-		$browser->{file_being_viewed_preset_value} = "";
-	    }
+            if ($browser->{file_being_viewed_preset_value} ne ""
+                && $browser->{file_being_viewed_preset_value} eq $item->{name})
+            {
+                $browser->{file_being_viewed} =
+                    {short_name     => $item->{name},
+                     manifest_entry => $item->{manifest_entry}};
+                $browser->{file_being_viewed_preset_value} = "";
+            }
 
-	    if ($taking_our_time && ($counter % 10) == 0)
-	    {
-		$browser->{appbar}->set_progress_percentage
-		    ($counter / scalar(@directory_entry_list));
-		$wm->update_gui();
-	    }
-	    ++ $counter;
+            if ($taking_our_time && ($counter % 10) == 0)
+            {
+                $browser->{appbar}->set_progress_percentage
+                    ($counter / scalar(@directory_entry_list));
+                $wm->update_gui();
+            }
+            ++ $counter;
 
-	}
-	if ($taking_our_time)
-	{
-	    $browser->{appbar}->set_progress_percentage(1);
-	    $wm->update_gui();
-	}
+        }
+        if ($taking_our_time)
+        {
+            $browser->{appbar}->set_progress_percentage(1);
+            $wm->update_gui();
+        }
 
-	$browser->{manifest_browser_treeview}->scroll_to_point(0, 0)
-	    if ($browser->{manifest_browser_treeview}->realized());
+        $browser->{manifest_browser_treeview}->scroll_to_point(0, 0)
+            if ($browser->{manifest_browser_treeview}->realized());
 
-	$browser->{appbar}->set_progress_percentage(0);
-	$browser->{appbar}->set_status("");
-	$wm->update_gui();
+        $browser->{appbar}->set_progress_percentage(0);
+        $browser->{appbar}->set_status("");
+        $wm->update_gui();
 
     }
 
@@ -3242,97 +3242,97 @@ sub update_browser_state($$)
     if ($changed & DISPLAY_OF_FILE)
     {
 
-	# Load up the selected file's contents into the file viewer.
+        # Load up the selected file's contents into the file viewer.
 
-	if (exists($browser->{file_being_viewed}->{manifest_entry}))
-	{
+        if (exists($browser->{file_being_viewed}->{manifest_entry}))
+        {
 
-	    my $manifest_entry =
-		$browser->{file_being_viewed}->{manifest_entry};
+            my $manifest_entry =
+                $browser->{file_being_viewed}->{manifest_entry};
 
-	    # Only do anything if the selected file has changed.
+            # Only do anything if the selected file has changed.
 
-	    if ($browser->{file_displayed_id} ne $manifest_entry->{file_id})
-	    {
+            if ($browser->{file_displayed_id} ne $manifest_entry->{file_id})
+            {
 
-		my ($last_update,
-		    $textual_data);
+                my ($last_update,
+                    $textual_data);
 
-		# Enable the file buttons, keeping the ones relating to text
-		# files disabled, and reset any associated find text window.
+                # Enable the file buttons, keeping the ones relating to text
+                # files disabled, and reset any associated find text window.
 
-		$browser->{file_button_vbox}->set_sensitive(TRUE);
-		foreach my $widget (@{$browser->{text_file_sensitive_group}})
-		{
-		    $widget->set_sensitive(FALSE);
-		}
-		reset_find_text($browser->{file_view_sv});
-		enable_find_text($browser->{file_view_sv}, 0);
+                $browser->{file_button_vbox}->set_sensitive(TRUE);
+                foreach my $widget (@{$browser->{text_file_sensitive_group}})
+                {
+                    $widget->set_sensitive(FALSE);
+                }
+                reset_find_text($browser->{file_view_sv});
+                enable_find_text($browser->{file_view_sv}, 0);
 
-		# Display the selected file's contents.
+                # Display the selected file's contents.
 
-		display_file($browser, \$textual_data);
+                display_file($browser, \$textual_data);
 
-		# If we have just displayed a text file then enable the file
-		# buttons applicable to text files and enable any associated
-		# find text window that may be displayed.
+                # If we have just displayed a text file then enable the file
+                # buttons applicable to text files and enable any associated
+                # find text window that may be displayed.
 
-		if ($textual_data)
-		{
-		    foreach my $widget
-			(@{$browser->{text_file_sensitive_group}})
-		    {
-			$widget->set_sensitive(TRUE);
-		    }
-		    $browser->{annotate_button}->set_sensitive(FALSE)
-			if (defined($browser->{mtn}->get_service_name()));
-		    enable_find_text($browser->{file_view_sv}, 1);
-		}
+                if ($textual_data)
+                {
+                    foreach my $widget
+                        (@{$browser->{text_file_sensitive_group}})
+                    {
+                        $widget->set_sensitive(TRUE);
+                    }
+                    $browser->{annotate_button}->set_sensitive(FALSE)
+                        if (defined($browser->{mtn}->get_service_name()));
+                    enable_find_text($browser->{file_view_sv}, 1);
+                }
 
-		# Update the file details labels.
+                # Update the file details labels.
 
-		if (! exists($manifest_entry->{last_changed_revision}))
-		{
-		    my @revision_ids;
-		    get_revision_ids($browser, \@revision_ids);
-		    cache_extra_file_info($browser->{mtn},
-					  $revision_ids[0],
-					  $manifest_entry);
-		}
-		$last_update = $manifest_entry->{last_update};
-		$last_update =~ s/T/ /;
-		set_label_value($browser->{file_name_value_label},
-				$manifest_entry->{name});
-		set_label_value($browser->{file_author_value_label},
-				$manifest_entry->{author});
-		set_label_value($browser->{last_update_value_label},
-				$last_update);
-		set_label_value($browser->{file_revision_id_value_label},
-				$manifest_entry->{last_changed_revision});
+                if (! exists($manifest_entry->{last_changed_revision}))
+                {
+                    my @revision_ids;
+                    get_revision_ids($browser, \@revision_ids);
+                    cache_extra_file_info($browser->{mtn},
+                                          $revision_ids[0],
+                                          $manifest_entry);
+                }
+                $last_update = $manifest_entry->{last_update};
+                $last_update =~ s/T/ /;
+                set_label_value($browser->{file_name_value_label},
+                                $manifest_entry->{name});
+                set_label_value($browser->{file_author_value_label},
+                                $manifest_entry->{author});
+                set_label_value($browser->{last_update_value_label},
+                                $last_update);
+                set_label_value($browser->{file_revision_id_value_label},
+                                $manifest_entry->{last_changed_revision});
 
-		$browser->{file_displayed_id} = $manifest_entry->{file_id};
+                $browser->{file_displayed_id} = $manifest_entry->{file_id};
 
-	    }
+            }
 
-	}
-	else
-	{
+        }
+        else
+        {
 
-	    # Reset the file view buffer and the associated find text window.
+            # Reset the file view buffer and the associated find text window.
 
-	    $browser->{file_displayed_id} = "";
-	    $browser->{file_button_vbox}->set_sensitive(FALSE);
-	    $browser->{file_view_svbuffer}->
-		place_cursor($browser->{file_view_svbuffer}->get_start_iter());
-	    $browser->{file_view_svbuffer}->set_text("");
-	    $browser->{file_view_svbuffer}->set("highlight", FALSE);
-	    set_label_value($browser->{file_name_value_label}, "");
-	    set_label_value($browser->{file_author_value_label}, "");
-	    set_label_value($browser->{last_update_value_label}, "");
-	    set_label_value($browser->{file_revision_id_value_label}, "");
-	    enable_find_text($browser->{file_view_sv}, 0);
+            $browser->{file_displayed_id} = "";
+            $browser->{file_button_vbox}->set_sensitive(FALSE);
+            $browser->{file_view_svbuffer}->
+                place_cursor($browser->{file_view_svbuffer}->get_start_iter());
+            $browser->{file_view_svbuffer}->set_text("");
+            $browser->{file_view_svbuffer}->set("highlight", FALSE);
+            set_label_value($browser->{file_name_value_label}, "");
+            set_label_value($browser->{file_author_value_label}, "");
+            set_label_value($browser->{last_update_value_label}, "");
+            set_label_value($browser->{file_revision_id_value_label}, "");
+            enable_find_text($browser->{file_view_sv}, 0);
 
-	}
+        }
 
     }
 
@@ -3367,49 +3367,49 @@ sub handle_advanced_find($)
     my $browser = $_[0];
 
     my (@branches,
-	$preset_branch,
-	$revision_id,
-	$state);
+        $preset_branch,
+        $revision_id,
+        $state);
 
     if (advanced_find($browser, \$revision_id, \@branches))
     {
 
-	# Preset branch name. If we already have a selected branch then try and
-	# match branch names, if that fails then just pick the first name.
+        # Preset branch name. If we already have a selected branch then try and
+        # match branch names, if that fails then just pick the first name.
 
-	$preset_branch = 1;
-	$state = BRANCH_CHANGED;
-	if ($browser->{branch_combo_details}->{complete})
-	{
-	    foreach my $name (@branches)
-	    {
-		if ($name eq $browser->{branch_combo_details}->{value})
-		{
-		    $preset_branch = 0;
-		    last;
-		}
-	    }
-	}
-	if ($preset_branch)
-	{
-	    $browser->{branch_combo_details}->{preset} = 1;
-	    $browser->{branch_combo_details}->{value} =
-		(scalar(@branches) > 0) ? $branches[0] : "";
-	    $state = ALL_CHANGED;
-	}
+        $preset_branch = 1;
+        $state = BRANCH_CHANGED;
+        if ($browser->{branch_combo_details}->{complete})
+        {
+            foreach my $name (@branches)
+            {
+                if ($name eq $browser->{branch_combo_details}->{value})
+                {
+                    $preset_branch = 0;
+                    last;
+                }
+            }
+        }
+        if ($preset_branch)
+        {
+            $browser->{branch_combo_details}->{preset} = 1;
+            $browser->{branch_combo_details}->{value} =
+                (scalar(@branches) > 0) ? $branches[0] : "";
+            $state = ALL_CHANGED;
+        }
 
-	# Preset revision id.
+        # Preset revision id.
 
-	$browser->{revision_combo_details}->{preset} = 1;
-	$browser->{revision_combo_details}->{value} = $revision_id;
+        $browser->{revision_combo_details}->{preset} = 1;
+        $browser->{revision_combo_details}->{value} = $revision_id;
 
-	# A revision id is what is returned so switch off the listing of tag
-	# names.
+        # A revision id is what is returned so switch off the listing of tag
+        # names.
 
-	$browser->{tagged_checkbutton}->set_active(FALSE);
+        $browser->{tagged_checkbutton}->set_active(FALSE);
 
-	$browser->{appbar}->clear_stack();
-	&{$browser->{update_handler}}($browser, $state);
+        $browser->{appbar}->clear_stack();
+        &{$browser->{update_handler}}($browser, $state);
 
     }
 
@@ -3438,158 +3438,158 @@ sub display_file($$)
     my ($browser, $textual_data) = @_;
 
     my ($contents,
-	$iter,
-	$lang,
-	$mime_details,
-	$mime_type);
+        $iter,
+        $lang,
+        $mime_details,
+        $mime_type);
 
     $$textual_data = 0;
 
     # Reset the file view buffer.
 
     $browser->{file_view_svbuffer}->
-	place_cursor($browser->{file_view_svbuffer}->get_start_iter());
+        place_cursor($browser->{file_view_svbuffer}->get_start_iter());
     $browser->{file_view_svbuffer}->set_text("");
     $browser->{file_view_svbuffer}->set("highlight", FALSE);
 
     # Get contents.
 
     $browser->{mtn}->get_file(\$contents,
-			      $browser->{file_being_viewed}->{manifest_entry}->
-			          {file_id});
+                              $browser->{file_being_viewed}->{manifest_entry}->
+                                  {file_id});
 
     # Try and work out the MIME type.
 
     determine_mime_type($browser->{file_being_viewed}->{short_name},
-			\$contents,
-			\$mime_type,
-			\$mime_details);
+                        \$contents,
+                        \$mime_type,
+                        \$mime_details);
 
     # Only attempt to render the file's contents if requested to do so.
 
     if (! defined($mime_type)
-	|| (defined($mime_details) && ! $mime_details->{display_internally}))
+        || (defined($mime_details) && ! $mime_details->{display_internally}))
     {
 
-	# The user doesn't want to display this type of file.
+        # The user doesn't want to display this type of file.
 
-	$browser->{file_view_svbuffer}->
-	    set_text("<"
-		     . (defined($mime_type)
-			? $mime_type : __("Unknown Contents"))
-		     . ">");
+        $browser->{file_view_svbuffer}->
+            set_text("<"
+                     . (defined($mime_type)
+                        ? $mime_type : __("Unknown Contents"))
+                     . ">");
 
     }
     else
     {
 
-	# The user wants to display this type of file.
+        # The user wants to display this type of file.
 
-	# Image/non-image data?
+        # Image/non-image data?
 
-	if ($mime_type =~ m/^image\/.+$/)
-	{
+        if ($mime_type =~ m/^image\/.+$/)
+        {
 
-	    # Image data.
+            # Image data.
 
-	    my $exception;
-	    my $loader = Gtk2::Gdk::PixbufLoader->new();
-	    eval
-	    {
-		$loader->write($contents);
-	    };
-	    $exception = $@;
-	    eval
-	    {
-		$loader->close();
-	    };
-	    $exception = $@ if ($@);
-	    if (! $exception)
-	    {
-		$browser->{file_view_svbuffer}->insert_pixbuf
-		    ($browser->{file_view_svbuffer}->get_start_iter(),
-		     $loader->get_pixbuf());
-	    }
-	    else
-	    {
-		$browser->{file_view_svbuffer}->
-		    set_text("<" . $mime_type . ">");
-	    }
+            my $exception;
+            my $loader = Gtk2::Gdk::PixbufLoader->new();
+            eval
+            {
+                $loader->write($contents);
+            };
+            $exception = $@;
+            eval
+            {
+                $loader->close();
+            };
+            $exception = $@ if ($@);
+            if (! $exception)
+            {
+                $browser->{file_view_svbuffer}->insert_pixbuf
+                    ($browser->{file_view_svbuffer}->get_start_iter(),
+                     $loader->get_pixbuf());
+            }
+            else
+            {
+                $browser->{file_view_svbuffer}->
+                    set_text("<" . $mime_type . ">");
+            }
 
-	}
-	else
-	{
+        }
+        else
+        {
 
-	    # Non-image data.
+            # Non-image data.
 
-	    # Binary/text data?
+            # Binary/text data?
 
-	    if (data_is_binary(\$contents))
-	    {
+            if (data_is_binary(\$contents))
+            {
 
-		# Binary data.
+                # Binary data.
 
-		# We have been asked to display this data. The only thing we
-		# can do is to hex dump it out.
+                # We have been asked to display this data. The only thing we
+                # can do is to hex dump it out.
 
-		$browser->{file_view_svbuffer}->
-		    set_text("<" . $mime_type . "> " . __("Hex dump:\n"));
-		$browser->{file_view_svbuffer}->
-		    insert($browser->{file_view_svbuffer}->get_end_iter(),
-			   ${hex_dump(\$contents)});
+                $browser->{file_view_svbuffer}->
+                    set_text("<" . $mime_type . "> " . __("Hex dump:\n"));
+                $browser->{file_view_svbuffer}->
+                    insert($browser->{file_view_svbuffer}->get_end_iter(),
+                           ${hex_dump(\$contents)});
 
-	    }
-	    else
-	    {
+            }
+            else
+            {
 
-		# Text data.
+                # Text data.
 
-		$$textual_data = 1;
+                $$textual_data = 1;
 
-		# Enable syntax highlighting if the user wants it on and it is
-		# available for this type of file.
+                # Enable syntax highlighting if the user wants it on and it is
+                # available for this type of file.
 
-		if ((! defined($mime_details)
-		     || (defined($mime_details)
-			 && $mime_details->{syntax_highlight}))
-		    && defined($lang =
-			       $browser->{file_view_svlangmgr}->
-				   get_language_from_mime_type($mime_type)))
-		{
-		    $browser->{file_view_svbuffer}->set("highlight", TRUE);
-		    $browser->{file_view_svbuffer}->set_language($lang);
-		}
+                if ((! defined($mime_details)
+                     || (defined($mime_details)
+                         && $mime_details->{syntax_highlight}))
+                    && defined($lang =
+                               $browser->{file_view_svlangmgr}->
+                                   get_language_from_mime_type($mime_type)))
+                {
+                    $browser->{file_view_svbuffer}->set("highlight", TRUE);
+                    $browser->{file_view_svbuffer}->set_language($lang);
+                }
 
-		# Load in the contents (ensuring UTF-8 encoding if possible).
+                # Load in the contents (ensuring UTF-8 encoding if possible).
 
-		eval
-		{
-		    $contents =
-			decode($file_encoding, $contents, Encode::FB_CROAK);
-		};
-		$browser->{file_view_svbuffer}->set_text($contents);
+                eval
+                {
+                    $contents =
+                        decode($file_encoding, $contents, Encode::FB_CROAK);
+                };
+                $browser->{file_view_svbuffer}->set_text($contents);
 
-	    }
+            }
 
-	    # Delete the trailing newline.
+            # Delete the trailing newline.
 
-	    $iter = $browser->{file_view_svbuffer}->get_end_iter();
-	    $browser->{file_view_svbuffer}->delete
-		($iter, $browser->{file_view_svbuffer}->get_end_iter())
-		if ($iter->backward_char());
+            $iter = $browser->{file_view_svbuffer}->get_end_iter();
+            $browser->{file_view_svbuffer}->delete
+                ($iter, $browser->{file_view_svbuffer}->get_end_iter())
+                if ($iter->backward_char());
 
-	}
+        }
 
     }
 
     # Scroll back up to the top left.
 
     $browser->{file_view_svbuffer}->
-	place_cursor($browser->{file_view_svbuffer}->get_start_iter());
+        place_cursor($browser->{file_view_svbuffer}->get_start_iter());
     if ($browser->{file_view_scrolledwindow}->realized())
     {
-	$browser->{file_view_scrolledwindow}->get_vadjustment()->set_value(0);
-	$browser->{file_view_scrolledwindow}->get_hadjustment()->set_value(0);
+        $browser->{file_view_scrolledwindow}->get_vadjustment()->set_value(0);
+        $browser->{file_view_scrolledwindow}->get_hadjustment()->set_value(0);
     }
 
 }
@@ -3628,12 +3628,12 @@ sub determine_mime_type($$$$)
 
     foreach my $entry (@$mime_match_table)
     {
-	if ($file_name =~ m/$entry->{re}/)
-	{
-	    $$mime_type = $entry->{details}->{name};
-	    $$mime_details = $entry->{details};
-	    return;
-	}
+        if ($file_name =~ m/$entry->{re}/)
+        {
+            $$mime_type = $entry->{details}->{name};
+            $$mime_details = $entry->{details};
+            return;
+        }
     }
 
     # If that didn't work then try determining the MIME type based upon its
@@ -3646,14 +3646,14 @@ sub determine_mime_type($$$$)
 
     if (defined($$mime_type))
     {
-	foreach my $entry (@{$user_preferences->{mime_table}})
-	{
-	    if ($$mime_type eq $entry->{name})
-	    {
-		$$mime_details = $entry;
-		return;
-	    }
-	}
+        foreach my $entry (@{$user_preferences->{mime_table}})
+        {
+            if ($$mime_type eq $entry->{name})
+            {
+                $$mime_details = $entry;
+                return;
+            }
+        }
     }
 
 }
@@ -3680,18 +3680,18 @@ sub quit_from_gtk2()
     # handlers and then quit out of Gtk2.
 
     WindowManager->instance()->cond_find
-	(undef,
-	 sub {
-	     my $instance = $_[0];
-	     $instance->{window}->hide() if ($instance->{window}->mapped());
-	     $instance->{mtn} = undef if (exists($instance->{mtn}));
-	     if (exists($instance->{cleanup_handler})
-		 && defined($instance->{cleanup_handler}))
-	     {
-		 $instance->{cleanup_handler}($instance);
-	     }
-	     return;
-	 });
+        (undef,
+         sub {
+             my $instance = $_[0];
+             $instance->{window}->hide() if ($instance->{window}->mapped());
+             $instance->{mtn} = undef if (exists($instance->{mtn}));
+             if (exists($instance->{cleanup_handler})
+                 && defined($instance->{cleanup_handler}))
+             {
+                 $instance->{cleanup_handler}($instance);
+             }
+             return;
+         });
     Gtk2->main_quit();
 
 }
@@ -3725,59 +3725,59 @@ sub setup_mtn_object($$)
 
     if ($user_preferences->{show_suspended})
     {
-	if ($mtn->supports(MTN_IGNORING_OF_SUSPEND_CERTS))
-	{
-	    $mtn->ignore_suspend_certs(1);
-	}
-	else
-	{
-	    my $dialog = Gtk2::MessageDialog->
-		new($parent,
-		    ["modal"],
-		    "info",
-		    "close",
-		    __("Your version of Monotone does not support\n"
-		       . "suspend certificates. I will adjusted your\n"
-		       . "preferences accordingly."));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    $user_preferences->{show_suspended} = 0;
-	    $save_prefs = 1;
-	}
+        if ($mtn->supports(MTN_IGNORING_OF_SUSPEND_CERTS))
+        {
+            $mtn->ignore_suspend_certs(1);
+        }
+        else
+        {
+            my $dialog = Gtk2::MessageDialog->
+                new($parent,
+                    ["modal"],
+                    "info",
+                    "close",
+                    __("Your version of Monotone does not support\n"
+                       . "suspend certificates. I will adjusted your\n"
+                       . "preferences accordingly."));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            $user_preferences->{show_suspended} = 0;
+            $save_prefs = 1;
+        }
     }
 
     # Determine whether remote connections to servers are supported.
 
     if (($mtn->supports(MTN_REMOTE_CONNECTIONS)
-	 && ! $user_preferences->{remote_connections})
-	|| (! $mtn->supports(MTN_REMOTE_CONNECTIONS)
-	    && $user_preferences->{remote_connections}))
+         && ! $user_preferences->{remote_connections})
+        || (! $mtn->supports(MTN_REMOTE_CONNECTIONS)
+            && $user_preferences->{remote_connections}))
     {
-	$user_preferences->{remote_connections} =
-	    $mtn->supports(MTN_REMOTE_CONNECTIONS) ? 1 : 0;
-	$save_prefs = 1;
+        $user_preferences->{remote_connections} =
+            $mtn->supports(MTN_REMOTE_CONNECTIONS) ? 1 : 0;
+        $save_prefs = 1;
     }
 
     # Save the user's preferences if they have been changed.
 
     if ($save_prefs)
     {
-	eval
-	{
-	    save_preferences($user_preferences);
-	};
-	if ($@)
-	{
-	    chomp($@);
-	    my $dialog = Gtk2::MessageDialog->new
-		(undef,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __("Your preferences could not be saved:\n") . $@);
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	}
+        eval
+        {
+            save_preferences($user_preferences);
+        };
+        if ($@)
+        {
+            chomp($@);
+            my $dialog = Gtk2::MessageDialog->new
+                (undef,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __("Your preferences could not be saved:\n") . $@);
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+        }
     }
 
 }
@@ -3809,12 +3809,12 @@ sub mtn_db_locked_handler($$)
     my $dialog;
 
     $dialog = Gtk2::MessageDialog->new
-	($parent,
-	 ["modal"],
-	 "info",
-	 "ok",
-	 __("The Monotone database is currently locked, please\n"
-	    . "dismiss this dialog when this is no longer the case."));
+        ($parent,
+         ["modal"],
+         "info",
+         "ok",
+         __("The Monotone database is currently locked, please\n"
+            . "dismiss this dialog when this is no longer the case."));
     busy_dialog_run($dialog);
     $dialog->destroy();
 
@@ -3845,38 +3845,38 @@ sub mtn_error_handler($$)
 
     if ($severity == MTN_SEVERITY_WARNING)
     {
-	if (! $suppress_mtn_warnings)
-	{
-	    $dialog = Gtk2::MessageDialog->new_with_markup
-		(undef,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("Problem with Monotone request, got:\n"
-			 . "<b><i>{error_message}</i></b>\n"
-			 . "This should not be happening!",
-		     error_message => Glib::Markup::escape_text($message)));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    WindowManager->instance()->reset_state();
-	    die($message);
-	}
+        if (! $suppress_mtn_warnings)
+        {
+            $dialog = Gtk2::MessageDialog->new_with_markup
+                (undef,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __x("Problem with Monotone request, got:\n"
+                         . "<b><i>{error_message}</i></b>\n"
+                         . "This should not be happening!",
+                     error_message => Glib::Markup::escape_text($message)));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            WindowManager->instance()->reset_state();
+            die($message);
+        }
     }
     else
     {
-	$dialog = Gtk2::MessageDialog->new_with_markup
-	    (undef,
-	     ["modal"],
-	     "error",
-	     "close",
-	     __x("The Monotone subprocess unexpectedly exited with:\n"
-		     . "<b><i>{error_message}</i></b>\n"
-		     . "This is fatal, I am going to exit.",
-		 error_message => Glib::Markup::escape_text($message)));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	Gtk2->main_quit() unless (Gtk2->main_level() == 0);
-	die($message);
+        $dialog = Gtk2::MessageDialog->new_with_markup
+            (undef,
+             ["modal"],
+             "error",
+             "close",
+             __x("The Monotone subprocess unexpectedly exited with:\n"
+                     . "<b><i>{error_message}</i></b>\n"
+                     . "This is fatal, I am going to exit.",
+                 error_message => Glib::Markup::escape_text($message)));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        Gtk2->main_quit() unless (Gtk2->main_level() == 0);
+        die($message);
     }
 
 }
@@ -3902,55 +3902,55 @@ sub sigchld_handler()
 
     while (($pid = waitpid(-1, WNOHANG)) > 0)
     {
-	my $exit_status = $?;
-	if (WIFEXITED($exit_status) || WIFSIGNALED($exit_status))
-	{
+        my $exit_status = $?;
+        if (WIFEXITED($exit_status) || WIFSIGNALED($exit_status))
+        {
 
-	    # If it is an mtn process then close down the relevant object so
-	    # that it will automatically restart when needed.
+            # If it is an mtn process then close down the relevant object so
+            # that it will automatically restart when needed.
 
-	    $wm->cond_find
-		(undef,
-		 sub {
-		     my $instance = $_[0];
-		     if (exists($instance->{mtn}) && defined($instance->{mtn})
-			 && $instance->{mtn}->get_pid() == $pid)
-		     {
-			 my $message;
-			 $instance->{mtn}->closedown();
-			 if (WIFSIGNALED($exit_status))
-			 {
-			     $message = __x("terminated by signal {number}",
-					    number => WTERMSIG($exit_status));
-			 }
-			 else
-			 {
-			     $message =
-				 __x("exited with status {number}",
-				     number => WEXITSTATUS($exit_status));
-			 }
-			 my $dialog = Gtk2::MessageDialog->new
-			     (undef,
-			      ["modal"],
-			      "warning",
-			      "close",
-			      __x("The Monotone subprocess just unexpectedly\n"
-				      . "exited ({error_message}).\n"
-				      . "This should not be happening!\n"
-				      . "It will be restarted when needed.",
-				  error_message => $message));
-			 busy_dialog_run($dialog);
-			 $dialog->destroy();
-			 $wm->reset_state();
-			 return 1;
-		     }
-		     return;
-		 });
+            $wm->cond_find
+                (undef,
+                 sub {
+                     my $instance = $_[0];
+                     if (exists($instance->{mtn}) && defined($instance->{mtn})
+                         && $instance->{mtn}->get_pid() == $pid)
+                     {
+                         my $message;
+                         $instance->{mtn}->closedown();
+                         if (WIFSIGNALED($exit_status))
+                         {
+                             $message = __x("terminated by signal {number}",
+                                            number => WTERMSIG($exit_status));
+                         }
+                         else
+                         {
+                             $message =
+                                 __x("exited with status {number}",
+                                     number => WEXITSTATUS($exit_status));
+                         }
+                         my $dialog = Gtk2::MessageDialog->new
+                             (undef,
+                              ["modal"],
+                              "warning",
+                              "close",
+                              __x("The Monotone subprocess just unexpectedly\n"
+                                      . "exited ({error_message}).\n"
+                                      . "This should not be happening!\n"
+                                      . "It will be restarted when needed.",
+                                  error_message => $message));
+                         busy_dialog_run($dialog);
+                         $dialog->destroy();
+                         $wm->reset_state();
+                         return 1;
+                     }
+                     return;
+                 });
 
-	}
+        }
     }
     warn(__x("waitpid failed: {error_message}", error_message => $!))
-	if ($pid < 0 && $! != ECHILD);
+        if ($pid < 0 && $! != ECHILD);
 
 }
 #
@@ -3972,7 +3972,7 @@ sub setup_sigchld_handler($)
     my $handler = $_[0];
 
     my ($reader,
-	$writer);
+        $writer);
 
     # Basically set up a SIGCHLD handler that simply writes a character down an
     # anonymous pipe in order to wake up the actual handler that is registered
@@ -3980,14 +3980,14 @@ sub setup_sigchld_handler($)
     # some alternatives.
 
     die(__x("pipe failed: {error_message}", error_message => $!))
-	unless (pipe($reader, $writer));
+        unless (pipe($reader, $writer));
     $SIG{CHLD} = sub { syswrite($writer, "\n", 1); };
     Gtk2::Helper->add_watch(fileno($reader), "in",
-			    sub {
-				my $buffer;
-				sysread($reader, $buffer, 1);
-				&$handler();
-				return 1;
-			    });
+                            sub {
+                                my $buffer;
+                                sysread($reader, $buffer, 1);
+                                &$handler();
+                                return 1;
+                            });
 
 }

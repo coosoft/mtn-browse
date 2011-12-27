@@ -107,10 +107,10 @@ sub new($$$$$$)
     my($owner, $group, $dir_perms, $exec_perms, $nexec_perms) = @_;
 
     my $this = {owner          => $owner,
-		group          => $group,
-		dir_perms      => $dir_perms,
-		exec_perms     => $exec_perms,
-		non_exec_perms => $nexec_perms};
+                group          => $group,
+                dir_perms      => $dir_perms,
+                exec_perms     => $exec_perms,
+                non_exec_perms => $nexec_perms};
     bless($this, $class);
 
     return $this;
@@ -150,7 +150,7 @@ sub install($$$;$)
     # Is the source file readable?
 
     croak("Source file `" . $src_file . "' does not exist or is unreadable")
-	unless (-r $src_file);
+        unless (-r $src_file);
 
     # Deal with the destination directory path.
 
@@ -161,37 +161,37 @@ sub install($$$;$)
     $path = "";
     foreach my $dir (@dirs)
     {
-	$path = File::Spec->catdir($path, $dir);
-	$full_path = File::Spec->catpath($vol, $path, "");
-	if (! -d $full_path)
-	{
-	    mkdir($full_path)
-		or croak ("mkdir " . $full_path . "failed with: " . $!);
-	    chmod($this->{dir_perms}, $full_path)
-		or croak ("chmod " . $full_path . "failed with: " . $!);
-	    chown($this->{owner}, $this->{group}, $full_path);
-	}
+        $path = File::Spec->catdir($path, $dir);
+        $full_path = File::Spec->catpath($vol, $path, "");
+        if (! -d $full_path)
+        {
+            mkdir($full_path)
+                or croak ("mkdir " . $full_path . "failed with: " . $!);
+            chmod($this->{dir_perms}, $full_path)
+                or croak ("chmod " . $full_path . "failed with: " . $!);
+            chown($this->{owner}, $this->{group}, $full_path);
+        }
     }
 
     # Copy the file across.
 
     $full_path = File::Spec->catpath($vol, $path, $file);
     copy($src_file, $full_path)
-	or croak("copy " . $src_file . " " . $full_path . " failed with: "
-		 . $!);
+        or croak("copy " . $src_file . " " . $full_path . " failed with: "
+                 . $!);
     if (! defined($perms))
     {
-	if (-x $src_file)
-	{
-	    $perms = $this->{exec_perms};
-	}
-	else
-	{
-	    $perms = $this->{non_exec_perms};
-	}
+        if (-x $src_file)
+        {
+            $perms = $this->{exec_perms};
+        }
+        else
+        {
+            $perms = $this->{non_exec_perms};
+        }
     }
     chmod($perms, $full_path)
-	or croak ("chmod " . $full_path . "failed with: " . $!);
+        or croak ("chmod " . $full_path . "failed with: " . $!);
     chown($this->{owner}, $this->{group}, $full_path);
 
 }

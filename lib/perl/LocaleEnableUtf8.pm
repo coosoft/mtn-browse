@@ -52,11 +52,11 @@ use warnings;
 BEGIN
 {
     Locale::Messages::bind_textdomain_filter
-	(APPLICATION_NAME,
-	 sub {
-	     my $utf_8 = decode_utf8($_[0]);
-	     return defined($utf_8) ? $utf_8 : $_[0];
-	 });
+        (APPLICATION_NAME,
+         sub {
+             my $utf_8 = decode_utf8($_[0]);
+             return defined($utf_8) ? $utf_8 : $_[0];
+         });
     Locale::Messages::bind_textdomain_codeset(APPLICATION_NAME, "utf-8");
 }
 

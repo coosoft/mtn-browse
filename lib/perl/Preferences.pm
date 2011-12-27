@@ -70,9 +70,9 @@ use warnings;
 # Constants for the columns within the MIME types liststore widget.
 
 use constant MTLS_COLUMN_TYPES    => ("Glib::String",
-				      "Glib::String",
-				      "Glib::String",
-				      "Glib::Scalar");
+                                      "Glib::String",
+                                      "Glib::String",
+                                      "Glib::Scalar");
 use constant MTLS_NAME_COLUMN     => 0;
 use constant MTLS_PATTERNS_COLUMN => 1;
 use constant MTLS_HELPER_COLUMN   => 2;
@@ -195,27 +195,27 @@ sub preferences($)
     my $browser = $_[0];
 
     my ($instance,
-	$preferences);
+        $preferences);
     my $wm = WindowManager->instance();
 
     # Load in the user's preferences.
 
     eval
     {
-	$preferences = load_preferences();
+        $preferences = load_preferences();
     };
     if ($@)
     {
-	chomp($@);
-	my $dialog = Gtk2::MessageDialog->new
-	    ($browser->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __("The preferences dialog cannot be displayed:\n") . $@);
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        chomp($@);
+        my $dialog = Gtk2::MessageDialog->new
+            ($browser->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __("The preferences dialog cannot be displayed:\n") . $@);
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Get the preferences dialog window.
@@ -227,17 +227,17 @@ sub preferences($)
     $wm->make_busy($instance, 1, 1);
     while (! $instance->{done})
     {
-	while (! $instance->{done})
-	{
-	    Gtk2->main_iteration();
-	}
-	if ($instance->{preferences_to_be_saved})
-	{
-	    local $instance->{in_cb} = 1;
-	    save_preferences_from_gui($instance);
-	    $instance->{done} = $instance->{preferences_to_be_saved} =
-		validate_preferences($instance);
-	}
+        while (! $instance->{done})
+        {
+            Gtk2->main_iteration();
+        }
+        if ($instance->{preferences_to_be_saved})
+        {
+            local $instance->{in_cb} = 1;
+            save_preferences_from_gui($instance);
+            $instance->{done} = $instance->{preferences_to_be_saved} =
+                validate_preferences($instance);
+        }
     }
     $wm->make_busy($instance, 0);
     local $instance->{in_cb} = 1;
@@ -247,23 +247,23 @@ sub preferences($)
 
     if ($instance->{preferences_to_be_saved})
     {
-	eval
-	{
-	    save_preferences($preferences);
-	};
-	if ($@)
-	{
-	    chomp($@);
-	    my $dialog = Gtk2::MessageDialog->new
-		($browser->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __("Your preferences could not be saved:\n") . $@);
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
+        eval
+        {
+            save_preferences($preferences);
+        };
+        if ($@)
+        {
+            chomp($@);
+            my $dialog = Gtk2::MessageDialog->new
+                ($browser->{window},
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __("Your preferences could not be saved:\n") . $@);
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
     }
 
     # Cleanup.
@@ -294,8 +294,8 @@ sub load_preferences()
 {
 
     my ($file_name,
-	%preferences,
-	$prefs_file);
+        %preferences,
+        $prefs_file);
 
     # Determine the name of the user's preferences file.
 
@@ -306,25 +306,25 @@ sub load_preferences()
 
     if (-f $file_name)
     {
-	die(__x("open failed: {error_message}\n", error_message => $!))
-	    unless (defined($prefs_file = IO::File->new($file_name, "r")));
-	eval(join("", $prefs_file->getlines()));
-	die(__x("Invalid user preferences file: {error_message}\n",
-		error_message => $@))
-	    if ($@);
-	$prefs_file->close();
-	die(__x("Preferences file, `{file_name}',\n", file_name => $file_name)
-	    . __("is corrupt, please remove it.\n"))
-	    if (! exists($preferences{version})
-		|| $preferences{version} == 0
-		|| $preferences{version} > PREFERENCES_FORMAT_VERSION);
-	upgrade_preferences(\%preferences)
-	    if ($preferences{version} < PREFERENCES_FORMAT_VERSION);
-	return \%preferences;
+        die(__x("open failed: {error_message}\n", error_message => $!))
+            unless (defined($prefs_file = IO::File->new($file_name, "r")));
+        eval(join("", $prefs_file->getlines()));
+        die(__x("Invalid user preferences file: {error_message}\n",
+                error_message => $@))
+            if ($@);
+        $prefs_file->close();
+        die(__x("Preferences file, `{file_name}',\n", file_name => $file_name)
+            . __("is corrupt, please remove it.\n"))
+            if (! exists($preferences{version})
+                || $preferences{version} == 0
+                || $preferences{version} > PREFERENCES_FORMAT_VERSION);
+        upgrade_preferences(\%preferences)
+            if ($preferences{version} < PREFERENCES_FORMAT_VERSION);
+        return \%preferences;
     }
     else
     {
-	return initialise_preferences();
+        return initialise_preferences();
     }
 
 }
@@ -349,7 +349,7 @@ sub save_preferences($)
     my $preferences = $_[0];
 
     my ($file_name,
-	$prefs_file);
+        $prefs_file);
 
     # Determine the name of the user's preferences file.
 
@@ -358,12 +358,12 @@ sub save_preferences($)
     # Write out the preferences record to disk.
 
     die(__x("open failed: {error_message}\n", error_message => $!))
-	unless (defined($prefs_file = IO::File->new($file_name, "w")));
+        unless (defined($prefs_file = IO::File->new($file_name, "w")));
     $prefs_file->print("#\n");
     $prefs_file->
-	print(__("# DO NOT EDIT! This is an automatically generated file.\n"));
+        print(__("# DO NOT EDIT! This is an automatically generated file.\n"));
     $prefs_file->print(__("# Changes to this file may be lost or cause ")
-		       . __("mtn-browse to malfunction.\n"));
+                       . __("mtn-browse to malfunction.\n"));
     $prefs_file->print("#\n");
     $prefs_file->print(Data::Dumper->Dump([$preferences], ["*preferences"]));
     $prefs_file->close();
@@ -393,17 +393,17 @@ sub build_mime_match_table($)
     my $mime_info_table = $_[0];
 
     my ($re_str,
-	@table);
+        @table);
 
     foreach my $entry (@$mime_info_table)
     {
-	foreach my $file_glob (@{$entry->{file_name_patterns}})
-	{
-	    $re_str = file_glob_to_regexp($file_glob);
-	    push(@table,
-		 {re      => qr/$re_str/,
-		  details => $entry});
-	}
+        foreach my $file_glob (@{$entry->{file_name_patterns}})
+        {
+            $re_str = file_glob_to_regexp($file_glob);
+            push(@table,
+                 {re      => qr/$re_str/,
+                  details => $entry});
+        }
     }
 
     return \@table;
@@ -434,8 +434,8 @@ sub defaults_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($defaults,
-	@fields,
-	$page_nr);
+        @fields,
+        $page_nr);
 
     # Save the current preferences, reset the relevant group depending upon
     # what page is currently selected and the reload the preferenes.
@@ -445,35 +445,35 @@ sub defaults_button_clicked_cb($$)
     $page_nr = $instance->{notebook}->get_current_page();
     if ($page_nr == 0)
     {
-	@fields = ("default_mtn_db",
-		   "workspace",
-		   "auto_select_head",
-		   "query",
-		   "history_size",
-		   "static_lists",
-		   "completion_tooltips",
-		   "show_suspended",
-		   "show_file_details",
-		   "folders_come_first",
-		   "show_line_numbers",
-		   "binary_threshold",
-		   "list_search_as_re",
-		   "diffs_application");
+        @fields = ("default_mtn_db",
+                   "workspace",
+                   "auto_select_head",
+                   "query",
+                   "history_size",
+                   "static_lists",
+                   "completion_tooltips",
+                   "show_suspended",
+                   "show_file_details",
+                   "folders_come_first",
+                   "show_line_numbers",
+                   "binary_threshold",
+                   "list_search_as_re",
+                   "diffs_application");
     }
     elsif ($page_nr == 1)
     {
-	@fields = ("fixed_font",
-		   "toolbar_settings",
-		   "coloured_diffs",
-		   "colours");
+        @fields = ("fixed_font",
+                   "toolbar_settings",
+                   "coloured_diffs",
+                   "colours");
     }
     else
     {
-	@fields = ("mime_table");
+        @fields = ("mime_table");
     }
     foreach my $field (@fields)
     {
-	$instance->{preferences}->{$field} = $defaults->{$field};
+        $instance->{preferences}->{$field} = $defaults->{$field};
     }
     load_preferences_into_gui($instance);
 
@@ -505,7 +505,7 @@ sub database_browse_button_clicked_cb($$)
     my $file_name;
 
     $instance->{database_entry}->set_text($file_name)
-	if (open_database($instance->{window}, undef, \$file_name));
+        if (open_database($instance->{window}, undef, \$file_name));
 
 }
 #
@@ -533,54 +533,54 @@ sub mime_types_treeselection_changed_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($entry,
-	$entry_path,
-	@paths);
+        $entry_path,
+        @paths);
 
     # Get the MIME table entry details for the item that was selected.
 
     @paths = $widget->get_selected_rows();
     if (scalar(@paths) > 0)
     {
-	my ($iter,
-	    $model);
-	($model, $iter) = $widget->get_selected();
-	$entry = $model->get($iter, MTLS_ENTRY_COLUMN);
-	$entry_path = $paths[0]->to_string();
+        my ($iter,
+            $model);
+        ($model, $iter) = $widget->get_selected();
+        $entry = $model->get($iter, MTLS_ENTRY_COLUMN);
+        $entry_path = $paths[0]->to_string();
     }
 
     # If the selection has changed then save any changes made and, if
     # necessary, update the liststore before loading in the new entry.
 
     if (defined($instance->{selected_mime_types_entry})
-	&& (! defined($entry)
-	    || $entry != $instance->{selected_mime_types_entry}))
+        && (! defined($entry)
+            || $entry != $instance->{selected_mime_types_entry}))
     {
-	my ($iter,
-	    $new_helper,
-	    $new_patterns,
-	    $old_helper,
-	    $old_patterns);
-	$iter = $instance->{mime_types_liststore}->
-	    get_iter_from_string($instance->{selected_mime_types_path});
-	$old_helper =
-	    $instance->{selected_mime_types_entry}->{helper_application};
-	$old_patterns = $instance->{mime_types_treeview}->get_model()->
-	    get($iter, MTLS_PATTERNS_COLUMN);
-	save_current_mime_types_settings($instance);
-	$new_helper =
-	    $instance->{selected_mime_types_entry}->{helper_application};
-	$new_patterns = join(" ",
-			     @{$instance->{selected_mime_types_entry}->
-			       {file_name_patterns}});
-	if ($old_helper ne $new_helper || $old_patterns ne $new_patterns)
-	{
-	    $instance->{mime_types_liststore}->
-		set($iter,
-		    MTLS_PATTERNS_COLUMN,
-		    $new_patterns,
-		    MTLS_HELPER_COLUMN,
-		    $new_helper);
-	}
+        my ($iter,
+            $new_helper,
+            $new_patterns,
+            $old_helper,
+            $old_patterns);
+        $iter = $instance->{mime_types_liststore}->
+            get_iter_from_string($instance->{selected_mime_types_path});
+        $old_helper =
+            $instance->{selected_mime_types_entry}->{helper_application};
+        $old_patterns = $instance->{mime_types_treeview}->get_model()->
+            get($iter, MTLS_PATTERNS_COLUMN);
+        save_current_mime_types_settings($instance);
+        $new_helper =
+            $instance->{selected_mime_types_entry}->{helper_application};
+        $new_patterns = join(" ",
+                             @{$instance->{selected_mime_types_entry}->
+                               {file_name_patterns}});
+        if ($old_helper ne $new_helper || $old_patterns ne $new_patterns)
+        {
+            $instance->{mime_types_liststore}->
+                set($iter,
+                    MTLS_PATTERNS_COLUMN,
+                    $new_patterns,
+                    MTLS_HELPER_COLUMN,
+                    $new_helper);
+        }
     }
 
     # Load in the newly selected entry.
@@ -615,8 +615,8 @@ sub mime_type_entry_changed_cb($$)
     local $instance->{in_cb} = 1;
 
     $instance->{add_mime_type_button}->set_sensitive
-	((length($instance->{mime_type_entry}->get_text()) > 0) ?
-	 TRUE : FALSE);
+        ((length($instance->{mime_type_entry}->get_text()) > 0) ?
+         TRUE : FALSE);
 
 }
 #
@@ -644,59 +644,59 @@ sub add_mime_type_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($match,
-	$mime_type);
+        $mime_type);
 
     # Check entry to see if it is valid.
 
     $mime_type = $instance->{mime_type_entry}->get_text();
     if ($mime_type !~ m/^[^\/]+\/[^\/]+$/)
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("`{mime_type}' does not\nlook like a valid MIME type.",
-		 mime_type => $mime_type));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("`{mime_type}' does not\nlook like a valid MIME type.",
+                 mime_type => $mime_type));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Now check for duplicate entries.
 
     foreach my $entry (@{$instance->{preferences}->{mime_table}})
     {
-	if ($mime_type eq $entry->{name})
-	{
-	    $match = $entry->{name};
-	    last;
-	}
+        if ($mime_type eq $entry->{name})
+        {
+            $match = $entry->{name};
+            last;
+        }
     }
     if (defined($match))
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("`{mime_type}' is already listed.", mime_type => $mime_type));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("`{mime_type}' is already listed.", mime_type => $mime_type));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Ok so add it to the MIME types list and reload the MIME types treeview.
 
     push(@{$instance->{preferences}->{mime_table}},
-	 {name               => $mime_type,
-	  file_name_patterns => [],
-	  display_internally => 0,
-	  syntax_highlight   => 0,
-	  helper_application => ""});
+         {name               => $mime_type,
+          file_name_patterns => [],
+          display_internally => 0,
+          syntax_highlight   => 0,
+          helper_application => ""});
     @{$instance->{preferences}->{mime_table}} =
-	sort({ $a->{name} cmp $b->{name} }
-	     @{$instance->{preferences}->{mime_table}});
+        sort({ $a->{name} cmp $b->{name} }
+             @{$instance->{preferences}->{mime_table}});
     load_mime_types_page($instance);
 
 }
@@ -731,20 +731,20 @@ sub remove_mime_type_button_clicked_cb($$)
     if (defined($instance->{selected_mime_types_entry}))
     {
 
-	# Locate the file name pattern and remove it from the list.
+        # Locate the file name pattern and remove it from the list.
 
-	for ($i = 0;
-	     $i < scalar(@{$instance->{preferences}->{mime_table}});
-	     ++ $i)
-	{
-	    last if ($instance->{selected_mime_types_entry}->{name}
-		     eq $instance->{preferences}->{mime_table}->[$i]->{name});
-	}
-	splice(@{$instance->{preferences}->{mime_table}}, $i, 1);
+        for ($i = 0;
+             $i < scalar(@{$instance->{preferences}->{mime_table}});
+             ++ $i)
+        {
+            last if ($instance->{selected_mime_types_entry}->{name}
+                     eq $instance->{preferences}->{mime_table}->[$i]->{name});
+        }
+        splice(@{$instance->{preferences}->{mime_table}}, $i, 1);
 
-	# Reload the MIME types list.
+        # Reload the MIME types list.
 
-	load_mime_types_page($instance);
+        load_mime_types_page($instance);
 
     }
 
@@ -777,16 +777,16 @@ sub file_name_patterns_treeselection_changed_cb($$)
 
     if ($widget->count_selected_rows() > 0)
     {
-	my ($iter,
-	    $model);
-	($model, $iter) = $widget->get_selected();
-	$instance->{selected_file_name_pattern} = $model->get($iter, 0);
-	$instance->{remove_file_name_pattern_button}->set_sensitive(TRUE);
+        my ($iter,
+            $model);
+        ($model, $iter) = $widget->get_selected();
+        $instance->{selected_file_name_pattern} = $model->get($iter, 0);
+        $instance->{remove_file_name_pattern_button}->set_sensitive(TRUE);
     }
     else
     {
-	$instance->{selected_file_name_pattern} = undef;
-	$instance->{remove_file_name_pattern_button}->set_sensitive(FALSE);
+        $instance->{selected_file_name_pattern} = undef;
+        $instance->{remove_file_name_pattern_button}->set_sensitive(FALSE);
     }
 
 }
@@ -815,8 +815,8 @@ sub file_name_pattern_entry_changed_cb($$)
     local $instance->{in_cb} = 1;
 
     $instance->{add_file_name_pattern_button}->set_sensitive
-	((length($instance->{file_name_pattern_entry}->get_text()) > 0) ?
-	 TRUE : FALSE);
+        ((length($instance->{file_name_pattern_entry}->get_text()) > 0) ?
+         TRUE : FALSE);
 
 }
 #
@@ -844,8 +844,8 @@ sub add_file_name_pattern_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($match,
-	$pattern,
-	$re_text);
+        $pattern,
+        $re_text);
 
     # Check entry to see if it is valid.
 
@@ -853,54 +853,54 @@ sub add_file_name_pattern_button_clicked_cb($$)
     $re_text = file_glob_to_regexp($pattern);
     eval
     {
-	qr/$re_text/;
+        qr/$re_text/;
     };
     if ($@)
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("`{pattern}' is an invalid\nfile name pattern.",
-		 pattern => $pattern));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("`{pattern}' is an invalid\nfile name pattern.",
+                 pattern => $pattern));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Now check for duplicate entries.
 
     foreach my $entry (@{$instance->{preferences}->{mime_table}})
     {
-	if (grep(/^\Q$pattern\E$/, @{$entry->{file_name_patterns}}) > 0)
-	{
-	    $match = $entry->{name};
-	    last;
-	}
+        if (grep(/^\Q$pattern\E$/, @{$entry->{file_name_patterns}}) > 0)
+        {
+            $match = $entry->{name};
+            last;
+        }
     }
     if (defined($match))
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("`{pattern}' is already used in MIME type\n`{mime_type}'.",
-		 pattern   => $pattern,
-		 mime_type => $match));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("`{pattern}' is already used in MIME type\n`{mime_type}'.",
+                 pattern   => $pattern,
+                 mime_type => $match));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Ok so add it to the file name patterns list and reload the file name
     # patterns treeview.
 
     push(@{$instance->{selected_mime_types_entry}->{file_name_patterns}},
-	 $pattern);
+         $pattern);
     @{$instance->{selected_mime_types_entry}->{file_name_patterns}} =
-	sort(@{$instance->{selected_mime_types_entry}->{file_name_patterns}});
+        sort(@{$instance->{selected_mime_types_entry}->{file_name_patterns}});
     load_file_name_patterns_treeview($instance);
 
 }
@@ -935,25 +935,25 @@ sub remove_file_name_pattern_button_clicked_cb($$)
     if (defined($instance->{selected_file_name_pattern}))
     {
 
-	# Locate the file name pattern and remove it from the list.
+        # Locate the file name pattern and remove it from the list.
 
-	for ($i = 0;
-	     $i < scalar(@{$instance->{selected_mime_types_entry}->
-			   {file_name_patterns}});
-	     ++ $i)
-	{
-	    last if ($instance->{selected_mime_types_entry}->
-		         {file_name_patterns}->[$i]
-		     eq $instance->{selected_file_name_pattern});
-	}
-	splice(@{$instance->{selected_mime_types_entry}->{file_name_patterns}},
-	       $i,
-	       1);
+        for ($i = 0;
+             $i < scalar(@{$instance->{selected_mime_types_entry}->
+                           {file_name_patterns}});
+             ++ $i)
+        {
+            last if ($instance->{selected_mime_types_entry}->
+                         {file_name_patterns}->[$i]
+                     eq $instance->{selected_file_name_pattern});
+        }
+        splice(@{$instance->{selected_mime_types_entry}->{file_name_patterns}},
+               $i,
+               1);
 
-	# Reload the file name patterns list.
+        # Reload the file name patterns list.
 
-	load_file_name_patterns_treeview($instance);
-	$instance->{remove_file_name_pattern_button}->set_sensitive(FALSE);
+        load_file_name_patterns_treeview($instance);
+        $instance->{remove_file_name_pattern_button}->set_sensitive(FALSE);
 
     }
 
@@ -993,277 +993,277 @@ sub get_preferences_window($$)
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my ($glade,
-	    $renderer,
-	    $tv_column);
+        my ($glade,
+            $renderer,
+            $tv_column);
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("notebook",
-			    "ok_button",
-			    "cancel_button",
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("notebook",
+                            "ok_button",
+                            "cancel_button",
 
-			    # General pane widgets.
+                            # General pane widgets.
 
-			    "database_entry",
-			    "database_browse_button",
-			    "precedence_checkbutton",
-			    "auto_select_checkbutton",
-			    "auto_select_head_checkbutton",
-			    "tagged_lists_limit_spinbutton",
-			    "tagged_lists_sort_chronologically_radiobutton",
-			    "tagged_lists_sort_by_name_radiobutton",
-			    "id_lists_limit_spinbutton",
-			    "id_lists_sort_chronologically_radiobutton",
-			    "id_lists_sort_by_id_radiobutton",
-			    "history_size_spinbutton",
-			    "static_lists_checkbutton",
-			    "show_tooltips_checkbutton",
-			    "show_suspended_revisions_checkbutton",
-			    "detailed_file_listing_checkbutton",
-			    "folders_come_first_checkbutton",
-			    "show_line_numbers_checkbutton",
-			    "binary_threshold_spinbutton",
-			    "search_as_regular_expression_checkbutton",
-			    "external_diffs_app_entry",
+                            "database_entry",
+                            "database_browse_button",
+                            "precedence_checkbutton",
+                            "auto_select_checkbutton",
+                            "auto_select_head_checkbutton",
+                            "tagged_lists_limit_spinbutton",
+                            "tagged_lists_sort_chronologically_radiobutton",
+                            "tagged_lists_sort_by_name_radiobutton",
+                            "id_lists_limit_spinbutton",
+                            "id_lists_sort_chronologically_radiobutton",
+                            "id_lists_sort_by_id_radiobutton",
+                            "history_size_spinbutton",
+                            "static_lists_checkbutton",
+                            "show_tooltips_checkbutton",
+                            "show_suspended_revisions_checkbutton",
+                            "detailed_file_listing_checkbutton",
+                            "folders_come_first_checkbutton",
+                            "show_line_numbers_checkbutton",
+                            "binary_threshold_spinbutton",
+                            "search_as_regular_expression_checkbutton",
+                            "external_diffs_app_entry",
 
-			    # Appearance pane widgets.
+                            # Appearance pane widgets.
 
-			    "fonts_fontbutton",
-			    "hide_text_checkbutton",
-			    "fixed_checkbutton",
-			    "comparison_pretty_print_checkbutton",
-			    "annotation_prefix_1_foreground_colorbutton",
-			    "annotation_prefix_1_background_colorbutton",
-			    "annotation_text_1_foreground_colorbutton",
-			    "annotation_text_1_background_colorbutton",
-			    "annotation_prefix_2_foreground_colorbutton",
-			    "annotation_prefix_2_background_colorbutton",
-			    "annotation_text_2_foreground_colorbutton",
-			    "annotation_text_2_background_colorbutton",
-			    "revision_1_foreground_colorbutton",
-			    "revision_1_background_colorbutton",
-			    "revision_1_highlight_colorbutton",
-			    "revision_2_foreground_colorbutton",
-			    "revision_2_background_colorbutton",
-			    "revision_2_highlight_colorbutton",
+                            "fonts_fontbutton",
+                            "hide_text_checkbutton",
+                            "fixed_checkbutton",
+                            "comparison_pretty_print_checkbutton",
+                            "annotation_prefix_1_foreground_colorbutton",
+                            "annotation_prefix_1_background_colorbutton",
+                            "annotation_text_1_foreground_colorbutton",
+                            "annotation_text_1_background_colorbutton",
+                            "annotation_prefix_2_foreground_colorbutton",
+                            "annotation_prefix_2_background_colorbutton",
+                            "annotation_text_2_foreground_colorbutton",
+                            "annotation_text_2_background_colorbutton",
+                            "revision_1_foreground_colorbutton",
+                            "revision_1_background_colorbutton",
+                            "revision_1_highlight_colorbutton",
+                            "revision_2_foreground_colorbutton",
+                            "revision_2_background_colorbutton",
+                            "revision_2_highlight_colorbutton",
 
-			    # MIME Types pane widgets.
+                            # MIME Types pane widgets.
 
-			    "mime_types_hpaned",
-			    "mime_types_treeview",
-			    "mime_type_entry",
-			    "add_mime_type_button",
-			    "remove_mime_type_button",
-			    "file_name_patterns_treeview",
-			    "file_name_pattern_entry",
-			    "add_file_name_pattern_button",
-			    "remove_file_name_pattern_button",
-			    "display_internally_checkbutton",
-			    "syntax_highlight_checkbutton",
-			    "helper_application_entry")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
-	$instance->{mime_type_sensitivity_list} =
-	    [$glade->get_widget("file_name_patterns_label"),
-	     $glade->get_widget("file_name_pattern_entry"),
-	     $glade->get_widget("file_actions_frame")];
+                            "mime_types_hpaned",
+                            "mime_types_treeview",
+                            "mime_type_entry",
+                            "add_mime_type_button",
+                            "remove_mime_type_button",
+                            "file_name_patterns_treeview",
+                            "file_name_pattern_entry",
+                            "add_file_name_pattern_button",
+                            "remove_file_name_pattern_button",
+                            "display_internally_checkbutton",
+                            "syntax_highlight_checkbutton",
+                            "helper_application_entry")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
+        $instance->{mime_type_sensitivity_list} =
+            [$glade->get_widget("file_name_patterns_label"),
+             $glade->get_widget("file_name_pattern_entry"),
+             $glade->get_widget("file_actions_frame")];
 
-	# Setup the preferences window deletion handlers.
+        # Setup the preferences window deletion handlers.
 
-	$instance->{window}->signal_connect
-	    ("delete_event",
-	     sub { $_[2]->{done} = 1 unless ($_[2]->{in_cb}); return TRUE; },
-	     $instance);
-	$glade->get_widget("cancel_button")->signal_connect
-	    ("clicked",
-	     sub { $_[1]->{done} = 1 unless ($_[1]->{in_cb}); },
-	     $instance);
-	$glade->get_widget("ok_button")->signal_connect
-	    ("clicked",
-	     sub { $_[1]->{done} = $_[1]->{preferences_to_be_saved} = 1
-		       unless ($_[1]->{in_cb}); },
-	     $instance);
+        $instance->{window}->signal_connect
+            ("delete_event",
+             sub { $_[2]->{done} = 1 unless ($_[2]->{in_cb}); return TRUE; },
+             $instance);
+        $glade->get_widget("cancel_button")->signal_connect
+            ("clicked",
+             sub { $_[1]->{done} = 1 unless ($_[1]->{in_cb}); },
+             $instance);
+        $glade->get_widget("ok_button")->signal_connect
+            ("clicked",
+             sub { $_[1]->{done} = $_[1]->{preferences_to_be_saved} = 1
+                       unless ($_[1]->{in_cb}); },
+             $instance);
 
-	# Setup the MIME types list.
+        # Setup the MIME types list.
 
-	$instance->{mime_types_liststore} =
-	    Gtk2::ListStore->new(MTLS_COLUMN_TYPES);
-	$instance->{mime_types_treeview}->
-	    set_model($instance->{mime_types_liststore});
+        $instance->{mime_types_liststore} =
+            Gtk2::ListStore->new(MTLS_COLUMN_TYPES);
+        $instance->{mime_types_treeview}->
+            set_model($instance->{mime_types_liststore});
 
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$tv_column->set_title(__("MIME Type"));
-	$tv_column->set_resizable(TRUE);
-	$tv_column->set_sizing("grow-only");
-	$tv_column->set_sort_column_id(MTLS_NAME_COLUMN);
-	$renderer = Gtk2::CellRendererText->new();
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "text" => MTLS_NAME_COLUMN);
-	$instance->{mime_types_treeview}->append_column($tv_column);
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $tv_column->set_title(__("MIME Type"));
+        $tv_column->set_resizable(TRUE);
+        $tv_column->set_sizing("grow-only");
+        $tv_column->set_sort_column_id(MTLS_NAME_COLUMN);
+        $renderer = Gtk2::CellRendererText->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "text" => MTLS_NAME_COLUMN);
+        $instance->{mime_types_treeview}->append_column($tv_column);
 
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$tv_column->set_title(__("File Name Patterns"));
-	$tv_column->set_resizable(TRUE);
-	$tv_column->set_sizing("grow-only");
-	$tv_column->set_sort_column_id(MTLS_PATTERNS_COLUMN);
-	$renderer = Gtk2::CellRendererText->new();
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "text" => MTLS_PATTERNS_COLUMN);
-	$instance->{mime_types_treeview}->append_column($tv_column);
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $tv_column->set_title(__("File Name Patterns"));
+        $tv_column->set_resizable(TRUE);
+        $tv_column->set_sizing("grow-only");
+        $tv_column->set_sort_column_id(MTLS_PATTERNS_COLUMN);
+        $renderer = Gtk2::CellRendererText->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "text" => MTLS_PATTERNS_COLUMN);
+        $instance->{mime_types_treeview}->append_column($tv_column);
 
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$tv_column->set_title(__("Helper Application"));
-	$tv_column->set_resizable(TRUE);
-	$tv_column->set_sizing("grow-only");
-	$tv_column->set_sort_column_id(MTLS_HELPER_COLUMN);
-	$renderer = Gtk2::CellRendererText->new();
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "text" => MTLS_HELPER_COLUMN);
-	$instance->{mime_types_treeview}->append_column($tv_column);
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $tv_column->set_title(__("Helper Application"));
+        $tv_column->set_resizable(TRUE);
+        $tv_column->set_sizing("grow-only");
+        $tv_column->set_sort_column_id(MTLS_HELPER_COLUMN);
+        $renderer = Gtk2::CellRendererText->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "text" => MTLS_HELPER_COLUMN);
+        $instance->{mime_types_treeview}->append_column($tv_column);
 
-	treeview_setup_search_column_selection
-	    ($instance->{mime_types_treeview}, 0 .. 2);
-	$instance->{mime_types_treeview}->set_search_column(MTLS_NAME_COLUMN);
-	$instance->{mime_types_treeview}->
-	    set_search_equal_func(\&treeview_column_searcher);
+        treeview_setup_search_column_selection
+            ($instance->{mime_types_treeview}, 0 .. 2);
+        $instance->{mime_types_treeview}->set_search_column(MTLS_NAME_COLUMN);
+        $instance->{mime_types_treeview}->
+            set_search_equal_func(\&treeview_column_searcher);
 
-	$instance->{mime_types_treeview}->get_selection()->
-	    signal_connect("changed",
-			   \&mime_types_treeselection_changed_cb,
-			   $instance);
+        $instance->{mime_types_treeview}->get_selection()->
+            signal_connect("changed",
+                           \&mime_types_treeselection_changed_cb,
+                           $instance);
 
-	# Find all of the re-ordering treeview header buttons on the MIME types
-	# treeview and add a clicked callback so we can update any selection
-	# path when the order changes.
+        # Find all of the re-ordering treeview header buttons on the MIME types
+        # treeview and add a clicked callback so we can update any selection
+        # path when the order changes.
 
-	foreach my $col_nr (0 .. 2)
-	{
+        foreach my $col_nr (0 .. 2)
+        {
 
-	    my ($button,
-		$col);
+            my ($button,
+                $col);
 
-	    next unless (defined($col = $instance->{mime_types_treeview}->
-				 get_column($col_nr)));
+            next unless (defined($col = $instance->{mime_types_treeview}->
+                                 get_column($col_nr)));
 
-	    # Find the header button widget.
+            # Find the header button widget.
 
-	    for ($button = $col->get_widget();
-		 defined($button) && ! $button->isa("Gtk2::Button");
-		 $button = $button->get_parent())
-	    {
-	    }
-	    next unless (defined($button));
+            for ($button = $col->get_widget();
+                 defined($button) && ! $button->isa("Gtk2::Button");
+                 $button = $button->get_parent())
+            {
+            }
+            next unless (defined($button));
 
-	    # Attach the selection change tracking callback.
+            # Attach the selection change tracking callback.
 
-	    $button->signal_connect
-		("clicked",
-		 sub {
-		     my ($widget, $instance) = @_;
-		     return if ($instance->{in_cb});
-		     local $instance->{in_cb} = 1;
-		     my @paths;
-		     @paths = $instance->{mime_types_treeview}->
-			 get_selection()->get_selected_rows();
-		     if (scalar(@paths) > 0)
-		     {
-			 $instance->{selected_mime_types_path} =
-			     $paths[0]->to_string();
-		     }
-		 },
-		 $instance);
+            $button->signal_connect
+                ("clicked",
+                 sub {
+                     my ($widget, $instance) = @_;
+                     return if ($instance->{in_cb});
+                     local $instance->{in_cb} = 1;
+                     my @paths;
+                     @paths = $instance->{mime_types_treeview}->
+                         get_selection()->get_selected_rows();
+                     if (scalar(@paths) > 0)
+                     {
+                         $instance->{selected_mime_types_path} =
+                             $paths[0]->to_string();
+                     }
+                 },
+                 $instance);
 
-	}
+        }
 
-	# Setup the file name patterns list.
+        # Setup the file name patterns list.
 
-	$instance->{file_name_patterns_liststore} =
-	    Gtk2::ListStore->new("Glib::String");
-	$instance->{file_name_patterns_treeview}->
-	    set_model($instance->{file_name_patterns_liststore});
+        $instance->{file_name_patterns_liststore} =
+            Gtk2::ListStore->new("Glib::String");
+        $instance->{file_name_patterns_treeview}->
+            set_model($instance->{file_name_patterns_liststore});
 
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$tv_column->set_sizing("grow-only");
-	$renderer = Gtk2::CellRendererText->new();
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "text" => 0);
-	$instance->{file_name_patterns_treeview}->append_column($tv_column);
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $tv_column->set_sizing("grow-only");
+        $renderer = Gtk2::CellRendererText->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "text" => 0);
+        $instance->{file_name_patterns_treeview}->append_column($tv_column);
 
-	$instance->{file_name_patterns_treeview}->set_search_column(0);
-	$instance->{file_name_patterns_treeview}->
-	    set_search_equal_func(\&treeview_column_searcher);
+        $instance->{file_name_patterns_treeview}->set_search_column(0);
+        $instance->{file_name_patterns_treeview}->
+            set_search_equal_func(\&treeview_column_searcher);
 
-	$instance->{file_name_patterns_treeview}->get_selection()->
-	    signal_connect("changed",
-			   \&file_name_patterns_treeselection_changed_cb,
-			   $instance);
+        $instance->{file_name_patterns_treeview}->get_selection()->
+            signal_connect("changed",
+                           \&file_name_patterns_treeselection_changed_cb,
+                           $instance);
 
-	# Reparent the preferences window to the specified parent.
+        # Reparent the preferences window to the specified parent.
 
-	$instance->{window}->set_transient_for($parent);
+        $instance->{window}->set_transient_for($parent);
 
-	# Load in the preferences.
+        # Load in the preferences.
 
-	$instance->{preferences} = $preferences;
-	load_preferences_into_gui($instance);
+        $instance->{preferences} = $preferences;
+        load_preferences_into_gui($instance);
 
-	# Display the window.
+        # Display the window.
 
-	$instance->{window}->show_all();
-	$instance->{window}->present();
+        $instance->{window}->show_all();
+        $instance->{window}->present();
 
-	# Register the window for management and set up the help callbacks.
+        # Register the window for management and set up the help callbacks.
 
-	$wm->manage($instance, $window_type, $instance->{window});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => undef,
-	      help_ref => __("mtnb-upc-the-preferences-dialog-window")});
+        $wm->manage($instance, $window_type, $instance->{window});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => undef,
+              help_ref => __("mtnb-upc-the-preferences-dialog-window")});
 
     }
     else
     {
 
-	my ($height,
-	    $width);
+        my ($height,
+            $width);
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Reset the preferences dialog's state.
+        # Reset the preferences dialog's state.
 
-	($width, $height) = $instance->{window}->get_default_size();
-	$instance->{window}->resize($width, $height);
-	$instance->{mime_types_hpaned}->set_position(700);
-	$instance->{window}->set_transient_for($parent);
-	$instance->{mime_types_liststore}->clear();
-	$instance->{mime_types_liststore} =
-	    Gtk2::ListStore->new(MTLS_COLUMN_TYPES);
-	$instance->{mime_types_treeview}->
-	    set_model($instance->{mime_types_liststore});
-	$instance->{mime_types_treeview}->set_search_column(MTLS_NAME_COLUMN);
-	$instance->{preferences} = $preferences;
-	load_preferences_into_gui($instance);
-	$instance->{window}->show_all();
-	$instance->{window}->present();
+        ($width, $height) = $instance->{window}->get_default_size();
+        $instance->{window}->resize($width, $height);
+        $instance->{mime_types_hpaned}->set_position(700);
+        $instance->{window}->set_transient_for($parent);
+        $instance->{mime_types_liststore}->clear();
+        $instance->{mime_types_liststore} =
+            Gtk2::ListStore->new(MTLS_COLUMN_TYPES);
+        $instance->{mime_types_treeview}->
+            set_model($instance->{mime_types_liststore});
+        $instance->{mime_types_treeview}->set_search_column(MTLS_NAME_COLUMN);
+        $instance->{preferences} = $preferences;
+        load_preferences_into_gui($instance);
+        $instance->{window}->show_all();
+        $instance->{window}->present();
 
     }
 
@@ -1298,95 +1298,95 @@ sub load_preferences_into_gui($)
     # Do the general page.
 
     $instance->{database_entry}->
-	set_text($instance->{preferences}->{default_mtn_db});
+        set_text($instance->{preferences}->{default_mtn_db});
     $instance->{precedence_checkbutton}->
-	set_active($instance->{preferences}->{workspace}->{takes_precedence} ?
-		   TRUE : FALSE);
+        set_active($instance->{preferences}->{workspace}->{takes_precedence} ?
+                   TRUE : FALSE);
     $instance->{auto_select_checkbutton}->
-	set_active($instance->{preferences}->{workspace}->{auto_select} ?
-		   TRUE : FALSE);
+        set_active($instance->{preferences}->{workspace}->{auto_select} ?
+                   TRUE : FALSE);
     $instance->{auto_select_head_checkbutton}->
-	set_active($instance->{preferences}->{auto_select_head} ?
-		   TRUE : FALSE);
+        set_active($instance->{preferences}->{auto_select_head} ?
+                   TRUE : FALSE);
     $instance->{tagged_lists_limit_spinbutton}->
-	set_value($instance->{preferences}->{query}->{tagged}->{limit});
+        set_value($instance->{preferences}->{query}->{tagged}->{limit});
     if ($instance->{preferences}->{query}->{tagged}->{sort_chronologically})
     {
-	$instance->{tagged_lists_sort_chronologically_radiobutton}->
-	    set_active(TRUE);
+        $instance->{tagged_lists_sort_chronologically_radiobutton}->
+            set_active(TRUE);
     }
     else
     {
-	$instance->{tagged_lists_sort_by_name_radiobutton}->set_active(TRUE);
+        $instance->{tagged_lists_sort_by_name_radiobutton}->set_active(TRUE);
     }
     $instance->{id_lists_limit_spinbutton}->
-	set_value($instance->{preferences}->{query}->{id}->{limit});
+        set_value($instance->{preferences}->{query}->{id}->{limit});
     if ($instance->{preferences}->{query}->{id}->{sort_chronologically})
     {
-	$instance->{id_lists_sort_chronologically_radiobutton}->
-	    set_active(TRUE);
+        $instance->{id_lists_sort_chronologically_radiobutton}->
+            set_active(TRUE);
     }
     else
     {
-	$instance->{id_lists_sort_by_id_radiobutton}->set_active(TRUE);
+        $instance->{id_lists_sort_by_id_radiobutton}->set_active(TRUE);
     }
     $instance->{history_size_spinbutton}->
-	set_value($instance->{preferences}->{history_size});
+        set_value($instance->{preferences}->{history_size});
     $instance->{static_lists_checkbutton}->
-	set_active($instance->{preferences}->{static_lists} ? TRUE : FALSE);
+        set_active($instance->{preferences}->{static_lists} ? TRUE : FALSE);
     $instance->{show_tooltips_checkbutton}->
-	set_active($instance->{preferences}->{completion_tooltips} ?
-		   TRUE : FALSE);
+        set_active($instance->{preferences}->{completion_tooltips} ?
+                   TRUE : FALSE);
     $instance->{show_suspended_revisions_checkbutton}->
-	set_active($instance->{preferences}->{show_suspended} ? TRUE : FALSE);
+        set_active($instance->{preferences}->{show_suspended} ? TRUE : FALSE);
     $instance->{detailed_file_listing_checkbutton}->
-	set_active($instance->{preferences}->{show_file_details} ?
-		   TRUE : FALSE);
+        set_active($instance->{preferences}->{show_file_details} ?
+                   TRUE : FALSE);
     $instance->{folders_come_first_checkbutton}->
-	set_active($instance->{preferences}->{folders_come_first} ?
-		   TRUE : FALSE);
+        set_active($instance->{preferences}->{folders_come_first} ?
+                   TRUE : FALSE);
     $instance->{show_line_numbers_checkbutton}->
-	set_active($instance->{preferences}->{show_line_numbers} ?
-		   TRUE : FALSE);
+        set_active($instance->{preferences}->{show_line_numbers} ?
+                   TRUE : FALSE);
     $instance->{binary_threshold_spinbutton}->
-	set_value($instance->{preferences}->{binary_threshold});
+        set_value($instance->{preferences}->{binary_threshold});
     $instance->{search_as_regular_expression_checkbutton}->
-	set_active($instance->{preferences}->{list_search_as_re} ?
-		   TRUE : FALSE);
+        set_active($instance->{preferences}->{list_search_as_re} ?
+                   TRUE : FALSE);
     $instance->{external_diffs_app_entry}->
-	set_text($instance->{preferences}->{diffs_application});
+        set_text($instance->{preferences}->{diffs_application});
 
     # Do the appearance page.
 
     $instance->{fonts_fontbutton}->
-	set_font_name($instance->{preferences}->{fixed_font});
+        set_font_name($instance->{preferences}->{fixed_font});
     $instance->{hide_text_checkbutton}->
-	set_active($instance->{preferences}->{toolbar_settings}->{hide_text}
-		   ? TRUE : FALSE);
+        set_active($instance->{preferences}->{toolbar_settings}->{hide_text}
+                   ? TRUE : FALSE);
     $instance->{fixed_checkbutton}->
-	set_active($instance->{preferences}->{toolbar_settings}->{fixed}
-		   ? TRUE : FALSE);
+        set_active($instance->{preferences}->{toolbar_settings}->{fixed}
+                   ? TRUE : FALSE);
     $instance->{comparison_pretty_print_checkbutton}->
-	set_active($instance->{preferences}->{coloured_diffs} ? TRUE : FALSE);
+        set_active($instance->{preferences}->{coloured_diffs} ? TRUE : FALSE);
     foreach my $item (@colour_mapping_table)
     {
-	my $field;
-	if ($item->{widget} =~ m/foreground/)
-	{
-	    $field = "fg";
-	}
-	elsif ($item->{widget} =~ m/background/)
-	{
-	    $field = "bg";
-	}
-	else
-	{
-	    $field = "hl";
-	}
-	$instance->{$item->{widget}}->
-	    set_color(Gtk2::Gdk::Color->parse($instance->{preferences}->
-					      {colours}->{$item->{record}}->
-					      {$field}));
+        my $field;
+        if ($item->{widget} =~ m/foreground/)
+        {
+            $field = "fg";
+        }
+        elsif ($item->{widget} =~ m/background/)
+        {
+            $field = "bg";
+        }
+        else
+        {
+            $field = "hl";
+        }
+        $instance->{$item->{widget}}->
+            set_color(Gtk2::Gdk::Color->parse($instance->{preferences}->
+                                              {colours}->{$item->{record}}->
+                                              {$field}));
     }
 
     # Do the MIME types page.
@@ -1416,16 +1416,16 @@ sub load_mime_types_page($)
     $instance->{mime_types_liststore}->clear();
     foreach my $entry (@{$instance->{preferences}->{mime_table}})
     {
-	$instance->{mime_types_liststore}->
-	    set($instance->{mime_types_liststore}->append(),
-		MTLS_NAME_COLUMN, $entry->{name},
-		MTLS_PATTERNS_COLUMN, join(" ",
-					   @{$entry->{file_name_patterns}}),
-		MTLS_HELPER_COLUMN, $entry->{helper_application},
-		MTLS_ENTRY_COLUMN, $entry);
+        $instance->{mime_types_liststore}->
+            set($instance->{mime_types_liststore}->append(),
+                MTLS_NAME_COLUMN, $entry->{name},
+                MTLS_PATTERNS_COLUMN, join(" ",
+                                           @{$entry->{file_name_patterns}}),
+                MTLS_HELPER_COLUMN, $entry->{helper_application},
+                MTLS_ENTRY_COLUMN, $entry);
     }
     $instance->{mime_types_treeview}->scroll_to_point(0, 0)
-	if ($instance->{mime_types_treeview}->realized());
+        if ($instance->{mime_types_treeview}->realized());
     $instance->{mime_type_entry}->set_text("");
     $instance->{add_mime_type_button}->set_sensitive(FALSE);
     $instance->{selected_mime_types_entry} = undef;
@@ -1456,15 +1456,15 @@ sub load_file_name_patterns_treeview($)
 
     $instance->{file_name_patterns_liststore}->clear();
     foreach my $pattern (@{$instance->{selected_mime_types_entry}->
-			   {file_name_patterns}})
+                           {file_name_patterns}})
     {
-	$instance->{file_name_patterns_liststore}->
-	    set($instance->{file_name_patterns_liststore}->append(),
-		0,
-		$pattern);
+        $instance->{file_name_patterns_liststore}->
+            set($instance->{file_name_patterns_liststore}->append(),
+                0,
+                $pattern);
     }
     $instance->{file_name_patterns_treeview}->scroll_to_point(0, 0)
-	if ($instance->{file_name_patterns_treeview}->realized());
+        if ($instance->{file_name_patterns_treeview}->realized());
 
 }
 #
@@ -1496,77 +1496,77 @@ sub save_preferences_from_gui($)
     # Do the general page.
 
     $instance->{preferences}->{default_mtn_db} =
-	$instance->{database_entry}->get_text();
+        $instance->{database_entry}->get_text();
     $instance->{preferences}->{workspace}->{takes_precedence} =
-	$instance->{precedence_checkbutton}->get_active() ? 1 : 0;
+        $instance->{precedence_checkbutton}->get_active() ? 1 : 0;
     $instance->{preferences}->{workspace}->{auto_select} =
-	$instance->{auto_select_checkbutton}->get_active() ? 1 : 0;
+        $instance->{auto_select_checkbutton}->get_active() ? 1 : 0;
     $instance->{preferences}->{auto_select_head} =
-	$instance->{auto_select_head_checkbutton}->get_active() ? 1 : 0;
+        $instance->{auto_select_head_checkbutton}->get_active() ? 1 : 0;
     $instance->{tagged_lists_limit_spinbutton}->update();
     $instance->{preferences}->{query}->{tagged}->{limit} =
-	$instance->{tagged_lists_limit_spinbutton}->get_value_as_int();
+        $instance->{tagged_lists_limit_spinbutton}->get_value_as_int();
     $instance->{preferences}->{query}->{tagged}->{sort_chronologically} =
-	$instance->{tagged_lists_sort_chronologically_radiobutton}->
-	get_active() ? 1 : 0;
+        $instance->{tagged_lists_sort_chronologically_radiobutton}->
+        get_active() ? 1 : 0;
     $instance->{id_lists_limit_spinbutton}->update();
     $instance->{preferences}->{query}->{id}->{limit} =
-	$instance->{id_lists_limit_spinbutton}->get_value_as_int();
+        $instance->{id_lists_limit_spinbutton}->get_value_as_int();
     $instance->{preferences}->{query}->{id}->{sort_chronologically} =
-	$instance->{id_lists_sort_chronologically_radiobutton}->get_active() ?
-	1 : 0;
+        $instance->{id_lists_sort_chronologically_radiobutton}->get_active() ?
+        1 : 0;
     $instance->{history_size_spinbutton}->update();
     $instance->{preferences}->{history_size} =
-	$instance->{history_size_spinbutton}->get_value_as_int();
+        $instance->{history_size_spinbutton}->get_value_as_int();
     $instance->{preferences}->{static_lists} =
-	$instance->{static_lists_checkbutton}->get_active() ? 1 : 0;
+        $instance->{static_lists_checkbutton}->get_active() ? 1 : 0;
     $instance->{preferences}->{completion_tooltips} =
-	$instance->{show_tooltips_checkbutton}->get_active() ? 1 : 0;
+        $instance->{show_tooltips_checkbutton}->get_active() ? 1 : 0;
     $instance->{preferences}->{show_suspended} =
-	$instance->{show_suspended_revisions_checkbutton}->get_active() ?
-	1 : 0;
+        $instance->{show_suspended_revisions_checkbutton}->get_active() ?
+        1 : 0;
     $instance->{preferences}->{show_file_details} =
-	$instance->{detailed_file_listing_checkbutton}->get_active() ? 1 : 0;
+        $instance->{detailed_file_listing_checkbutton}->get_active() ? 1 : 0;
     $instance->{preferences}->{folders_come_first} =
-	$instance->{folders_come_first_checkbutton}->get_active() ? 1 : 0;
+        $instance->{folders_come_first_checkbutton}->get_active() ? 1 : 0;
     $instance->{preferences}->{show_line_numbers} =
-	$instance->{show_line_numbers_checkbutton}->get_active() ? 1 : 0;
+        $instance->{show_line_numbers_checkbutton}->get_active() ? 1 : 0;
     $instance->{binary_threshold_spinbutton}->update();
     $instance->{preferences}->{binary_threshold} =
-	$instance->{binary_threshold_spinbutton}->get_value_as_int();
+        $instance->{binary_threshold_spinbutton}->get_value_as_int();
     $instance->{preferences}->{list_search_as_re} =
-	$instance->{search_as_regular_expression_checkbutton}->get_active() ?
-	1 : 0;
+        $instance->{search_as_regular_expression_checkbutton}->get_active() ?
+        1 : 0;
     $instance->{preferences}->{diffs_application} =
-	$instance->{external_diffs_app_entry}->get_text();
+        $instance->{external_diffs_app_entry}->get_text();
 
     # Do the appearance page.
 
     $instance->{preferences}->{fixed_font} =
-	$instance->{fonts_fontbutton}->get_font_name();
+        $instance->{fonts_fontbutton}->get_font_name();
     $instance->{preferences}->{toolbar_settings}->{hide_text} =
-	$instance->{hide_text_checkbutton}->get_active() ? 1 : 0;
+        $instance->{hide_text_checkbutton}->get_active() ? 1 : 0;
     $instance->{preferences}->{toolbar_settings}->{fixed} =
-	$instance->{fixed_checkbutton}->get_active() ? 1 : 0;
+        $instance->{fixed_checkbutton}->get_active() ? 1 : 0;
     $instance->{preferences}->{coloured_diffs} =
-	$instance->{comparison_pretty_print_checkbutton}->get_active() ? 1 : 0;
+        $instance->{comparison_pretty_print_checkbutton}->get_active() ? 1 : 0;
     foreach my $item (@colour_mapping_table)
     {
-	my $field;
-	if ($item->{widget} =~ m/foreground/)
-	{
-	    $field = "fg";
-	}
-	elsif ($item->{widget} =~ m/background/)
-	{
-	    $field = "bg";
-	}
-	else
-	{
-	    $field = "hl";
-	}
-	$instance->{preferences}->{colours}->{$item->{record}}->{$field} =
-	    colour_to_string($instance->{$item->{widget}}->get_color());
+        my $field;
+        if ($item->{widget} =~ m/foreground/)
+        {
+            $field = "fg";
+        }
+        elsif ($item->{widget} =~ m/background/)
+        {
+            $field = "bg";
+        }
+        else
+        {
+            $field = "hl";
+        }
+        $instance->{preferences}->{colours}->{$item->{record}}->{$field} =
+            colour_to_string($instance->{$item->{widget}}->get_color());
     }
 
     # Do the MIME types page (most of it has possibly been saved already).
@@ -1597,39 +1597,39 @@ sub load_current_mime_types_settings($)
 
     if (defined($instance->{selected_mime_types_entry}))
     {
-	$instance->{remove_mime_type_button}->set_sensitive(TRUE);
-	load_file_name_patterns_treeview($instance);
-	$instance->{file_name_pattern_entry}->set_text("");
-	foreach my $widget (@{$instance->{mime_type_sensitivity_list}})
-	{
-	    $widget->set_sensitive(TRUE);
-	}
-	$instance->{add_file_name_pattern_button}->set_sensitive(FALSE);
-	$instance->{remove_file_name_pattern_button}->set_sensitive(FALSE);
-	$instance->{display_internally_checkbutton}->
-	    set_active($instance->{selected_mime_types_entry}->
-		       {display_internally} ? TRUE : FALSE);
-	$instance->{syntax_highlight_checkbutton}->
-	    set_active($instance->{selected_mime_types_entry}->
-		       {syntax_highlight} ? TRUE : FALSE);
-	$instance->{helper_application_entry}->
-	    set_text($instance->{selected_mime_types_entry}->
-		     {helper_application});
+        $instance->{remove_mime_type_button}->set_sensitive(TRUE);
+        load_file_name_patterns_treeview($instance);
+        $instance->{file_name_pattern_entry}->set_text("");
+        foreach my $widget (@{$instance->{mime_type_sensitivity_list}})
+        {
+            $widget->set_sensitive(TRUE);
+        }
+        $instance->{add_file_name_pattern_button}->set_sensitive(FALSE);
+        $instance->{remove_file_name_pattern_button}->set_sensitive(FALSE);
+        $instance->{display_internally_checkbutton}->
+            set_active($instance->{selected_mime_types_entry}->
+                       {display_internally} ? TRUE : FALSE);
+        $instance->{syntax_highlight_checkbutton}->
+            set_active($instance->{selected_mime_types_entry}->
+                       {syntax_highlight} ? TRUE : FALSE);
+        $instance->{helper_application_entry}->
+            set_text($instance->{selected_mime_types_entry}->
+                     {helper_application});
     }
     else
     {
-	$instance->{remove_mime_type_button}->set_sensitive(FALSE);
-	$instance->{file_name_patterns_liststore}->clear();
-	$instance->{file_name_pattern_entry}->set_text("");
-	foreach my $widget (@{$instance->{mime_type_sensitivity_list}})
-	{
-	    $widget->set_sensitive(FALSE);
-	}
-	$instance->{add_file_name_pattern_button}->set_sensitive(FALSE);
-	$instance->{remove_file_name_pattern_button}->set_sensitive(FALSE);
-	$instance->{display_internally_checkbutton}->set_active(FALSE);
-	$instance->{syntax_highlight_checkbutton}->set_active(FALSE);
-	$instance->{helper_application_entry}->set_text("");
+        $instance->{remove_mime_type_button}->set_sensitive(FALSE);
+        $instance->{file_name_patterns_liststore}->clear();
+        $instance->{file_name_pattern_entry}->set_text("");
+        foreach my $widget (@{$instance->{mime_type_sensitivity_list}})
+        {
+            $widget->set_sensitive(FALSE);
+        }
+        $instance->{add_file_name_pattern_button}->set_sensitive(FALSE);
+        $instance->{remove_file_name_pattern_button}->set_sensitive(FALSE);
+        $instance->{display_internally_checkbutton}->set_active(FALSE);
+        $instance->{syntax_highlight_checkbutton}->set_active(FALSE);
+        $instance->{helper_application_entry}->set_text("");
     }
 
 }
@@ -1653,11 +1653,11 @@ sub save_current_mime_types_settings($)
     my $instance = $_[0];
 
     $instance->{selected_mime_types_entry}->{display_internally} =
-	$instance->{display_internally_checkbutton}->get_active() ? 1 : 0;
+        $instance->{display_internally_checkbutton}->get_active() ? 1 : 0;
     $instance->{selected_mime_types_entry}->{syntax_highlight} =
-	$instance->{syntax_highlight_checkbutton}->get_active() ? 1 : 0;
+        $instance->{syntax_highlight_checkbutton}->get_active() ? 1 : 0;
     $instance->{selected_mime_types_entry}->{helper_application} =
-	$instance->{helper_application_entry}->get_text();
+        $instance->{helper_application_entry}->get_text();
 
 }
 #
@@ -1689,20 +1689,20 @@ sub validate_preferences($)
     $value = $instance->{external_diffs_app_entry}->get_text();
     if ($value ne "")
     {
-	if ($value !~ m/^[^\{]*\{file1\}[^\{]*\{file2\}[^\{]*$/
-	    && $value !~ m/^[^\{]*\{file2\}[^\{]*\{file1\}[^\{]*$/)
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __("The external file comparison application field is\n"
-		    . "invalid, please correct before attempting to resave."));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
+        if ($value !~ m/^[^\{]*\{file1\}[^\{]*\{file2\}[^\{]*$/
+            && $value !~ m/^[^\{]*\{file2\}[^\{]*\{file1\}[^\{]*$/)
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($instance->{window},
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __("The external file comparison application field is\n"
+                    . "invalid, please correct before attempting to resave."));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
     }
 
     return 1;
@@ -1730,75 +1730,75 @@ sub upgrade_preferences($)
 
     if ($preferences->{version} == 1)
     {
-	$preferences->{coloured_diffs} = 1;
-	$preferences->{diffs_application} =
-	    FILE_COMPARE_CMD . " '{file1}' '{file2}'";
-	$preferences->{version} = 2;
+        $preferences->{coloured_diffs} = 1;
+        $preferences->{diffs_application} =
+            FILE_COMPARE_CMD . " '{file1}' '{file2}'";
+        $preferences->{version} = 2;
     }
     if ($preferences->{version} == 2)
     {
-	$preferences->{histories} = {advanced_find          => [],
-				     find_files_named       => [],
-				     find_files_containing  => [],
-				     find_files_modified_by => [],
-				     find_text              => []};
-	$preferences->{version} = 3;
+        $preferences->{histories} = {advanced_find          => [],
+                                     find_files_named       => [],
+                                     find_files_containing  => [],
+                                     find_files_modified_by => [],
+                                     find_text              => []};
+        $preferences->{version} = 3;
     }
     if ($preferences->{version} == 3)
     {
-	$preferences->{auto_select_head} = 0;
-	$preferences->{version} = 4;
+        $preferences->{auto_select_head} = 0;
+        $preferences->{version} = 4;
     }
     if ($preferences->{version} == 4)
     {
-	$preferences->{show_suspended} = 0;
-	$preferences->{show_file_details} = 1;
-	$preferences->{version} = 5;
+        $preferences->{show_suspended} = 0;
+        $preferences->{show_file_details} = 1;
+        $preferences->{version} = 5;
     }
     if ($preferences->{version} == 5)
     {
-	$preferences->{history_size} = 20;
-	$preferences->{version} = 6;
+        $preferences->{history_size} = 20;
+        $preferences->{version} = 6;
     }
     if ($preferences->{version} == 6)
     {
-	$preferences->{show_line_numbers} = 0;
-	$preferences->{static_lists} = 0;
-	$preferences->{version} = 7;
+        $preferences->{show_line_numbers} = 0;
+        $preferences->{static_lists} = 0;
+        $preferences->{version} = 7;
     }
     if ($preferences->{version} == 7)
     {
-	$preferences->{query}->{tagged}->{sort_chronologically} =
-	    $preferences->{query}->{tagged}->{sort_cronologically};
-	delete($preferences->{query}->{tagged}->{sort_cronologically});
-	$preferences->{query}->{id}->{sort_chronologically} =
-	    $preferences->{query}->{id}->{sort_cronologically};
-	delete($preferences->{query}->{id}->{sort_cronologically});
-	$preferences->{version} = 8;
+        $preferences->{query}->{tagged}->{sort_chronologically} =
+            $preferences->{query}->{tagged}->{sort_cronologically};
+        delete($preferences->{query}->{tagged}->{sort_cronologically});
+        $preferences->{query}->{id}->{sort_chronologically} =
+            $preferences->{query}->{id}->{sort_cronologically};
+        delete($preferences->{query}->{id}->{sort_cronologically});
+        $preferences->{version} = 8;
     }
     if ($preferences->{version} == 8)
     {
-	$preferences->{list_search_as_re} = 0;
-	$preferences->{toolbar_settings} = {hide_text => 0,
-					    fixed     => 0};
-	$preferences->{version} = 9;
+        $preferences->{list_search_as_re} = 0;
+        $preferences->{toolbar_settings} = {hide_text => 0,
+                                            fixed     => 0};
+        $preferences->{version} = 9;
     }
     if ($preferences->{version} == 9)
     {
-	$preferences->{folders_come_first} = 1;
-	$preferences->{completion_tooltips} = 1;
-	$preferences->{binary_threshold} = 20;
-	$preferences->{version} = 10;
+        $preferences->{folders_come_first} = 1;
+        $preferences->{completion_tooltips} = 1;
+        $preferences->{binary_threshold} = 20;
+        $preferences->{version} = 10;
     }
     if ($preferences->{version} == 10)
     {
-	$preferences->{remote_connections} = 0;
-	$preferences->{server_bookmarks} = [];
-	$preferences->{version} = 11;
+        $preferences->{remote_connections} = 0;
+        $preferences->{server_bookmarks} = [];
+        $preferences->{version} = 11;
     }
     if ($preferences->{version} == 11)
     {
-	$preferences->{tag_weightings} = [];
+        $preferences->{tag_weightings} = [];
     }
 
     $preferences->{version} = PREFERENCES_FORMAT_VERSION;
@@ -1823,57 +1823,57 @@ sub initialise_preferences()
 {
 
     my ($mime_table,
-	%preferences);
+        %preferences);
 
     die(__("Cannot load system MIME types.\n"))
-	unless (defined($mime_table = initialise_mime_info_table()));
+        unless (defined($mime_table = initialise_mime_info_table()));
     %preferences =
-	(version             => PREFERENCES_FORMAT_VERSION,
-	 default_mtn_db      => "",
-	 workspace           => {takes_precedence => 1,
-				 auto_select      => 1},
-	 auto_select_head    => 0,
-	 query               => {tagged => {limit                => 200,
-					    sort_chronologically => 1},
-				 id     => {limit                => 200,
-					    sort_chronologically => 1}},
-	 history_size        => 20,
-	 static_lists        => 0,
-	 completion_tooltips => 1,
-	 show_suspended      => 0,
-	 show_file_details   => 1,
-	 folders_come_first  => 1,
-	 show_line_numbers   => 0,
-	 binary_threshold    => 20,
-	 list_search_as_re   => 0,
-	 diffs_application   => FILE_COMPARE_CMD . " '{file1}' '{file2}'",
-	 fixed_font          => "monospace 10",
-	 toolbar_settings    => {hide_text => 0,
-				 fixed     => 0},
-	 coloured_diffs      => 1,
-	 colours             => {annotate_prefix_1 => {fg => "AliceBlue",
-						       bg => "CadetBlue"},
-				 annotate_text_1   => {fg => "MidnightBlue",
-						       bg => "PaleTurquoise"},
-				 annotate_prefix_2 => {fg => "AliceBlue",
-						       bg => "SteelBlue"},
-				 annotate_text_2   => {fg => "MidnightBlue",
-						       bg => "SkyBlue"},
-				 cmp_revision_1    => {fg => "DarkRed",
-						       bg => "MistyRose1",
-						       hl => "IndianRed1"},
-				 cmp_revision_2    => {fg => "DarkGreen",
-						       bg => "DarkSeaGreen1",
-						       hl => "SpringGreen1"}},
-	 mime_table          => $mime_table,
-	 histories           => {advanced_find          => [],
-				 find_files_named       => [],
-				 find_files_containing  => [],
-				 find_files_modified_by => [],
-				 find_text              => []},
-	 remote_connections  => 0,
-	 server_bookmarks    => [],
-	 tag_weightings      => []);
+        (version             => PREFERENCES_FORMAT_VERSION,
+         default_mtn_db      => "",
+         workspace           => {takes_precedence => 1,
+                                 auto_select      => 1},
+         auto_select_head    => 0,
+         query               => {tagged => {limit                => 200,
+                                            sort_chronologically => 1},
+                                 id     => {limit                => 200,
+                                            sort_chronologically => 1}},
+         history_size        => 20,
+         static_lists        => 0,
+         completion_tooltips => 1,
+         show_suspended      => 0,
+         show_file_details   => 1,
+         folders_come_first  => 1,
+         show_line_numbers   => 0,
+         binary_threshold    => 20,
+         list_search_as_re   => 0,
+         diffs_application   => FILE_COMPARE_CMD . " '{file1}' '{file2}'",
+         fixed_font          => "monospace 10",
+         toolbar_settings    => {hide_text => 0,
+                                 fixed     => 0},
+         coloured_diffs      => 1,
+         colours             => {annotate_prefix_1 => {fg => "AliceBlue",
+                                                       bg => "CadetBlue"},
+                                 annotate_text_1   => {fg => "MidnightBlue",
+                                                       bg => "PaleTurquoise"},
+                                 annotate_prefix_2 => {fg => "AliceBlue",
+                                                       bg => "SteelBlue"},
+                                 annotate_text_2   => {fg => "MidnightBlue",
+                                                       bg => "SkyBlue"},
+                                 cmp_revision_1    => {fg => "DarkRed",
+                                                       bg => "MistyRose1",
+                                                       hl => "IndianRed1"},
+                                 cmp_revision_2    => {fg => "DarkGreen",
+                                                       bg => "DarkSeaGreen1",
+                                                       hl => "SpringGreen1"}},
+         mime_table          => $mime_table,
+         histories           => {advanced_find          => [],
+                                 find_files_named       => [],
+                                 find_files_containing  => [],
+                                 find_files_modified_by => [],
+                                 find_text              => []},
+         remote_connections  => 0,
+         server_bookmarks    => [],
+         tag_weightings      => []);
 
     return \%preferences;
 
@@ -1898,14 +1898,14 @@ sub initialise_mime_info_table()
 {
 
     my ($display_internally,
-	$pattern,
-	$globs_file,
-	$line,
-	%lookup,
-	$part,
-	$syntax_highlight,
-	@table,
-	$type);
+        $pattern,
+        $globs_file,
+        $line,
+        %lookup,
+        $part,
+        $syntax_highlight,
+        @table,
+        $type);
 
     # Open the MIME globs file and then scan through reading in all the
     # entries.
@@ -1914,50 +1914,50 @@ sub initialise_mime_info_table()
 
     while (defined($line = $globs_file->getline()))
     {
-	chomp($line);
+        chomp($line);
 
-	# Only process recognisable MIME type entries.
+        # Only process recognisable MIME type entries.
 
-	if ($line !~ m/^(\s)|(\#.*)$/ && $line =~ m/^[^:]*:.*$/)
-	{
+        if ($line !~ m/^(\s)|(\#.*)$/ && $line =~ m/^[^:]*:.*$/)
+        {
 
-	    # Break lines into their MIME type and file name patterns fields.
+            # Break lines into their MIME type and file name patterns fields.
 
-	    ($type, $pattern) = $line =~ m/^([^:]*):(.*)$/;
+            ($type, $pattern) = $line =~ m/^([^:]*):(.*)$/;
 
-	    # File the data, creating a node if necessary
+            # File the data, creating a node if necessary
 
-	    if (exists($lookup{$type}))
-	    {
-		push(@{$lookup{$type}->{file_name_patterns}}, $pattern);
-	    }
-	    else
-	    {
-		$display_internally = $syntax_highlight = 0;
-		if ($type =~ m/^application\/.+$/)
-		{
-		    ($part) = ($type =~ m/^application\/(.+)$/);
-		    $display_internally = $syntax_highlight = 1
-			if (grep(/\Q$part\E/, @text_viewable_app_mime_types)
-			    > 0);
-		}
-		elsif ($type =~ m/^image\/.+$/)
-		{
-		    $display_internally = 1;
-		}
-		elsif ($type =~ m/^text\/.+$/)
-		{
-		    $display_internally = $syntax_highlight = 1;
-		}
-		$lookup{$type} = {name               => $type,
-			          file_name_patterns => [$pattern],
-			          display_internally => $display_internally,
-			          syntax_highlight   => $syntax_highlight,
-			          helper_application => ""};
-		push(@table, $lookup{$type});
-	    }
+            if (exists($lookup{$type}))
+            {
+                push(@{$lookup{$type}->{file_name_patterns}}, $pattern);
+            }
+            else
+            {
+                $display_internally = $syntax_highlight = 0;
+                if ($type =~ m/^application\/.+$/)
+                {
+                    ($part) = ($type =~ m/^application\/(.+)$/);
+                    $display_internally = $syntax_highlight = 1
+                        if (grep(/\Q$part\E/, @text_viewable_app_mime_types)
+                            > 0);
+                }
+                elsif ($type =~ m/^image\/.+$/)
+                {
+                    $display_internally = 1;
+                }
+                elsif ($type =~ m/^text\/.+$/)
+                {
+                    $display_internally = $syntax_highlight = 1;
+                }
+                $lookup{$type} = {name               => $type,
+                                  file_name_patterns => [$pattern],
+                                  display_internally => $display_internally,
+                                  syntax_highlight   => $syntax_highlight,
+                                  helper_application => ""};
+                push(@table, $lookup{$type});
+            }
 
-	}
+        }
     }
     $globs_file->close();
 
@@ -1966,8 +1966,8 @@ sub initialise_mime_info_table()
     @table = sort({ $a->{name} cmp $b->{name} } @table);
     foreach my $entry (@table)
     {
-	@{$entry->{file_name_patterns}} =
-	    sort(@{$entry->{file_name_patterns}});
+        @{$entry->{file_name_patterns}} =
+            sort(@{$entry->{file_name_patterns}});
     }
 
     return \@table;

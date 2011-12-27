@@ -124,25 +124,25 @@ sub generate_tmp_path($)
     my $file_name = $_[0];
 
     my ($path,
-	$i);
+        $i);
 
     # Loop through looking for a temporary subdirectory not containing the
     # specified file.
 
     for ($i = 0; ; ++ $i)
     {
-	if (-d File::Spec->catfile($tmp_dir, $i))
-	{
-	    if (! -e ($path = File::Spec->catfile($tmp_dir, $i, $file_name)))
-	    {
-		return $path;
-	    }
-	}
-	else
-	{
-	    return unless mkdir(File::Spec->catfile($tmp_dir, $i));
-	    return File::Spec->catfile($tmp_dir, $i, $file_name);
-	}
+        if (-d File::Spec->catfile($tmp_dir, $i))
+        {
+            if (! -e ($path = File::Spec->catfile($tmp_dir, $i, $file_name)))
+            {
+                return $path;
+            }
+        }
+        else
+        {
+            return unless mkdir(File::Spec->catfile($tmp_dir, $i));
+            return File::Spec->catfile($tmp_dir, $i, $file_name);
+        }
     }
 
     return;
@@ -182,15 +182,15 @@ sub run_command($$$$@)
     my ($buffer, $input_cb, $details, $abort, @args) = @_;
 
     my ($dummy_flag,
-	@err,
-	$fd_err,
-	$fd_in,
-	$fd_out,
-	$my_pid,
-	$pid,
-	$stop,
-	$total_bytes,
-	$watcher);
+        @err,
+        $fd_err,
+        $fd_in,
+        $fd_out,
+        $my_pid,
+        $pid,
+        $stop,
+        $total_bytes,
+        $watcher);
 
     $abort = \$dummy_flag unless (defined($abort));
 
@@ -200,7 +200,7 @@ sub run_command($$$$@)
     $my_pid = $$;
     eval
     {
-	$pid = open3($fd_in, $fd_out, $fd_err, @args);
+        $pid = open3($fd_in, $fd_out, $fd_err, @args);
     };
 
     # Check for errors (remember that open3() errors can happen in both the
@@ -208,34 +208,34 @@ sub run_command($$$$@)
 
     if ($@)
     {
-	if ($$ != $my_pid)
-	{
+        if ($$ != $my_pid)
+        {
 
-	    # In the child process so all we can do is complain and exit.
+            # In the child process so all we can do is complain and exit.
 
-	    warn(__x("open3 failed: {error_message}", error_message => $@));
-	    exit(1);
+            warn(__x("open3 failed: {error_message}", error_message => $@));
+            exit(1);
 
-	}
-	else
-	{
+        }
+        else
+        {
 
-	    # In the parent process so deal with the error in the usual way.
+            # In the parent process so deal with the error in the usual way.
 
-	    my $dialog = Gtk2::MessageDialog->new
-		(undef,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("The {name} subprocess could not start,\n"
-		         . "the system gave:\n<b><i>{error_message}</b></i>",
-		     name => Glib::Markup::escape_text($args[0]),
-		     error_message => Glib::Markup::escape_text($@)));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
+            my $dialog = Gtk2::MessageDialog->new
+                (undef,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __x("The {name} subprocess could not start,\n"
+                         . "the system gave:\n<b><i>{error_message}</b></i>",
+                     name => Glib::Markup::escape_text($args[0]),
+                     error_message => Glib::Markup::escape_text($@)));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
 
-	}
+        }
     }
 
     # Setup a watch handler to read our data when we hand control over to GTK2.
@@ -243,23 +243,23 @@ sub run_command($$$$@)
     $total_bytes = 0;
     $$buffer = "";
     $watcher = Gtk2::Helper->add_watch
-	($fd_out->fileno(), "in",
-	 sub {
-	     my $bytes_read;
-	     if (($bytes_read = $fd_out->sysread($$buffer,
-						 32768,
-						 $total_bytes))
-		     == 0
-		 || ! defined($bytes_read))
-	     {
-		 $stop = 1;
-	     }
-	     else
-	     {
-		 $total_bytes += $bytes_read;
-	     }
-	     return TRUE;
-	 });
+        ($fd_out->fileno(), "in",
+         sub {
+             my $bytes_read;
+             if (($bytes_read = $fd_out->sysread($$buffer,
+                                                 32768,
+                                                 $total_bytes))
+                     == 0
+                 || ! defined($bytes_read))
+             {
+                 $stop = 1;
+             }
+             else
+             {
+                 $total_bytes += $bytes_read;
+             }
+             return TRUE;
+         });
 
     # Call the input callback routine if we have one. It is allowed to close
     # STDIN if it wishes to.
@@ -271,7 +271,7 @@ sub run_command($$$$@)
 
     while (! $stop && ! $$abort)
     {
-	Gtk2->main_iteration();
+        Gtk2->main_iteration();
     }
     Gtk2::Helper->remove_watch($watcher);
 
@@ -280,11 +280,11 @@ sub run_command($$$$@)
 
     if ($$abort)
     {
-	kill("TERM", $pid);
+        kill("TERM", $pid);
     }
     else
     {
-	@err = $fd_err->getlines() unless ($$abort);
+        @err = $fd_err->getlines() unless ($$abort);
     }
 
     $fd_in->close() if ($fd_in->opened());
@@ -296,117 +296,117 @@ sub run_command($$$$@)
     for (my $i = 0; $i < 4; ++ $i)
     {
 
-	my $wait_status = 0;
+        my $wait_status = 0;
 
-	# Wait for the subprocess to exit (preserving the current state of $@
-	# so that any exception that has already occurred is not lost, also
-	# ignore any errors resulting from waitpid() interruption).
+        # Wait for the subprocess to exit (preserving the current state of $@
+        # so that any exception that has already occurred is not lost, also
+        # ignore any errors resulting from waitpid() interruption).
 
-	{
-	    local $@;
-	    eval
-	    {
-		local $SIG{ALRM} = sub { die(WAITPID_INTERRUPT); };
-		alarm(5);
-		$wait_status = waitpid($pid, 0);
-		alarm(0);
-	    };
-	    $wait_status = 0
-		if ($@ eq WAITPID_INTERRUPT && $wait_status < 0
-		    && $! == EINTR);
-	}
+        {
+            local $@;
+            eval
+            {
+                local $SIG{ALRM} = sub { die(WAITPID_INTERRUPT); };
+                alarm(5);
+                $wait_status = waitpid($pid, 0);
+                alarm(0);
+            };
+            $wait_status = 0
+                if ($@ eq WAITPID_INTERRUPT && $wait_status < 0
+                    && $! == EINTR);
+        }
 
-	# The subprocess has terminated.
+        # The subprocess has terminated.
 
-	if ($wait_status == $pid)
-	{
-	    if (! $$abort)
-	    {
-		my $exit_status = $?;
-		if (WIFEXITED($exit_status) && WEXITSTATUS($exit_status) != 0)
-		{
-		    my $dialog = Gtk2::MessageDialog->new_with_markup
-			(undef,
-			 ["modal"],
-			 "warning",
-			 "close",
-			 __x("The {name} subprocess failed with an exit "
-			         . "status\n"
-				 . "of {exit_code} and printed the following "
-			         . "on stderr:\n"
-				 . "<b><i>{error_message}</i></b>",
-			     name => Glib::Markup::escape_text($args[0]),
-			     exit_code => WEXITSTATUS($exit_status),
-			     error_message => Glib::Markup::escape_text
-					      (join("", @err))));
-		    busy_dialog_run($dialog);
-		    $dialog->destroy();
-		    return;
-		}
-		elsif (WIFSIGNALED($exit_status))
-		{
-		    my $dialog = Gtk2::MessageDialog->new
-			(undef,
-			 ["modal"],
-			 "warning",
-			 "close",
-			 __x("The {name} subprocess was terminated by signal "
-				 . "{number}.",
-			     name   => Glib::Markup::escape_text($args[0]),
-			     number => WTERMSIG($exit_status)));
-		    busy_dialog_run($dialog);
-		    $dialog->destroy();
-		    return;
-		}
-	    }
-	    last;
-	}
+        if ($wait_status == $pid)
+        {
+            if (! $$abort)
+            {
+                my $exit_status = $?;
+                if (WIFEXITED($exit_status) && WEXITSTATUS($exit_status) != 0)
+                {
+                    my $dialog = Gtk2::MessageDialog->new_with_markup
+                        (undef,
+                         ["modal"],
+                         "warning",
+                         "close",
+                         __x("The {name} subprocess failed with an exit "
+                                 . "status\n"
+                                 . "of {exit_code} and printed the following "
+                                 . "on stderr:\n"
+                                 . "<b><i>{error_message}</i></b>",
+                             name => Glib::Markup::escape_text($args[0]),
+                             exit_code => WEXITSTATUS($exit_status),
+                             error_message => Glib::Markup::escape_text
+                                              (join("", @err))));
+                    busy_dialog_run($dialog);
+                    $dialog->destroy();
+                    return;
+                }
+                elsif (WIFSIGNALED($exit_status))
+                {
+                    my $dialog = Gtk2::MessageDialog->new
+                        (undef,
+                         ["modal"],
+                         "warning",
+                         "close",
+                         __x("The {name} subprocess was terminated by signal "
+                                 . "{number}.",
+                             name   => Glib::Markup::escape_text($args[0]),
+                             number => WTERMSIG($exit_status)));
+                    busy_dialog_run($dialog);
+                    $dialog->destroy();
+                    return;
+                }
+            }
+            last;
+        }
 
-	# The subprocess is still there so try and kill it unless it's time to
-	# just give up.
+        # The subprocess is still there so try and kill it unless it's time to
+        # just give up.
 
-	elsif ($i < 3 && $wait_status == 0)
-	{
-	    if ($i == 0)
-	    {
-		kill("INT", $pid);
-	    }
-	    elsif ($i == 1)
-	    {
-		kill("TERM", $pid);
-	    }
-	    else
-	    {
-		kill("KILL", $pid);
-	    }
-	}
+        elsif ($i < 3 && $wait_status == 0)
+        {
+            if ($i == 0)
+            {
+                kill("INT", $pid);
+            }
+            elsif ($i == 1)
+            {
+                kill("TERM", $pid);
+            }
+            else
+            {
+                kill("KILL", $pid);
+            }
+        }
 
-	# Stop if we don't have any relevant children to wait for anymore.
+        # Stop if we don't have any relevant children to wait for anymore.
 
-	elsif ($wait_status < 0 && $! == ECHILD)
-	{
-	    last;
-	}
+        elsif ($wait_status < 0 && $! == ECHILD)
+        {
+            last;
+        }
 
-	# Either there is some other error with waitpid() or a child process
-	# has been reaped that we aren't interested in (in which case just
-	# ignore it).
+        # Either there is some other error with waitpid() or a child process
+        # has been reaped that we aren't interested in (in which case just
+        # ignore it).
 
-	elsif ($wait_status < 0)
-	{
-	    my $err_msg = $!;
-	    kill("KILL", $pid);
-	    my $dialog = Gtk2::MessageDialog->new_with_markup
-		(undef,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("waitpid failed with:\n<b><i>{error_message}</i></b>",
-		     error_message => Glib::Markup::escape_text($!)));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
+        elsif ($wait_status < 0)
+        {
+            my $err_msg = $!;
+            kill("KILL", $pid);
+            my $dialog = Gtk2::MessageDialog->new_with_markup
+                (undef,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __x("waitpid failed with:\n<b><i>{error_message}</i></b>",
+                     error_message => Glib::Markup::escape_text($!)));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
 
     }
 
@@ -440,53 +440,53 @@ sub get_dir_contents($$$)
     my ($path, $manifest, $result) = @_;
 
     my (@dir_list,
-	$entry,
-	$extract_re,
-	@file_list,
-	$list,
-	$match_re,
-	$name);
+        $entry,
+        $extract_re,
+        @file_list,
+        $list,
+        $match_re,
+        $name);
 
     # Manifests are already sorted alphabetically. However, if the user wishes
     # it, place folders before files.
 
     if ($path eq "")
     {
-	$match_re = qr/^[^\/]+$/;
-	$extract_re = qr/^([^\/]+)$/;
+        $match_re = qr/^[^\/]+$/;
+        $extract_re = qr/^([^\/]+)$/;
     }
     else
     {
-	$match_re = qr/^${path}\/[^\/]+$/;
-	$extract_re = qr/^${path}\/([^\/]+)$/;
+        $match_re = qr/^${path}\/[^\/]+$/;
+        $extract_re = qr/^${path}\/([^\/]+)$/;
     }
     @$result = ();
     foreach $entry (@$manifest)
     {
-	if ($entry->{name} =~ m/$match_re/)
-	{
-	    ($name) = ($entry->{name} =~ m/$extract_re/);
-	    if ($user_preferences->{folders_come_first})
-	    {
-		if ($entry->{type} eq "directory")
-		{
-		    $list = \@dir_list;
-		}
-		else
-		{
-		    $list = \@file_list;
-		}
-	    }
-	    else
-	    {
-		$list = $result;
-	    }
-	    push(@$list, {manifest_entry => $entry, name => $name});
-	}
+        if ($entry->{name} =~ m/$match_re/)
+        {
+            ($name) = ($entry->{name} =~ m/$extract_re/);
+            if ($user_preferences->{folders_come_first})
+            {
+                if ($entry->{type} eq "directory")
+                {
+                    $list = \@dir_list;
+                }
+                else
+                {
+                    $list = \@file_list;
+                }
+            }
+            else
+            {
+                $list = $result;
+            }
+            push(@$list, {manifest_entry => $entry, name => $name});
+        }
     }
     if ($user_preferences->{folders_come_first})
     {
-	@$result = (@dir_list, @file_list);
+        @$result = (@dir_list, @file_list);
     }
 
 }
@@ -522,109 +522,109 @@ sub open_database($$$)
     my ($parent, $mtn, $file_name) = @_;
 
     my ($chooser_dialog,
-	$done,
-	$ret_val);
+        $done,
+        $ret_val);
 
     $chooser_dialog = Gtk2::FileChooserDialog->new(__("Open Database"),
-						   $parent,
-						   "open",
-						   "gtk-cancel" => "cancel",
-						   "gtk-open" => "ok");
+                                                   $parent,
+                                                   "open",
+                                                   "gtk-cancel" => "cancel",
+                                                   "gtk-open" => "ok");
     $chooser_dialog->
-	set_current_folder($file_chooser_dir_locations{open_db_dir})
-	if (exists($file_chooser_dir_locations{open_db_dir}));
+        set_current_folder($file_chooser_dir_locations{open_db_dir})
+        if (exists($file_chooser_dir_locations{open_db_dir}));
 
     do
     {
-	if (busy_dialog_run($chooser_dialog) eq "ok")
-	{
+        if (busy_dialog_run($chooser_dialog) eq "ok")
+        {
 
-	    my ($exception,
-		$fh,
-		$fname,
-		$mtn_obj);
+            my ($exception,
+                $fh,
+                $fname,
+                $mtn_obj);
 
-	    $fname = $chooser_dialog->get_filename();
+            $fname = $chooser_dialog->get_filename();
 
-	    # The user has selected a file. First make sure we can open it for
-	    # reading (I know I could use the -r test but this takes care of
-	    # any other unforeseen access problems as well).
+            # The user has selected a file. First make sure we can open it for
+            # reading (I know I could use the -r test but this takes care of
+            # any other unforeseen access problems as well).
 
-	    if (! defined($fh = IO::File->new($fname, "r")))
-	    {
-		my $dialog = Gtk2::MessageDialog->new
-		    ($parent,
-		     ["modal"],
-		     "warning",
-		     "close",
-		     $! . ".");
-		busy_dialog_run($dialog);
-		$dialog->destroy();
-	    }
-	    else
-	    {
+            if (! defined($fh = IO::File->new($fname, "r")))
+            {
+                my $dialog = Gtk2::MessageDialog->new
+                    ($parent,
+                     ["modal"],
+                     "warning",
+                     "close",
+                     $! . ".");
+                busy_dialog_run($dialog);
+                $dialog->destroy();
+            }
+            else
+            {
 
-		$fh->close();
-		$fh = undef;
+                $fh->close();
+                $fh = undef;
 
-		# Ok it is a readable file, try and open it but deal with any
-		# errors in a nicer way than normal.
+                # Ok it is a readable file, try and open it but deal with any
+                # errors in a nicer way than normal.
 
-		CachingAutomateStdio->register_error_handler
-		    (MTN_SEVERITY_ALL,
-		     sub {
-			 my ($severity, $message) = @_;
-			 my $dialog;
-			 $message =~ s/mtn: misuse: //g;
-			 $message =~ s/^Corrupt\/missing mtn [^\n]+\n//g;
-			 $message =~ s/ at .+ line \d+$//g;
-			 $message =~ s/\s+$//g;
-			 $message =~ s/\n/ /g;
-			 $message .= "." unless ($message =~ m/.+\.$/);
-			 $dialog = Gtk2::MessageDialog->new_with_markup
-			     ($parent,
-			      ["modal"],
-			      "warning",
-			      "close",
-			      __x("There is a problem opening the database, "
-				  . "the details are:\n"
-				  . "<b><i>{error_message}</i></b>",
-				  error_message =>
-			              Glib::Markup::escape_text($message)));
-			 busy_dialog_run($dialog);
-			 $dialog->destroy();
-			 die("Bad open");
-		     });
-		eval
-		{
-		    $mtn_obj = CachingAutomateStdio->new($fname);
-		};
-		$exception = $@;
-		CachingAutomateStdio->register_error_handler
-		    (MTN_SEVERITY_ALL, \&mtn_error_handler);
-		if (! $exception)
-		{
+                CachingAutomateStdio->register_error_handler
+                    (MTN_SEVERITY_ALL,
+                     sub {
+                         my ($severity, $message) = @_;
+                         my $dialog;
+                         $message =~ s/mtn: misuse: //g;
+                         $message =~ s/^Corrupt\/missing mtn [^\n]+\n//g;
+                         $message =~ s/ at .+ line \d+$//g;
+                         $message =~ s/\s+$//g;
+                         $message =~ s/\n/ /g;
+                         $message .= "." unless ($message =~ m/.+\.$/);
+                         $dialog = Gtk2::MessageDialog->new_with_markup
+                             ($parent,
+                              ["modal"],
+                              "warning",
+                              "close",
+                              __x("There is a problem opening the database, "
+                                  . "the details are:\n"
+                                  . "<b><i>{error_message}</i></b>",
+                                  error_message =>
+                                      Glib::Markup::escape_text($message)));
+                         busy_dialog_run($dialog);
+                         $dialog->destroy();
+                         die("Bad open");
+                     });
+                eval
+                {
+                    $mtn_obj = CachingAutomateStdio->new($fname);
+                };
+                $exception = $@;
+                CachingAutomateStdio->register_error_handler
+                    (MTN_SEVERITY_ALL, \&mtn_error_handler);
+                if (! $exception)
+                {
 
-		    # Seems to be ok so tell the caller.
+                    # Seems to be ok so tell the caller.
 
-		    $$mtn = $mtn_obj if (defined($mtn));
-		    $$file_name = $fname if (defined($file_name));
-		    $done = $ret_val = 1;
+                    $$mtn = $mtn_obj if (defined($mtn));
+                    $$file_name = $fname if (defined($file_name));
+                    $done = $ret_val = 1;
 
-		}
+                }
 
-	    }
+            }
 
-	}
-	else
-	{
-	    $done = 1;
-	}
+        }
+        else
+        {
+            $done = 1;
+        }
     }
     while (! $done);
 
     $file_chooser_dir_locations{open_db_dir} =
-	$chooser_dialog->get_current_folder();
+        $chooser_dialog->get_current_folder();
     $chooser_dialog->destroy();
 
     return $ret_val;
@@ -655,82 +655,82 @@ sub save_as_file($$$)
     my ($parent, $file_name, $data) = @_;
 
     my ($chooser_dialog,
-	$continue,
-	$done);
+        $continue,
+        $done);
 
     $chooser_dialog = Gtk2::FileChooserDialog->new(__("Save As"),
-						   $parent,
-						   "save",
-						   "gtk-cancel" => "cancel",
-						   "gtk-save" => "ok");
+                                                   $parent,
+                                                   "save",
+                                                   "gtk-cancel" => "cancel",
+                                                   "gtk-save" => "ok");
     $chooser_dialog->set_current_name($file_name) if ($file_name ne "");
     $chooser_dialog->
-	set_current_folder($file_chooser_dir_locations{save_as_dir})
-	if (exists($file_chooser_dir_locations{save_as_dir}));
+        set_current_folder($file_chooser_dir_locations{save_as_dir})
+        if (exists($file_chooser_dir_locations{save_as_dir}));
 
     do
     {
-	if (busy_dialog_run($chooser_dialog) eq "ok")
-	{
+        if (busy_dialog_run($chooser_dialog) eq "ok")
+        {
 
-	    my ($fh,
-		$fname);
+            my ($fh,
+                $fname);
 
-	    $continue = 1;
-	    $fname = $chooser_dialog->get_filename();
+            $continue = 1;
+            $fname = $chooser_dialog->get_filename();
 
-	    # See if the file exists, if so then get a confirmation from the
-	    # user.
+            # See if the file exists, if so then get a confirmation from the
+            # user.
 
-	    if (-e $fname)
-	    {
-		my $dialog = Gtk2::MessageDialog->new
-		    ($parent,
-		     ["modal"],
-		     "question",
-		     "yes-no",
-		     __("File already exists.\nDo you want to replace it?"));
-		$dialog->set_title(__("Confirm"));
-		$continue = 0 if (busy_dialog_run($dialog) ne "yes");
-		$dialog->destroy();
-	    }
+            if (-e $fname)
+            {
+                my $dialog = Gtk2::MessageDialog->new
+                    ($parent,
+                     ["modal"],
+                     "question",
+                     "yes-no",
+                     __("File already exists.\nDo you want to replace it?"));
+                $dialog->set_title(__("Confirm"));
+                $continue = 0 if (busy_dialog_run($dialog) ne "yes");
+                $dialog->destroy();
+            }
 
-	    if ($continue)
-	    {
+            if ($continue)
+            {
 
-		# Attempt to save the contents to the file.
+                # Attempt to save the contents to the file.
 
-		if (! defined($fh = IO::File->new($fname, "w")))
-		{
-		    my $dialog = Gtk2::MessageDialog->new
-			($parent,
-			 ["modal"],
-			 "warning",
-			 "close",
-			 __x("{error_message}.", error_message => $!));
-		    busy_dialog_run($dialog);
-		    $dialog->destroy();
-		}
-		else
-		{
-		    binmode($fh);
-		    $fh->print($$data);
-		    $fh->close();
-		    $done = 1;
-		}
+                if (! defined($fh = IO::File->new($fname, "w")))
+                {
+                    my $dialog = Gtk2::MessageDialog->new
+                        ($parent,
+                         ["modal"],
+                         "warning",
+                         "close",
+                         __x("{error_message}.", error_message => $!));
+                    busy_dialog_run($dialog);
+                    $dialog->destroy();
+                }
+                else
+                {
+                    binmode($fh);
+                    $fh->print($$data);
+                    $fh->close();
+                    $done = 1;
+                }
 
-	    }
+            }
 
-	}
-	else
-	{
-	    $done = 1;
-	}
+        }
+        else
+        {
+            $done = 1;
+        }
     }
     while (! $done);
 
     $file_chooser_dir_locations{save_as_dir} =
-	$chooser_dialog->get_current_folder();
+        $chooser_dialog->get_current_folder();
     $chooser_dialog->destroy();
 
 }
@@ -758,82 +758,82 @@ sub treeview_setup_search_column_selection($@)
     foreach my $col_nr (@columns)
     {
 
-	my ($button,
-	    $col,
-	    $label);
+        my ($button,
+            $col,
+            $label);
 
-	next unless (defined($col = $treeview->get_column($col_nr)));
+        next unless (defined($col = $treeview->get_column($col_nr)));
 
-	# We need to add a widget if we are going to get back a button widget
-	# from $treeview->get_parent() (this is just how Gtk2 works, I guess
-	# the header widgets are by default some sort of cut down affair).
+        # We need to add a widget if we are going to get back a button widget
+        # from $treeview->get_parent() (this is just how Gtk2 works, I guess
+        # the header widgets are by default some sort of cut down affair).
 
-	$label = Gtk2::Label->new($col->get_title());
-	$col->set_widget($label);
-	$label->show();
+        $label = Gtk2::Label->new($col->get_title());
+        $col->set_widget($label);
+        $label->show();
 
-	# Find the header button widget.
+        # Find the header button widget.
 
-	for ($button = $col->get_widget();
-	     defined($button) && ! $button->isa("Gtk2::Button");
-	     $button = $button->get_parent())
-	{
-	}
-	next unless (defined($button));
+        for ($button = $col->get_widget();
+             defined($button) && ! $button->isa("Gtk2::Button");
+             $button = $button->get_parent())
+        {
+        }
+        next unless (defined($button));
 
-	# Attach a mouse button press event callback to the column header
-	# button.
+        # Attach a mouse button press event callback to the column header
+        # button.
 
-	$button->signal_connect
-	    ("button_press_event",
-	     sub {
+        $button->signal_connect
+            ("button_press_event",
+             sub {
 
-		 my ($widget, $event, $data) = @_;
+                 my ($widget, $event, $data) = @_;
 
-		 # We are only interested in right button mouse clicks.
+                 # We are only interested in right button mouse clicks.
 
-		 return FALSE unless ($event->button() == 3);
+                 return FALSE unless ($event->button() == 3);
 
-		 my ($menu,
-		     $menu_item);
+                 my ($menu,
+                     $menu_item);
 
-		 # Create a popup menu with the search option in it.
+                 # Create a popup menu with the search option in it.
 
-		 $menu = Gtk2::Menu->new();
-		 $menu_item =
-		     Gtk2::MenuItem->new(__("Select As Search Column"));
-		 $menu->append($menu_item);
-		 $menu_item->show();
+                 $menu = Gtk2::Menu->new();
+                 $menu_item =
+                     Gtk2::MenuItem->new(__("Select As Search Column"));
+                 $menu->append($menu_item);
+                 $menu_item->show();
 
-		 # Setup a callback that will set up that column for searching
-		 # if the user should select the option.
+                 # Setup a callback that will set up that column for searching
+                 # if the user should select the option.
 
-		 $menu_item->signal_connect
-		     ("activate",
-		      sub {
+                 $menu_item->signal_connect
+                     ("activate",
+                      sub {
 
-			  my ($widget, $data) = @_;
+                          my ($widget, $data) = @_;
 
-			  $data->{treeview}->
-			      set_search_column($data->{col_nr});
+                          $data->{treeview}->
+                              set_search_column($data->{col_nr});
 
-		      },
-		      $data);
+                      },
+                      $data);
 
-		 # Display the popup menu.
+                 # Display the popup menu.
 
-		 $menu->popup(undef,
-			      undef,
-			      undef,
-			      undef,
-			      $event->button(),
-			      $event->time());
+                 $menu->popup(undef,
+                              undef,
+                              undef,
+                              undef,
+                              $event->button(),
+                              $event->time());
 
-		 return TRUE;
+                 return TRUE;
 
-	     },
-	     {treeview => $treeview,
-	      col_nr   => $col_nr});
+             },
+             {treeview => $treeview,
+              col_nr   => $col_nr});
 
     }
 
@@ -865,7 +865,7 @@ sub treeview_column_searcher($$$$)
     my ($model, $column, $key, $iter) = @_;
 
     my ($re,
-	$value);
+        $value);
 
     # Get the value in the treeview's cell.
 
@@ -877,14 +877,14 @@ sub treeview_column_searcher($$$$)
 
     eval
     {
-	if ($user_preferences->{list_search_as_re})
-	{
-	    $re = qr/$key/;
-	}
-	else
-	{
-	    $re = qr/\Q$key\E/;
-	}
+        if ($user_preferences->{list_search_as_re})
+        {
+            $re = qr/$key/;
+        }
+        else
+        {
+            $re = qr/\Q$key\E/;
+        }
     };
     return TRUE if ($@);
 
@@ -892,11 +892,11 @@ sub treeview_column_searcher($$$$)
 
     if ($value =~ m/$re/)
     {
-	return FALSE;
+        return FALSE;
     }
     else
     {
-	return TRUE;
+        return TRUE;
     }
 
 }
@@ -939,7 +939,7 @@ sub get_branch_revisions($$$$$)
 
     if (defined($branch) && $branch ne "")
     {
-	$branch =~ s/$select_escape_re/\\$1/g;
+        $branch =~ s/$select_escape_re/\\$1/g;
     }
 
     # Now get the revisions matching the branch name, either as tags or as
@@ -948,148 +948,148 @@ sub get_branch_revisions($$$$$)
     if ($tags)
     {
 
-	my (%rev_id_to_tags,
-	    %seen,
-	    @sorted_rev_ids,
-	    @tags);
+        my (%rev_id_to_tags,
+            %seen,
+            @sorted_rev_ids,
+            @tags);
 
-	# Get the list of revision tags.
+        # Get the list of revision tags.
 
-	$mtn->tags(\@tags, $branch);
-	$appbar->set_progress_percentage(0.5) if (defined($appbar));
-	WindowManager->update_gui();
+        $mtn->tags(\@tags, $branch);
+        $appbar->set_progress_percentage(0.5) if (defined($appbar));
+        WindowManager->update_gui();
 
-	# Does the list need truncating (in which case we need to sort by date
-	# to keep the most recent tags) or does the user want to sort tags by
-	# date?
+        # Does the list need truncating (in which case we need to sort by date
+        # to keep the most recent tags) or does the user want to sort tags by
+        # date?
 
-	if (($user_preferences->{query}->{tagged}->{limit} > 0
-	     && scalar(@tags) > $user_preferences->{query}->{tagged}->{limit})
-	    || $user_preferences->{query}->{tagged}->{sort_chronologically})
-	{
+        if (($user_preferences->{query}->{tagged}->{limit} > 0
+             && scalar(@tags) > $user_preferences->{query}->{tagged}->{limit})
+            || $user_preferences->{query}->{tagged}->{sort_chronologically})
+        {
 
-	    # Yes tags are to be either sorted by date or need to be truncated
-	    # (requiring them to temporarily be sorted by date).
+            # Yes tags are to be either sorted by date or need to be truncated
+            # (requiring them to temporarily be sorted by date).
 
-	    # Build up a hash mapping revision id to tag(s).
+            # Build up a hash mapping revision id to tag(s).
 
-	    foreach my $tag (@tags)
-	    {
-		if (exists($rev_id_to_tags{$tag->{revision_id}}))
-		{
-		    push(@{$rev_id_to_tags{$tag->{revision_id}}}, $tag->{tag});
-		}
-		else
-		{
-		    $rev_id_to_tags{$tag->{revision_id}} = [$tag->{tag}];
-		}
-	    }
+            foreach my $tag (@tags)
+            {
+                if (exists($rev_id_to_tags{$tag->{revision_id}}))
+                {
+                    push(@{$rev_id_to_tags{$tag->{revision_id}}}, $tag->{tag});
+                }
+                else
+                {
+                    $rev_id_to_tags{$tag->{revision_id}} = [$tag->{tag}];
+                }
+            }
 
-	    # Sort the revision ids into date order (youngest first).
+            # Sort the revision ids into date order (youngest first).
 
-	    $mtn->toposort(\@sorted_rev_ids, keys(%rev_id_to_tags));
-	    @sorted_rev_ids = reverse(@sorted_rev_ids);
+            $mtn->toposort(\@sorted_rev_ids, keys(%rev_id_to_tags));
+            @sorted_rev_ids = reverse(@sorted_rev_ids);
 
-	    # Now build up a list of tags based on this ordering, deduping
-	    # items and stopping when we have enough tags.
+            # Now build up a list of tags based on this ordering, deduping
+            # items and stopping when we have enough tags.
 
-	    revision: foreach my $rev_id (@sorted_rev_ids)
-	    {
-		foreach my $tag (sort(@{$rev_id_to_tags{$rev_id}}))
-		{
-		    push(@$revisions, $tag) if (! $seen{$tag} ++);
-		    last revision
-			if ($user_preferences->{query}->{tagged}->{limit} > 0
-			    && scalar(@$revisions) >=
-			        $user_preferences->{query}->{tagged}->{limit});
-		}
-	    }
+            revision: foreach my $rev_id (@sorted_rev_ids)
+            {
+                foreach my $tag (sort(@{$rev_id_to_tags{$rev_id}}))
+                {
+                    push(@$revisions, $tag) if (! $seen{$tag} ++);
+                    last revision
+                        if ($user_preferences->{query}->{tagged}->{limit} > 0
+                            && scalar(@$revisions) >=
+                                $user_preferences->{query}->{tagged}->{limit});
+                }
+            }
 
-	}
-	else
-	{
+        }
+        else
+        {
 
-	    # No tags are to be sorted by name, without truncation.
+            # No tags are to be sorted by name, without truncation.
 
-	    # At this stage simply extract the tags and dedupe them.
+            # At this stage simply extract the tags and dedupe them.
 
-	    @$revisions = map($_->{tag}, grep(! $seen{$_->{tag}} ++, @tags));
+            @$revisions = map($_->{tag}, grep(! $seen{$_->{tag}} ++, @tags));
 
-	}
+        }
 
-	# We now have a list of tags in @$revisions of the correct size and
-	# sorted by date if so required by the user. So resort the list
-	# aplhabetically if required.
+        # We now have a list of tags in @$revisions of the correct size and
+        # sorted by date if so required by the user. So resort the list
+        # aplhabetically if required.
 
-	@$revisions = sort(@$revisions)
-	    if (! $user_preferences->{query}->{tagged}->
-		    {sort_chronologically});
+        @$revisions = sort(@$revisions)
+            if (! $user_preferences->{query}->{tagged}->
+                    {sort_chronologically});
 
     }
     else
     {
 
-	# Get the list of revision ids, if no branch is specified then get all
-	# of the revisions within the database.
+        # Get the list of revision ids, if no branch is specified then get all
+        # of the revisions within the database.
 
-	if (defined($branch) && $branch ne "")
-	{
-	    $mtn->select($revisions, "b:" . $branch);
-	}
-	else
-	{
-	    $mtn->select($revisions, "i:");
-	}
+        if (defined($branch) && $branch ne "")
+        {
+            $mtn->select($revisions, "b:" . $branch);
+        }
+        else
+        {
+            $mtn->select($revisions, "i:");
+        }
 
-	# Does it need truncating?
+        # Does it need truncating?
 
-	if ($user_preferences->{query}->{id}->{limit} == 0
-	    || scalar(@$revisions)
-	        <= $user_preferences->{query}->{id}->{limit})
-	{
+        if ($user_preferences->{query}->{id}->{limit} == 0
+            || scalar(@$revisions)
+                <= $user_preferences->{query}->{id}->{limit})
+        {
 
-	    # No so simply sort it.
+            # No so simply sort it.
 
-	    if ($user_preferences->{query}->{id}->{sort_chronologically})
-	    {
-		$appbar->set_progress_percentage(0.33) if (defined($appbar));
-		WindowManager->update_gui();
-		$mtn->toposort($revisions, @$revisions);
-		$appbar->set_progress_percentage(0.66) if (defined($appbar));
-		WindowManager->update_gui();
-		@$revisions = reverse(@$revisions);
-	    }
-	    else
-	    {
-		$appbar->set_progress_percentage(0.5) if (defined($appbar));
-		WindowManager->update_gui();
-		@$revisions = sort(@$revisions);
-	    }
+            if ($user_preferences->{query}->{id}->{sort_chronologically})
+            {
+                $appbar->set_progress_percentage(0.33) if (defined($appbar));
+                WindowManager->update_gui();
+                $mtn->toposort($revisions, @$revisions);
+                $appbar->set_progress_percentage(0.66) if (defined($appbar));
+                WindowManager->update_gui();
+                @$revisions = reverse(@$revisions);
+            }
+            else
+            {
+                $appbar->set_progress_percentage(0.5) if (defined($appbar));
+                WindowManager->update_gui();
+                @$revisions = sort(@$revisions);
+            }
 
-	}
-	else
-	{
+        }
+        else
+        {
 
-	    # Yes so truncate and then sort it.
+            # Yes so truncate and then sort it.
 
-	    $appbar->set_progress_percentage(0.33) if (defined($appbar));
-	    WindowManager->update_gui();
-	    $mtn->toposort($revisions, @$revisions);
-	    $appbar->set_progress_percentage(0.66) if (defined($appbar));
-	    splice(@$revisions,
-		   0,
-		   scalar(@$revisions)
-		       - $user_preferences->{query}->{id}->{limit});
-	    if ($user_preferences->{query}->{id}->{sort_chronologically})
-	    {
-		@$revisions = reverse(@$revisions);
-	    }
-	    else
-	    {
-		@$revisions = sort(@$revisions);
-	    }
+            $appbar->set_progress_percentage(0.33) if (defined($appbar));
+            WindowManager->update_gui();
+            $mtn->toposort($revisions, @$revisions);
+            $appbar->set_progress_percentage(0.66) if (defined($appbar));
+            splice(@$revisions,
+                   0,
+                   scalar(@$revisions)
+                       - $user_preferences->{query}->{id}->{limit});
+            if ($user_preferences->{query}->{id}->{sort_chronologically})
+            {
+                @$revisions = reverse(@$revisions);
+            }
+            else
+            {
+                @$revisions = sort(@$revisions);
+            }
 
-	}
+        }
 
     }
 
@@ -1130,24 +1130,24 @@ sub get_revision_ids($$;$)
     return unless ($instance->{revision_combo_details}->{complete});
     if ($instance->{tagged_checkbutton}->get_active())
     {
-	my $escaped_value;
-	my $query = "";
-	if ($instance->{branch_combo_details}->{complete})
-	{
-	    $escaped_value = $instance->{branch_combo_details}->{value};
-	    $escaped_value =~ s/$select_escape_re/\\$1/g;
-	    $query = "b:" . $escaped_value . "/";
-	}
-	$escaped_value = $instance->{revision_combo_details}->{value};
-	$escaped_value =~ s/$select_escape_re/\\$1/g;
-	$query .= "t:" . $escaped_value;
-	$instance->{mtn}->select($revision_ids, $query);
-	$$tag = $instance->{revision_combo_details}->{value}
-	    if (defined($tag));
+        my $escaped_value;
+        my $query = "";
+        if ($instance->{branch_combo_details}->{complete})
+        {
+            $escaped_value = $instance->{branch_combo_details}->{value};
+            $escaped_value =~ s/$select_escape_re/\\$1/g;
+            $query = "b:" . $escaped_value . "/";
+        }
+        $escaped_value = $instance->{revision_combo_details}->{value};
+        $escaped_value =~ s/$select_escape_re/\\$1/g;
+        $query .= "t:" . $escaped_value;
+        $instance->{mtn}->select($revision_ids, $query);
+        $$tag = $instance->{revision_combo_details}->{value}
+            if (defined($tag));
     }
     else
     {
-	push(@$revision_ids, $instance->{revision_combo_details}->{value});
+        push(@$revision_ids, $instance->{revision_combo_details}->{value});
     }
 
 }
@@ -1176,38 +1176,38 @@ sub cache_extra_file_info($$$)
     my ($mtn, $revision_id, $manifest_entry) = @_;
 
     my (@certs_list,
-	@revision_list);
+        @revision_list);
 
     if (exists($manifest_entry->{content_mark}))
     {
-	$revision_list[0] = $manifest_entry->{content_mark};
+        $revision_list[0] = $manifest_entry->{content_mark};
     }
     else
     {
-	$mtn->get_content_changed(\@revision_list,
-				  $revision_id,
-				  $manifest_entry->{name});
-	if (scalar(@revision_list) > 1)
-	{
-	    $mtn->toposort(\@revision_list, @revision_list);
-	    @revision_list = reverse(@revision_list);
-	}
+        $mtn->get_content_changed(\@revision_list,
+                                  $revision_id,
+                                  $manifest_entry->{name});
+        if (scalar(@revision_list) > 1)
+        {
+            $mtn->toposort(\@revision_list, @revision_list);
+            @revision_list = reverse(@revision_list);
+        }
     }
     $manifest_entry->{last_changed_revision} = $revision_list[0];
     $mtn->certs(\@certs_list, $revision_list[0]);
     $manifest_entry->{author} = $manifest_entry->{last_update} = "";
     foreach my $cert (@certs_list)
     {
-	if ($cert->{name} eq "author")
-	{
-	    $manifest_entry->{author} = $cert->{value};
-	}
-	elsif ($cert->{name} eq "date")
-	{
-	    $manifest_entry->{last_update} = $cert->{value};
-	}
-	last if ($manifest_entry->{author} ne ""
-		 && $manifest_entry->{last_update} ne "");
+        if ($cert->{name} eq "author")
+        {
+            $manifest_entry->{author} = $cert->{value};
+        }
+        elsif ($cert->{name} eq "date")
+        {
+            $manifest_entry->{last_update} = $cert->{value};
+        }
+        last if ($manifest_entry->{author} ne ""
+                 && $manifest_entry->{last_update} ne "");
     }
 
 }
@@ -1233,49 +1233,49 @@ sub file_glob_to_regexp($)
     my $file_glob = $_[0];
 
     my ($escaping,
-	$first,
-	$re_text);
+        $first,
+        $re_text);
 
     $escaping = 0;
     $first = 1;
     $re_text = "^";
     foreach my $char (split(//, $file_glob))
     {
-	if ($first)
-	{
-	    $re_text .= "(?=[^\\.])" unless $char eq ".";
-	    $first = 0;
-	}
-	if (".+^\$\@%()|" =~ m/\Q$char\E/)
-	{
-	    $re_text .= "\\" . $char;
-	}
-	elsif ($char eq "*")
-	{
-	    $re_text .= $escaping ? "\\*" : "[^/]*";
-	}
-	elsif ($char eq "?")
-	{
-	    $re_text .= $escaping ? "\\?" : "[^/]";
-	}
-	elsif ($char eq "\\")
-	{
-	    if ($escaping)
-	    {
-		$re_text .= "\\\\";
-		$escaping = 0;
-	    }
-	    else
-	    {
-		$escaping = 1;
-	    }
-	}
-	else
-	{
-	    $re_text .= "\\" if ($escaping && $char eq "[");
-	    $re_text .= $char;
-	    $escaping = 0;
-	}
+        if ($first)
+        {
+            $re_text .= "(?=[^\\.])" unless $char eq ".";
+            $first = 0;
+        }
+        if (".+^\$\@%()|" =~ m/\Q$char\E/)
+        {
+            $re_text .= "\\" . $char;
+        }
+        elsif ($char eq "*")
+        {
+            $re_text .= $escaping ? "\\*" : "[^/]*";
+        }
+        elsif ($char eq "?")
+        {
+            $re_text .= $escaping ? "\\?" : "[^/]";
+        }
+        elsif ($char eq "\\")
+        {
+            if ($escaping)
+            {
+                $re_text .= "\\\\";
+                $escaping = 0;
+            }
+            else
+            {
+                $escaping = 1;
+            }
+        }
+        else
+        {
+            $re_text .= "\\" if ($escaping && $char eq "[");
+            $re_text .= $char;
+            $escaping = 0;
+        }
     }
     $re_text .= "\$";
 
@@ -1312,19 +1312,19 @@ sub program_valid($;$)
 
     if (File::Spec->file_name_is_absolute($program))
     {
-	$found = 1 if (-x $program || -f ($program . ".exe"));
+        $found = 1 if (-x $program || -f ($program . ".exe"));
     }
     else
     {
-	foreach my $dir (File::Spec->path())
-	{
-	    if (-x File::Spec->catfile($dir, $program)
-		|| -f File::Spec->catfile($dir, $program . ".exe"))
-	    {
-		$found = 1;
-		last;
-	    }
-	}
+        foreach my $dir (File::Spec->path())
+        {
+            if (-x File::Spec->catfile($dir, $program)
+                || -f File::Spec->catfile($dir, $program . ".exe"))
+            {
+                $found = 1;
+                last;
+            }
+        }
     }
 
     # Tell the user that the program can't be found if that is the case and the
@@ -1332,16 +1332,16 @@ sub program_valid($;$)
 
     if (! $found && defined($parent))
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($parent,
-	     ["modal"],
-	     "info",
-	     "close",
-	     __x("The program `{program_name}' cannot be found.\n"
-		     . "Is it installed?",
-		 program_name => $program));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
+        my $dialog = Gtk2::MessageDialog->new
+            ($parent,
+             ["modal"],
+             "info",
+             "close",
+             __x("The program `{program_name}' cannot be found.\n"
+                     . "Is it installed?",
+                 program_name => $program));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
     }
 
     return $found;
@@ -1381,56 +1381,56 @@ sub handle_comboxentry_history($$;$)
 
     if (defined($value))
     {
-	if ($value ne "")
-	{
-	    foreach my $entry (@$history_ref)
-	    {
-		if ($entry eq $value)
-		{
-		    $update_history = 0;
-		    last;
-		}
-	    }
-	}
-	else
-	{
-	    $update_history = 0;
-	}
-	if ($update_history)
-	{
-	    splice(@$history_ref, $user_preferences->{history_size})
-		if (unshift(@$history_ref, $value) >
-		    $user_preferences->{history_size});
-	    eval
-	    {
-		save_preferences($user_preferences);
-	    };
-	    if ($@)
-	    {
-		chomp($@);
-		my $dialog = Gtk2::MessageDialog->new
-		    (undef,
-		     ["modal"],
-		     "warning",
-		     "close",
-		     __("Your preferences could not be saved:\n") . $@);
-		busy_dialog_run($dialog);
-		$dialog->destroy();
-	    }
-	}
+        if ($value ne "")
+        {
+            foreach my $entry (@$history_ref)
+            {
+                if ($entry eq $value)
+                {
+                    $update_history = 0;
+                    last;
+                }
+            }
+        }
+        else
+        {
+            $update_history = 0;
+        }
+        if ($update_history)
+        {
+            splice(@$history_ref, $user_preferences->{history_size})
+                if (unshift(@$history_ref, $value) >
+                    $user_preferences->{history_size});
+            eval
+            {
+                save_preferences($user_preferences);
+            };
+            if ($@)
+            {
+                chomp($@);
+                my $dialog = Gtk2::MessageDialog->new
+                    (undef,
+                     ["modal"],
+                     "warning",
+                     "close",
+                     __("Your preferences could not be saved:\n") . $@);
+                busy_dialog_run($dialog);
+                $dialog->destroy();
+            }
+        }
     }
 
     # Update the comboboxentry itself if necessary.
 
     if ($update_history)
     {
-	my $text_entry_value = $widget->child()->get_text();
-	$widget->get_model()->clear();
-	foreach my $entry (@$history_ref)
-	{
-	    $widget->append_text($entry);
-	}
-	$widget->child()->set_text($text_entry_value);
+        my $text_entry_value = $widget->child()->get_text();
+        $widget->get_model()->clear();
+        foreach my $entry (@$history_ref)
+        {
+            $widget->append_text($entry);
+        }
+        $widget->child()->set_text($text_entry_value);
     }
 
 }
@@ -1459,48 +1459,48 @@ sub display_help(;$)
     if (HTML_VIEWER_CMD eq "")
     {
 
-	# Simply let Gnome handle it using yelp.
+        # Simply let Gnome handle it using yelp.
 
-	if (defined($section))
-	{
-	    Gnome2::Help->display("mtn-browse.xml", $section);
-	}
-	else
-	{
-	    Gnome2::Help->display("mtn-browse.xml");
-	}
+        if (defined($section))
+        {
+            Gnome2::Help->display("mtn-browse.xml", $section);
+        }
+        else
+        {
+            Gnome2::Help->display("mtn-browse.xml");
+        }
 
     }
     else
     {
 
-	my $url;
+        my $url;
 
-	# Use the specified HTML viewer to display the help section.
+        # Use the specified HTML viewer to display the help section.
 
-	$section = "index" unless defined($section);
-	if (exists($help_ref_to_url_map{$section}))
-	{
-	    $url = $help_ref_to_url_map{$section};
-	}
-	else
-	{
-	    $url = $help_ref_to_url_map{"index"};
-	}
-	if (! defined($url) || $url eq "")
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		(undef,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __("The requested help section\n"
-		    . "cannot be found or is not known."));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
-	display_html($url);
+        $section = "index" unless defined($section);
+        if (exists($help_ref_to_url_map{$section}))
+        {
+            $url = $help_ref_to_url_map{$section};
+        }
+        else
+        {
+            $url = $help_ref_to_url_map{"index"};
+        }
+        if (! defined($url) || $url eq "")
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                (undef,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __("The requested help section\n"
+                    . "cannot be found or is not known."));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
+        display_html($url);
 
     }
 
@@ -1528,28 +1528,28 @@ sub display_html($)
     if (HTML_VIEWER_CMD eq "")
     {
 
-	# Simply let Gnome handle it.
+        # Simply let Gnome handle it.
 
-	Gnome2::URL->show($url);
+        Gnome2::URL->show($url);
 
     }
     else
     {
 
-	my $cmd = HTML_VIEWER_CMD;
+        my $cmd = HTML_VIEWER_CMD;
 
-	if ($cmd =~ m/\{url\}/)
-	{
-	    $cmd =~ s/\{url\}/$url/g;
-	}
-	else
-	{
-	    $cmd .= " " . $url;
-	}
+        if ($cmd =~ m/\{url\}/)
+        {
+            $cmd =~ s/\{url\}/$url/g;
+        }
+        else
+        {
+            $cmd .= " " . $url;
+        }
 
-	# Launch it.
+        # Launch it.
 
-	system($cmd . " &");
+        system($cmd . " &");
 
     }
 
@@ -1582,21 +1582,21 @@ sub register_help_callbacks($$@)
     my $wm = WindowManager->instance();
 
     build_help_ref_to_url_map()
-	if (HTML_VIEWER_CMD ne "" && keys(%help_ref_to_url_map) == 0);
+        if (HTML_VIEWER_CMD ne "" && keys(%help_ref_to_url_map) == 0);
 
     foreach my $entry (@details)
     {
-	my $help_ref = $entry->{help_ref};
-	my $widget = defined($entry->{widget})
-	    ? $glade->get_widget($entry->{widget}) : undef;
-	$wm->help_connect($instance,
-			  $widget,
-			  sub {
-			      my ($widget, $instance) = @_;
-			      return if ($instance->{in_cb});
-			      local $instance->{in_cb} = 1;
-			      display_help($help_ref);
-			  });
+        my $help_ref = $entry->{help_ref};
+        my $widget = defined($entry->{widget})
+            ? $glade->get_widget($entry->{widget}) : undef;
+        $wm->help_connect($instance,
+                          $widget,
+                          sub {
+                              my ($widget, $instance) = @_;
+                              return if ($instance->{in_cb});
+                              local $instance->{in_cb} = 1;
+                              display_help($help_ref);
+                          });
     }
 
 }
@@ -1629,49 +1629,49 @@ sub create_format_tags($)
     $text_buffer->create_tag("bold", "weight" => PANGO_WEIGHT_BOLD);
     $text_buffer->create_tag("italics", "style" => "italic");
     $text_buffer->create_tag("bold-italics",
-			     "weight" => PANGO_WEIGHT_BOLD,
-			     "style" => "italic");
+                             "weight" => PANGO_WEIGHT_BOLD,
+                             "style" => "italic");
 
     # Set up the colour and style schemes for file comparison and annotation.
 
     foreach my $i (1 .. 2)
     {
-	my $clr = $user_preferences->{colours}->{"cmp_revision_" . $i};
-	$text_buffer->create_tag("compare-" . $i,
-				 "foreground" => $clr->{fg});
-	$text_buffer->create_tag("bold-compare-" . $i,
-				 "weight" => PANGO_WEIGHT_BOLD,
-				 "foreground" => $clr->{fg});
-	$text_buffer->create_tag("italics-compare-" . $i,
-				 "style" => "italic",
-				 "foreground" => $clr->{fg});
-	$text_buffer->create_tag("bold-italics-compare-" . $i,
-				 "weight" => PANGO_WEIGHT_BOLD,
-				 "style" => "italic",
-				 "foreground" => $clr->{fg});
-	$text_buffer->create_tag("compare-file-" . $i,
-				 "foreground" => $clr->{fg},
-				 "background" => $clr->{bg});
-	$text_buffer->create_tag("compare-file-info-" . $i,
-				 "weight" => PANGO_WEIGHT_BOLD,
-				 "foreground" => $clr->{hl},
-				 "background" => "DarkSlateGrey");
-	foreach my $prefix ("annotate_prefix_", "annotate_text_")
-	{
-	    my $tag = $prefix;
-	    $tag =~ s/_/-/g;
-	    $clr = $user_preferences->{colours}->{$prefix . $i};
-	    $text_buffer->create_tag($tag . $i,
-				     "foreground" => $clr->{fg},
-				     "background" => $clr->{bg});
-	}
+        my $clr = $user_preferences->{colours}->{"cmp_revision_" . $i};
+        $text_buffer->create_tag("compare-" . $i,
+                                 "foreground" => $clr->{fg});
+        $text_buffer->create_tag("bold-compare-" . $i,
+                                 "weight" => PANGO_WEIGHT_BOLD,
+                                 "foreground" => $clr->{fg});
+        $text_buffer->create_tag("italics-compare-" . $i,
+                                 "style" => "italic",
+                                 "foreground" => $clr->{fg});
+        $text_buffer->create_tag("bold-italics-compare-" . $i,
+                                 "weight" => PANGO_WEIGHT_BOLD,
+                                 "style" => "italic",
+                                 "foreground" => $clr->{fg});
+        $text_buffer->create_tag("compare-file-" . $i,
+                                 "foreground" => $clr->{fg},
+                                 "background" => $clr->{bg});
+        $text_buffer->create_tag("compare-file-info-" . $i,
+                                 "weight" => PANGO_WEIGHT_BOLD,
+                                 "foreground" => $clr->{hl},
+                                 "background" => "DarkSlateGrey");
+        foreach my $prefix ("annotate_prefix_", "annotate_text_")
+        {
+            my $tag = $prefix;
+            $tag =~ s/_/-/g;
+            $clr = $user_preferences->{colours}->{$prefix . $i};
+            $text_buffer->create_tag($tag . $i,
+                                     "foreground" => $clr->{fg},
+                                     "background" => $clr->{bg});
+        }
     }
 
     # Yellow text on a grey background.
 
     $text_buffer->create_tag("compare-info",
-			     "foreground" => "Yellow",
-			     "background" => "LightSlateGrey");
+                             "foreground" => "Yellow",
+                             "background" => "LightSlateGrey");
 
 }
 #
@@ -1696,39 +1696,39 @@ sub hex_dump($)
     my $data = $_[0];
 
     my ($buffer,
-	$counter,
-	@line);
+        $counter,
+        @line);
 
     $counter = 0;
     foreach my $byte (split(//, $$data))
     {
-	++ $counter;
-	push(@line, $byte);
-	$buffer .= sprintf("%02X ", ord($byte));
-	$buffer .= " " if (($counter % 8) == 0);
-	if (($counter % 16) == 0)
-	{
-	    foreach my $byte2 (@line)
-	    {
-		$buffer .= ($byte2 =~ m/[[:print:]]/) ? (" " . $byte2) : " .";
-	    }
-	    $buffer .= "\n";
-	    @line = ();
-	}
+        ++ $counter;
+        push(@line, $byte);
+        $buffer .= sprintf("%02X ", ord($byte));
+        $buffer .= " " if (($counter % 8) == 0);
+        if (($counter % 16) == 0)
+        {
+            foreach my $byte2 (@line)
+            {
+                $buffer .= ($byte2 =~ m/[[:print:]]/) ? (" " . $byte2) : " .";
+            }
+            $buffer .= "\n";
+            @line = ();
+        }
     }
 
     # If the last line is incomplete then finish it off.
 
     if (scalar(@line) > 0)
     {
-	$buffer .= "   " x (16 - scalar(@line));
-	$buffer .= " " if (scalar(@line) < 8);
-	$buffer .= " ";
-	foreach my $byte2 (@line)
-	{
-	    $buffer .= ($byte2 =~ m/[[:print:]]/) ? (" " . $byte2) : " .";
-	}
-	$buffer .= "\n";
+        $buffer .= "   " x (16 - scalar(@line));
+        $buffer .= " " if (scalar(@line) < 8);
+        $buffer .= " ";
+        foreach my $byte2 (@line)
+        {
+            $buffer .= ($byte2 =~ m/[[:print:]]/) ? (" " . $byte2) : " .";
+        }
+        $buffer .= "\n";
     }
 
     return \$buffer;
@@ -1757,23 +1757,23 @@ sub data_is_binary($)
     my $data = $_[0];
 
     my ($chunk,
-	$length,
-	$non_printable,
-	$offset,
-	$total_length);
+        $length,
+        $non_printable,
+        $offset,
+        $total_length);
 
     $offset = 0;
     $total_length = length($$data);
     while ($offset < $total_length)
     {
-	$chunk = substr($$data, $offset, CHUNK_SIZE);
-	$offset += CHUNK_SIZE;
-	$length = length($chunk);
-	$non_printable =
-	    scalar(grep(/[^[:print:][:space:]]/, split(//, $chunk)));
-	return 1
-	    if (((100 * $non_printable) / $length)
-		> $user_preferences->{binary_threshold});
+        $chunk = substr($$data, $offset, CHUNK_SIZE);
+        $offset += CHUNK_SIZE;
+        $length = length($chunk);
+        $non_printable =
+            scalar(grep(/[^[:print:][:space:]]/, split(//, $chunk)));
+        return 1
+            if (((100 * $non_printable) / $length)
+                > $user_preferences->{binary_threshold});
     }
     return;
 
@@ -1799,9 +1799,9 @@ sub colour_to_string($)
     my $colour = $_[0];
 
     return sprintf("#%02X%02X%02X",
-		   ($colour->red() >> 8) & 0xff,
-		   ($colour->green() >> 8) & 0xff,
-		   ($colour->blue() >> 8) & 0xff);
+                   ($colour->red() >> 8) & 0xff,
+                   ($colour->green() >> 8) & 0xff,
+                   ($colour->blue() >> 8) & 0xff);
 
 }
 #
@@ -1858,29 +1858,29 @@ sub glade_signal_autoconnect($$)
     $caller_package = "main" if (! defined($caller_package));
 
     $glade->signal_autoconnect
-	(sub {
-	     my ($callback_name,
-		 $widget,
-		 $signal_name,
-		 $signal_data,
-		 $connect_object,
-		 $after,
-		 $user_data) = @_;
-	     my $func = $after ? "signal_connect_after" : "signal_connect";
+        (sub {
+             my ($callback_name,
+                 $widget,
+                 $signal_name,
+                 $signal_data,
+                 $connect_object,
+                 $after,
+                 $user_data) = @_;
+             my $func = $after ? "signal_connect_after" : "signal_connect";
 
-	     # Need to fully qualify any callback name that isn't prefixed by
-	     # it's package name with the name of the calling package.
+             # Need to fully qualify any callback name that isn't prefixed by
+             # it's package name with the name of the calling package.
 
-	     $callback_name = $caller_package . "::" . $callback_name
-		 if (index($callback_name, "::") < 0);
+             $callback_name = $caller_package . "::" . $callback_name
+                 if (index($callback_name, "::") < 0);
 
-	     # Actually connect the signal handler.
+             # Actually connect the signal handler.
 
-	     $widget->$func($signal_name,
-			    $callback_name,
-			    $connect_object ? $connect_object : $user_data);
-	 },
-	 $client_data);
+             $widget->$func($signal_name,
+                            $callback_name,
+                            $connect_object ? $connect_object : $user_data);
+         },
+         $client_data);
 
 }
 #
@@ -1901,30 +1901,30 @@ sub build_help_ref_to_url_map()
 {
 
     my ($dir,
-	$dir_path,
-	$fname,
-	$locale,
-	@lparts,
-	$nr_parts,
-	$prog,
-	$tmp);
+        $dir_path,
+        $fname,
+        $locale,
+        @lparts,
+        $nr_parts,
+        $prog,
+        $tmp);
 
     # Ask Gnome where the based help directory is, failing that have an
     # educated guess.
 
     if (HTML_VIEWER_CMD eq ""
-	&& defined($prog = Gnome2::Program->get_program()))
+        && defined($prog = Gnome2::Program->get_program()))
     {
-	($dir_path) = $prog->locate_file("app-help", "mtn-browse.xml", FALSE);
-	$dir_path = dirname($dir_path);
+        ($dir_path) = $prog->locate_file("app-help", "mtn-browse.xml", FALSE);
+        $dir_path = dirname($dir_path);
     }
     else
     {
-	$dir_path = File::Spec->catfile(PREFIX_DIR,
-					"share",
-					"gnome",
-					"help",
-					APPLICATION_NAME);
+        $dir_path = File::Spec->catfile(PREFIX_DIR,
+                                        "share",
+                                        "gnome",
+                                        "help",
+                                        APPLICATION_NAME);
     }
 
     # Work out the locale component, going from the most specific to the least.
@@ -1936,38 +1936,38 @@ sub build_help_ref_to_url_map()
     $nr_parts = scalar(@lparts);
     if (-d ($tmp = File::Spec->catfile($dir_path, $locale)))
     {
-	$dir_path = $tmp;
+        $dir_path = $tmp;
     }
     elsif ($nr_parts >= 3
-	   && -d ($tmp = File::Spec->catfile($dir_path,
-					     $lparts[0] . "_"
-					     . $lparts[1] . "."
-					     . $lparts[2])))
+           && -d ($tmp = File::Spec->catfile($dir_path,
+                                             $lparts[0] . "_"
+                                             . $lparts[1] . "."
+                                             . $lparts[2])))
     {
-	$dir_path = $tmp;
+        $dir_path = $tmp;
     }
     elsif ($nr_parts >= 2
-	   && -d ($tmp = File::Spec->catfile($dir_path,
-					     $lparts[0] . "_" . $lparts[1])))
+           && -d ($tmp = File::Spec->catfile($dir_path,
+                                             $lparts[0] . "_" . $lparts[1])))
     {
-	$dir_path = $tmp;
+        $dir_path = $tmp;
     }
     elsif ($nr_parts >= 1
-	   && -d ($tmp = File::Spec->catfile($dir_path, $lparts[0])))
+           && -d ($tmp = File::Spec->catfile($dir_path, $lparts[0])))
     {
-	$dir_path = $tmp;
+        $dir_path = $tmp;
     }
     elsif (-d ($tmp = File::Spec->catfile($dir_path, "POSIX")))
     {
-	$dir_path = $tmp;
+        $dir_path = $tmp;
     }
     elsif (-d ($tmp = File::Spec->catfile($dir_path, "C")))
     {
-	$dir_path = $tmp;
+        $dir_path = $tmp;
     }
     else
     {
-	return;
+        return;
     }
 
     # Now open the directory and scan all HTML files for links.
@@ -1975,61 +1975,61 @@ sub build_help_ref_to_url_map()
     return unless (defined($dir = IO::Dir->new($dir_path)));
     while (defined($fname = $dir->read()))
     {
-	my ($file,
-	    $full_name);
-	$full_name = File::Spec->catfile($dir_path, $fname);
-	$full_name = File::Spec->rel2abs($full_name);
+        my ($file,
+            $full_name);
+        $full_name = File::Spec->catfile($dir_path, $fname);
+        $full_name = File::Spec->rel2abs($full_name);
 
-	# Only scan HTML files.
+        # Only scan HTML files.
 
-	if ($fname =~ m/^.*\.html$/
-	    && defined($file = IO::File->new($full_name, "r")))
-	{
-	    my $line;
-	    while (defined($line = $file->getline()))
-	    {
+        if ($fname =~ m/^.*\.html$/
+            && defined($file = IO::File->new($full_name, "r")))
+        {
+            my $line;
+            while (defined($line = $file->getline()))
+            {
 
-		my ($dir_string,
-		    @dirs,
-		    $file_name,
-		    @list,
-		    $url,
-		    $volume);
+                my ($dir_string,
+                    @dirs,
+                    $file_name,
+                    @list,
+                    $url,
+                    $volume);
 
-		# Mangle the file name into a URL.
+                # Mangle the file name into a URL.
 
-		($volume, $dir_string, $file_name) =
-		    File::Spec->splitpath($full_name);
-		@dirs = File::Spec->splitdir($dir_string);
-		$url = "file://";
-		$url .= "/" . $volume . "/" if ($volume ne "");
-		$url .= join("/", @dirs);
-		$url .= "/" if ($url =~ m/.*[^\/]$/);
-		$url .= $file_name;
+                ($volume, $dir_string, $file_name) =
+                    File::Spec->splitpath($full_name);
+                @dirs = File::Spec->splitdir($dir_string);
+                $url = "file://";
+                $url .= "/" . $volume . "/" if ($volume ne "");
+                $url .= join("/", @dirs);
+                $url .= "/" if ($url =~ m/.*[^\/]$/);
+                $url .= $file_name;
 
-		# Process each link of the form <a name="..."> but filter out
-		# the internally generated ones (used for all figures).
+                # Process each link of the form <a name="..."> but filter out
+                # the internally generated ones (used for all figures).
 
-		@list = ($line =~ m/<a name=\"([^\"]+)\">/g);
-		foreach my $link (@list)
-		{
-		    $help_ref_to_url_map{$link} = $url . "#" . $link
-			if ($link !~ m/^id\d+$/);
-		}
+                @list = ($line =~ m/<a name=\"([^\"]+)\">/g);
+                foreach my $link (@list)
+                {
+                    $help_ref_to_url_map{$link} = $url . "#" . $link
+                        if ($link !~ m/^id\d+$/);
+                }
 
-		# Special case the contents page making sure that it has
-		# appropiate default entries pointing to it.
+                # Special case the contents page making sure that it has
+                # appropiate default entries pointing to it.
 
-		if ($fname eq "monotone-browse.html")
-		{
-		    $help_ref_to_url_map{""} = $url;
-		    $help_ref_to_url_map{"contents"} = $url;
-		    $help_ref_to_url_map{"index"} = $url;
-		}
+                if ($fname eq "monotone-browse.html")
+                {
+                    $help_ref_to_url_map{""} = $url;
+                    $help_ref_to_url_map{"contents"} = $url;
+                    $help_ref_to_url_map{"index"} = $url;
+                }
 
-	    }
-	    $file->close();
-	}
+            }
+            $file->close();
+        }
     }
     $dir->close();
 
@@ -2068,46 +2068,46 @@ sub adjust_time($$$)
 
     if ($units == DURATION_MONTHS)
     {
-	my ($month,
-	    $year);
-	($month, $year) = @$time_value[4, 5];
-	if ($period > 12)
-	{
-	    $year -= floor($period / 12);
-	    $period %= 12;
-	}
-	if ($period > $month)
-	{
-	    -- $year;
-	    $month = 12 - ($period - $month);
-	}
-	else
-	{
-	    $month -= $period;
-	}
-	@$time_value[4, 5] = ($month, $year);
-	$time = timelocal(@$time_value[0 .. 5]);
+        my ($month,
+            $year);
+        ($month, $year) = @$time_value[4, 5];
+        if ($period > 12)
+        {
+            $year -= floor($period / 12);
+            $period %= 12;
+        }
+        if ($period > $month)
+        {
+            -- $year;
+            $month = 12 - ($period - $month);
+        }
+        else
+        {
+            $month -= $period;
+        }
+        @$time_value[4, 5] = ($month, $year);
+        $time = timelocal(@$time_value[0 .. 5]);
     }
     elsif ($units == DURATION_YEARS)
     {
-	@$time_value[5] -= $period;
-	$time = timelocal(@$time_value[0 .. 5]);
+        @$time_value[5] -= $period;
+        $time = timelocal(@$time_value[0 .. 5]);
     }
     else
     {
-	$time = timelocal(@$time_value[0 .. 5]);
-	if ($units == DURATION_MINUTES)
-	{
-	    $time -= $period * 60;
-	}
-	elsif ($units == DURATION_HOURS)
-	{
-	    $time -= $period * 60 * 60;
-	}
-	elsif ($units == DURATION_DAYS)
-	{
-	    $time -= $period * 60 * 60 * 24;
-	}
+        $time = timelocal(@$time_value[0 .. 5]);
+        if ($units == DURATION_MINUTES)
+        {
+            $time -= $period * 60;
+        }
+        elsif ($units == DURATION_HOURS)
+        {
+            $time -= $period * 60 * 60;
+        }
+        elsif ($units == DURATION_DAYS)
+        {
+            $time -= $period * 60 * 60 * 24;
+        }
     }
 
     # Return the adjusted time back to the caller.
@@ -2140,23 +2140,23 @@ sub mtn_time_string_to_time($)
     if ($time_string =~ m/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/)
     {
 
-	my ($day_of_month,
-	    $hours,
-	    $minutes,
-	    $month,
-	    $seconds,
-	    $year);
+        my ($day_of_month,
+            $hours,
+            $minutes,
+            $month,
+            $seconds,
+            $year);
 
-	($year, $month, $day_of_month, $hours, $minutes, $seconds) =
-	    ($1, $2, $3, $4, $5, $6);
-	$month -= 1;
-	$year -= 1900;
-	return timelocal($seconds,
-			 $minutes,
-			 $hours,
-			 $day_of_month,
-			 $month,
-			 $year);
+        ($year, $month, $day_of_month, $hours, $minutes, $seconds) =
+            ($1, $2, $3, $4, $5, $6);
+        $month -= 1;
+        $year -= 1900;
+        return timelocal($seconds,
+                         $minutes,
+                         $hours,
+                         $day_of_month,
+                         $month,
+                         $year);
 
     }
 
@@ -2191,20 +2191,20 @@ sub calculate_update_interval($;$)
     my ($items, $granularity) = @_;
 
     my ($nr_items,
-	$update_interval);
+        $update_interval);
 
     $granularity = 20 unless (defined($granularity));
     if (ref($items) eq "ARRAY")
     {
-	$nr_items = scalar(@$items);
+        $nr_items = scalar(@$items);
     }
     elsif (ref($items) eq "HASH")
     {
-	$nr_items = scalar(keys(%$items));
+        $nr_items = scalar(keys(%$items));
     }
     else
     {
-	$nr_items = $items;
+        $nr_items = $items;
     }
     $update_interval = floor($nr_items / $granularity);
     $update_interval = 1 if ($update_interval < 1);
@@ -2240,15 +2240,15 @@ sub busy_dialog_run($)
 
     if (isa($item, "Gtk2::Dialog"))
     {
-	$wm->make_busy(undef, 1);
-	$choice = $wm->allow_input(sub { return $item->run(); });
-	$wm->make_busy(undef, 0);
+        $wm->make_busy(undef, 1);
+        $choice = $wm->allow_input(sub { return $item->run(); });
+        $wm->make_busy(undef, 0);
     }
     else
     {
-	$wm->make_busy($item, 1, 1);
-	$choice = $wm->allow_input(sub { return $item->{window}->run(); });
-	$wm->make_busy($item, 0);
+        $wm->make_busy($item, 1, 1);
+        $choice = $wm->allow_input(sub { return $item->{window}->run(); });
+        $wm->make_busy($item, 0);
     }
 
     return $choice;

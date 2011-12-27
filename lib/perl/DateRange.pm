@@ -87,31 +87,31 @@ sub date_range_checkbutton_toggled_cb($$)
 
     if ($instance->{date_range_checkbutton}->get_active())
     {
-	foreach my $widget (@{$instance->{date_sensitive_group}})
-	{
-	    $widget->set_sensitive(TRUE);
-	}
-	if ($instance->{between_range_radiobutton}->get_active())
-	{
-	    foreach my $widget (@{$instance->{during_dates_sensitive_group}})
-	    {
-		$widget->set_sensitive(FALSE);
-	    }
-	}
-	else
-	{
-	    foreach my $widget (@{$instance->{between_dates_sensitive_group}})
-	    {
-		$widget->set_sensitive(FALSE);
-	    }
-	}
+        foreach my $widget (@{$instance->{date_sensitive_group}})
+        {
+            $widget->set_sensitive(TRUE);
+        }
+        if ($instance->{between_range_radiobutton}->get_active())
+        {
+            foreach my $widget (@{$instance->{during_dates_sensitive_group}})
+            {
+                $widget->set_sensitive(FALSE);
+            }
+        }
+        else
+        {
+            foreach my $widget (@{$instance->{between_dates_sensitive_group}})
+            {
+                $widget->set_sensitive(FALSE);
+            }
+        }
     }
     else
     {
-	foreach my $widget (@{$instance->{date_sensitive_group}})
-	{
-	    $widget->set_sensitive(FALSE);
-	}
+        foreach my $widget (@{$instance->{date_sensitive_group}})
+        {
+            $widget->set_sensitive(FALSE);
+        }
     }
 
 }
@@ -143,25 +143,25 @@ sub between_range_radiobutton_toggled_cb($$)
 
     if ($instance->{between_range_radiobutton}->get_active())
     {
-	foreach my $widget (@{$instance->{between_dates_sensitive_group}})
-	{
-	    $widget->set_sensitive(TRUE);
-	}
-	foreach my $widget (@{$instance->{during_dates_sensitive_group}})
-	{
-	    $widget->set_sensitive(FALSE);
-	}
+        foreach my $widget (@{$instance->{between_dates_sensitive_group}})
+        {
+            $widget->set_sensitive(TRUE);
+        }
+        foreach my $widget (@{$instance->{during_dates_sensitive_group}})
+        {
+            $widget->set_sensitive(FALSE);
+        }
     }
     else
     {
-	foreach my $widget (@{$instance->{during_dates_sensitive_group}})
-	{
-	    $widget->set_sensitive(TRUE);
-	}
-	foreach my $widget (@{$instance->{between_dates_sensitive_group}})
-	{
-	    $widget->set_sensitive(FALSE);
-	}
+        foreach my $widget (@{$instance->{during_dates_sensitive_group}})
+        {
+            $widget->set_sensitive(TRUE);
+        }
+        foreach my $widget (@{$instance->{between_dates_sensitive_group}})
+        {
+            $widget->set_sensitive(FALSE);
+        }
     }
 
 }
@@ -200,8 +200,8 @@ sub get_date_range($$$)
 
     if (! $instance->{date_range_checkbutton}->get_active())
     {
-	$$from_date = $$to_date = undef;
-	return 1;
+        $$from_date = $$to_date = undef;
+        return 1;
     }
 
     # Get the user entered date range.
@@ -209,102 +209,102 @@ sub get_date_range($$$)
     if ($instance->{between_range_radiobutton}->get_active())
     {
 
-	my ($older_date,
-	    $younger_date);
+        my ($older_date,
+            $younger_date);
 
-	# Simple `from - to' style date range.
+        # Simple `from - to' style date range.
 
-	$older_date = strftime(MTN_TIME_STRING,
-			       localtime($instance->{older_date_dateedit}->
-					 get_time()));
-	$younger_date = strftime(MTN_TIME_STRING,
-				 localtime($instance->{younger_date_dateedit}->
-					   get_time()));
+        $older_date = strftime(MTN_TIME_STRING,
+                               localtime($instance->{older_date_dateedit}->
+                                         get_time()));
+        $younger_date = strftime(MTN_TIME_STRING,
+                                 localtime($instance->{younger_date_dateedit}->
+                                           get_time()));
 
-	# Check that any date range is the right way around.
+        # Check that any date range is the right way around.
 
-	if ($older_date ge $younger_date)
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __("The `between' dates are either\n"
-		    . "the same or the wrong way round."));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
+        if ($older_date ge $younger_date)
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($instance->{window},
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __("The `between' dates are either\n"
+                    . "the same or the wrong way round."));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
 
-	# Sort out the return values.
+        # Sort out the return values.
 
-	$$from_date = $older_date;
-	$$to_date = $younger_date;
+        $$from_date = $older_date;
+        $$to_date = $younger_date;
 
     }
     else
     {
 
-	my ($month,
-	    $period,
-	    $period_units,
-	    @time_val,
-	    $year);
+        my ($month,
+            $period,
+            $period_units,
+            @time_val,
+            $year);
 
-	# `In the last ...' style date range.
+        # `In the last ...' style date range.
 
-	# Please note that the update method needs to be called on the
-	# spinbutton so as to make sure that it's internal state is completely
-	# up to date (the user might have entered a value directly into the
-	# entry field). Updates are usually done when it looses the focus,
-	# however the parent window may not make use of any focus stealing
-	# buttons.
+        # Please note that the update method needs to be called on the
+        # spinbutton so as to make sure that it's internal state is completely
+        # up to date (the user might have entered a value directly into the
+        # entry field). Updates are usually done when it looses the focus,
+        # however the parent window may not make use of any focus stealing
+        # buttons.
 
-	$instance->{time_spinbutton}->update();
-	$period = $instance->{time_spinbutton}->get_value_as_int();
-	$period_units = $instance->{time_units_combobox}->get_active();
+        $instance->{time_spinbutton}->update();
+        $period = $instance->{time_spinbutton}->get_value_as_int();
+        $period_units = $instance->{time_units_combobox}->get_active();
 
-	# Check that the duration period is not too large.
+        # Check that the duration period is not too large.
 
-	@time_val = localtime();
-	($month, $year) = (@time_val)[4, 5];
-	if ($period_units == DURATION_MONTHS
-	    && $period > ((($year - 70) * 12) + $month))
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("A duration of {months} months is too long.",
-		     months => $period));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
-	elsif ($period_units == DURATION_YEARS && $period > ($year - 70))
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("A duration of {years} years is too long.",
-		     years => $period));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
+        @time_val = localtime();
+        ($month, $year) = (@time_val)[4, 5];
+        if ($period_units == DURATION_MONTHS
+            && $period > ((($year - 70) * 12) + $month))
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($instance->{window},
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __x("A duration of {months} months is too long.",
+                     months => $period));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
+        elsif ($period_units == DURATION_YEARS && $period > ($year - 70))
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($instance->{window},
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __x("A duration of {years} years is too long.",
+                     years => $period));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
 
-	# Now work out the actual start date.
+        # Now work out the actual start date.
 
-	adjust_time(\@time_val, $period, $period_units);
+        adjust_time(\@time_val, $period, $period_units);
 
-	# Sort out the return values.
+        # Sort out the return values.
 
-	$$from_date = strftime(MTN_TIME_STRING, @time_val);
-	$$to_date = undef;
+        $$from_date = strftime(MTN_TIME_STRING, @time_val);
+        $$to_date = undef;
 
     }
 
@@ -340,11 +340,11 @@ sub set_date_range($$$)
     $instance->{between_range_radiobutton}->set_active(TRUE);
     foreach my $widget (@{$instance->{date_sensitive_group}})
     {
-	$widget->set_sensitive(TRUE);
+        $widget->set_sensitive(TRUE);
     }
     foreach my $widget (@{$instance->{during_dates_sensitive_group}})
     {
-	$widget->set_sensitive(FALSE);
+        $widget->set_sensitive(FALSE);
     }
 
     # Now load in the date/time values into teh dateedit widgets.
@@ -377,28 +377,28 @@ sub setup_date_range_widgets($)
 
     $instance->{date_sensitive_group} = [];
     foreach my $widget ("between_range_radiobutton",
-			"older_date_dateedit",
-			"and_label",
-			"younger_date_dateedit",
-			"during_range_radiobutton",
-			"time_spinbutton",
-			"time_units_combobox")
+                        "older_date_dateedit",
+                        "and_label",
+                        "younger_date_dateedit",
+                        "during_range_radiobutton",
+                        "time_spinbutton",
+                        "time_units_combobox")
     {
-	push(@{$instance->{date_sensitive_group}}, $instance->{$widget});
+        push(@{$instance->{date_sensitive_group}}, $instance->{$widget});
     }
     $instance->{between_dates_sensitive_group} = [];
     foreach my $widget ("older_date_dateedit",
-			"and_label",
-			"younger_date_dateedit")
+                        "and_label",
+                        "younger_date_dateedit")
     {
-	push(@{$instance->{between_dates_sensitive_group}},
-	     $instance->{$widget});
+        push(@{$instance->{between_dates_sensitive_group}},
+             $instance->{$widget});
     }
     $instance->{during_dates_sensitive_group} = [];
     foreach my $widget ("time_spinbutton", "time_units_combobox")
     {
-	push(@{$instance->{during_dates_sensitive_group}},
-	     $instance->{$widget});
+        push(@{$instance->{during_dates_sensitive_group}},
+             $instance->{$widget});
     }
 
     # Setup the comboboxes.
@@ -409,7 +409,7 @@ sub setup_date_range_widgets($)
 
     foreach my $widget (@{$instance->{date_sensitive_group}})
     {
-	$widget->set_sensitive(FALSE);
+        $widget->set_sensitive(FALSE);
     }
 
 }

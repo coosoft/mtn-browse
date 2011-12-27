@@ -118,10 +118,10 @@ sub display_find_files($$$$$)
     $instance->{starting_point} = $starting_point;
 
     $instance->{window}->set_title(__x("Find Files Within Revision {rev}",
-				       rev => defined($tag) ?
-				           $tag : $revision_id));
+                                       rev => defined($tag) ?
+                                           $tag : $revision_id));
     set_label_value($instance->{searching_from_value_label},
-		    $instance->{starting_point});
+                    $instance->{starting_point});
 
     $instance->{window}->show_all();
     $instance->{window}->present();
@@ -156,17 +156,17 @@ sub size_comparitor_combobox_changed_cb($$)
 
     if ($widget->get_active() == CMP_ANY_SIZE)
     {
-	foreach my $widget (@{$instance->{size_sensitive_group}})
-	{
-	    $widget->set_sensitive(FALSE);
-	}
+        foreach my $widget (@{$instance->{size_sensitive_group}})
+        {
+            $widget->set_sensitive(FALSE);
+        }
     }
     else
     {
-	foreach my $widget (@{$instance->{size_sensitive_group}})
-	{
-	    $widget->set_sensitive(TRUE);
-	}
+        foreach my $widget (@{$instance->{size_sensitive_group}})
+        {
+            $widget->set_sensitive(TRUE);
+        }
     }
 
 }
@@ -195,20 +195,20 @@ sub search_files_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($contents_re,
-	$counter,
-	$file_glob_re,
-	$file_prefix_length,
-	$manifest,
-	$matches,
-	$name,
-	$query,
-	$size);
+        $counter,
+        $file_glob_re,
+        $file_prefix_length,
+        $manifest,
+        $matches,
+        $name,
+        $query,
+        $size);
     my $wm = WindowManager->instance();
 
     # Get the query from the GUI and validate it.
 
     return
-	unless (defined($query = save_query_from_gui_and_validate($instance)));
+        unless (defined($query = save_query_from_gui_and_validate($instance)));
 
     $wm->make_busy($instance, 1);
     $instance->{appbar}->push($instance->{appbar}->get_status()->get_text());
@@ -217,112 +217,112 @@ sub search_files_button_clicked_cb($$)
     # Update the comboxentries histories.
 
     handle_comboxentry_history($instance->{files_named_comboboxentry},
-			       "find_files_named",
-			       $query->{file_glob});
+                               "find_files_named",
+                               $query->{file_glob});
     handle_comboxentry_history($instance->{files_containing_comboboxentry},
-			       "find_files_containing",
-			       $query->{contents_pattern});
+                               "find_files_containing",
+                               $query->{contents_pattern});
     handle_comboxentry_history($instance->{modified_by_comboboxentry},
-			       "find_files_modified_by",
-			       $query->{modified_by});
+                               "find_files_modified_by",
+                               $query->{modified_by});
 
     # Build up a sub-manifest representing the items that we are going to
     # search.
 
     $file_prefix_length = 0;
     if ($query->{file_glob_search_subdirectories}
-	&& $instance->{starting_point} eq "")
+        && $instance->{starting_point} eq "")
     {
-	$manifest = $instance->{manifest};
+        $manifest = $instance->{manifest};
     }
     else
     {
-	my @manifest;
-	if ($query->{file_glob_search_subdirectories})
-	{
-	    my $match_re = qr/^$instance->{starting_point}\/.+$/;
-	    @manifest =
-		grep($_->{name} =~ m/$match_re/, @{$instance->{manifest}});
-	}
-	else
-	{
-	    my @result;
-	    get_dir_contents($instance->{starting_point},
-			     $instance->{manifest},
-			     \@result);
-	    @manifest = map($_->{manifest_entry}, @result);
-	}
-	$manifest = \@manifest;
-	$file_prefix_length = length($instance->{starting_point});
-	++ $file_prefix_length if ($file_prefix_length > 0);
+        my @manifest;
+        if ($query->{file_glob_search_subdirectories})
+        {
+            my $match_re = qr/^$instance->{starting_point}\/.+$/;
+            @manifest =
+                grep($_->{name} =~ m/$match_re/, @{$instance->{manifest}});
+        }
+        else
+        {
+            my @result;
+            get_dir_contents($instance->{starting_point},
+                             $instance->{manifest},
+                             \@result);
+            @manifest = map($_->{manifest_entry}, @result);
+        }
+        $manifest = \@manifest;
+        $file_prefix_length = length($instance->{starting_point});
+        ++ $file_prefix_length if ($file_prefix_length > 0);
     }
 
     # Precompile the regexps and more complex comparison values.
 
     if ($query->{file_glob} ne "")
     {
-	my $re_text = file_glob_to_regexp($query->{file_glob});
-	if ($query->{file_glob_case_sensitive})
-	{
-	    $file_glob_re = qr/$re_text/;
-	}
-	else
-	{
-	    $file_glob_re = qr/$re_text/i;
-	}
+        my $re_text = file_glob_to_regexp($query->{file_glob});
+        if ($query->{file_glob_case_sensitive})
+        {
+            $file_glob_re = qr/$re_text/;
+        }
+        else
+        {
+            $file_glob_re = qr/$re_text/i;
+        }
     }
     else
     {
-	$file_glob_re = qr/^.*$/;
+        $file_glob_re = qr/^.*$/;
     }
     if ($query->{contents_pattern} ne "")
     {
 
-	my $pattern;
+        my $pattern;
 
-	# We need to convert the contents pattern from possibly UTF-8 to binary
-	# as we may have to search binary data.
+        # We need to convert the contents pattern from possibly UTF-8 to binary
+        # as we may have to search binary data.
 
-	$pattern = encode($file_encoding, $query->{contents_pattern});
+        $pattern = encode($file_encoding, $query->{contents_pattern});
 
-	if ($query->{contents_pattern_is_regexp})
-	{
-	    if ($query->{contents_case_sensitive})
-	    {
-		$contents_re = qr/$pattern/;
-	    }
-	    else
-	    {
-		$contents_re = qr/$pattern/i;
-	    }
-	}
-	else
-	{
-	    if ($query->{contents_case_sensitive})
-	    {
-		$contents_re = qr/\Q$pattern\E/;
-	    }
-	    else
-	    {
-		$contents_re = qr/\Q$pattern\E/i;
-	    }
-	}
+        if ($query->{contents_pattern_is_regexp})
+        {
+            if ($query->{contents_case_sensitive})
+            {
+                $contents_re = qr/$pattern/;
+            }
+            else
+            {
+                $contents_re = qr/$pattern/i;
+            }
+        }
+        else
+        {
+            if ($query->{contents_case_sensitive})
+            {
+                $contents_re = qr/\Q$pattern\E/;
+            }
+            else
+            {
+                $contents_re = qr/\Q$pattern\E/i;
+            }
+        }
 
     }
     if (exists($query->{file_size}))
     {
-	if ($query->{file_size_units} == SIZE_B)
-	{
-	    $size = $query->{file_size};
-	}
-	elsif ($query->{file_size_units} == SIZE_KB)
-	{
-	    $size = $query->{file_size} * 1024;
-	}
-	else
-	{
-	    $size = $query->{file_size} * 1024 * 1024;
-	}
+        if ($query->{file_size_units} == SIZE_B)
+        {
+            $size = $query->{file_size};
+        }
+        elsif ($query->{file_size_units} == SIZE_KB)
+        {
+            $size = $query->{file_size} * 1024;
+        }
+        else
+        {
+            $size = $query->{file_size} * 1024 * 1024;
+        }
     }
 
     $instance->{appbar}->set_status(__("Finding matching files"));
@@ -342,116 +342,116 @@ sub search_files_button_clicked_cb($$)
     foreach my $entry (@$manifest)
     {
 
-	# Check for aborts.
+        # Check for aborts.
 
-	last if ($instance->{stop});
+        last if ($instance->{stop});
 
-	# Exclude entries using the cheapest critera first.
+        # Exclude entries using the cheapest critera first.
 
-	# Name.
+        # Name.
 
-	next if (basename($entry->{name}) !~ m/$file_glob_re/
-		 || ($query->{file_glob} eq "" && $entry->{type} ne "file"));
+        next if (basename($entry->{name}) !~ m/$file_glob_re/
+                 || ($query->{file_glob} eq "" && $entry->{type} ne "file"));
 
-	# The remaining tests only make sense for files.
+        # The remaining tests only make sense for files.
 
-	if ($entry->{type} eq "file")
-	{
+        if ($entry->{type} eq "file")
+        {
 
-	    # Date and/or modifier.
+            # Date and/or modifier.
 
-	    if (exists($query->{older_date}) || exists($query->{period})
-		|| $query->{modified_by} ne "")
-	    {
-		my ($author,
-		    $last_update);
-		if (! exists($entry->{author}))
-		{
-		    cache_extra_file_info($instance->{mtn},
-					  $instance->{revision_id},
-					  $entry);
-		}
-		$author = $entry->{author};
-		$last_update = $entry->{last_update};
-		if (exists($query->{older_date}))
-		{
-		    next if ($last_update lt $query->{older_date}
-			     || $last_update gt $query->{younger_date});
-		}
-		elsif (exists($query->{period}))
-		{
-		    next if ($last_update lt $query->{period});
-		}
-		next if ($query->{modified_by} ne ""
-			 && $query->{modified_by} ne $author);
-	    }
+            if (exists($query->{older_date}) || exists($query->{period})
+                || $query->{modified_by} ne "")
+            {
+                my ($author,
+                    $last_update);
+                if (! exists($entry->{author}))
+                {
+                    cache_extra_file_info($instance->{mtn},
+                                          $instance->{revision_id},
+                                          $entry);
+                }
+                $author = $entry->{author};
+                $last_update = $entry->{last_update};
+                if (exists($query->{older_date}))
+                {
+                    next if ($last_update lt $query->{older_date}
+                             || $last_update gt $query->{younger_date});
+                }
+                elsif (exists($query->{period}))
+                {
+                    next if ($last_update lt $query->{period});
+                }
+                next if ($query->{modified_by} ne ""
+                         && $query->{modified_by} ne $author);
+            }
 
-	    # Contents and/or size.
+            # Contents and/or size.
 
-	    if (defined($contents_re) || exists($query->{file_size}))
-	    {
-		my $data;
-		if (exists($query->{file_size}))
-		{
-		    if (! exists($entry->{size}))
-		    {
-			$instance->{mtn}->get_file(\$data, $entry->{file_id});
-			$entry->{size} = length($data);
-		    }
-		    if ($query->{file_size_operator} == CMP_AT_LEAST)
-		    {
-			next if ($entry->{size} < $size);
-		    }
-		    elsif ($query->{file_size_operator} == CMP_AT_MOST)
-		    {
-			next if ($entry->{size} > $size);
-		    }
-		    else
-		    {
-			next if ($entry->{size} != $size);
-		    }
-		}
-		if (defined($contents_re))
-		{
-		    if (! exists($entry->{is_binary}))
-		    {
-			$instance->{mtn}->get_file(\$data, $entry->{file_id})
-			    if (! defined($data));
-			$entry->{is_binary} = data_is_binary(\$data);
-		    }
+            if (defined($contents_re) || exists($query->{file_size}))
+            {
+                my $data;
+                if (exists($query->{file_size}))
+                {
+                    if (! exists($entry->{size}))
+                    {
+                        $instance->{mtn}->get_file(\$data, $entry->{file_id});
+                        $entry->{size} = length($data);
+                    }
+                    if ($query->{file_size_operator} == CMP_AT_LEAST)
+                    {
+                        next if ($entry->{size} < $size);
+                    }
+                    elsif ($query->{file_size_operator} == CMP_AT_MOST)
+                    {
+                        next if ($entry->{size} > $size);
+                    }
+                    else
+                    {
+                        next if ($entry->{size} != $size);
+                    }
+                }
+                if (defined($contents_re))
+                {
+                    if (! exists($entry->{is_binary}))
+                    {
+                        $instance->{mtn}->get_file(\$data, $entry->{file_id})
+                            if (! defined($data));
+                        $entry->{is_binary} = data_is_binary(\$data);
+                    }
 
-		    # Ignore binary files if requested.
+                    # Ignore binary files if requested.
 
-		    next if ($entry->{is_binary}
-			     && ! $query->{contents_search_binary_files});
+                    next if ($entry->{is_binary}
+                             && ! $query->{contents_search_binary_files});
 
-		    $instance->{mtn}->get_file(\$data, $entry->{file_id})
-			if (! defined($data));
-		    next if ($data !~ m/$contents_re/);
-		}
-	    }
+                    $instance->{mtn}->get_file(\$data, $entry->{file_id})
+                        if (! defined($data));
+                    next if ($data !~ m/$contents_re/);
+                }
+            }
 
-	}
+        }
 
-	# If we have got this far then it is a match.
+        # If we have got this far then it is a match.
 
-	++ $matches;
-	$name = substr($entry->{name}, $file_prefix_length);
-	$instance->{results_liststore}->
-	    set($instance->{results_liststore}->append(),
-		RLS_NAME_COLUMN, $name,
-		RLS_MANIFEST_ENTRY_COLUMN, $entry);
+        ++ $matches;
+        $name = substr($entry->{name}, $file_prefix_length);
+        $instance->{results_liststore}->
+            set($instance->{results_liststore}->append(),
+                RLS_NAME_COLUMN, $name,
+                RLS_MANIFEST_ENTRY_COLUMN, $entry);
 
     }
     continue
     {
-	if (($counter % 10) == 0)
-	{
-	    $instance->{appbar}->set_progress_percentage
-		($counter / scalar(@$manifest));
-	    $wm->update_gui();
-	}
-	++ $counter;
+        if (($counter % 10) == 0)
+        {
+            $instance->{appbar}->set_progress_percentage
+                ($counter / scalar(@$manifest));
+            $wm->update_gui();
+        }
+        ++ $counter;
     }
     $instance->{appbar}->set_progress_percentage(1);
     $wm->update_gui();
@@ -467,23 +467,23 @@ sub search_files_button_clicked_cb($$)
     $instance->{appbar}->pop();
     if ($matches > 0)
     {
-	$instance->{appbar}->set_status(__nx("Found 1 file",
-					     "Found {files_found} files",
-					     $matches,
-					     files_found => $matches));
+        $instance->{appbar}->set_status(__nx("Found 1 file",
+                                             "Found {files_found} files",
+                                             $matches,
+                                             files_found => $matches));
     }
     else
     {
-	my $dialog;
-	$dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "info",
-	     "close",
-	     __("No files matched your query."));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	$instance->{appbar}->set_status(__("Nothing found"));
+        my $dialog;
+        $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "info",
+             "close",
+             __("No files matched your query."));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        $instance->{appbar}->set_status(__("Nothing found"));
     }
     $wm->make_busy($instance, 0);
 
@@ -513,44 +513,44 @@ sub results_treeselection_changed_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($author,
-	$file_id,
-	$last_changed_revision,
-	$last_update);
+        $file_id,
+        $last_changed_revision,
+        $last_update);
 
     # Get the manifest entry details for the item that was selected and then
     # display them if appropriate.
 
     if ($widget->count_selected_rows() > 0)
     {
-	my ($iter,
-	    $manifest_entry,
-	    $model);
-	($model, $iter) = $widget->get_selected();
-	$manifest_entry = $model->get($iter, RLS_MANIFEST_ENTRY_COLUMN);
-	if ($manifest_entry->{type} eq "file")
-	{
-	    if (! exists($manifest_entry->{author}))
-	    {
-		cache_extra_file_info($instance->{mtn},
-				      $instance->{revision_id},
-				      $manifest_entry);
-	    }
-	    $author = $manifest_entry->{author};
-	    $file_id = $manifest_entry->{file_id};
-	    $last_changed_revision = $manifest_entry->{last_changed_revision};
-	    $last_update = $manifest_entry->{last_update};
-	    $last_update =~ s/T/ /;
-	}
+        my ($iter,
+            $manifest_entry,
+            $model);
+        ($model, $iter) = $widget->get_selected();
+        $manifest_entry = $model->get($iter, RLS_MANIFEST_ENTRY_COLUMN);
+        if ($manifest_entry->{type} eq "file")
+        {
+            if (! exists($manifest_entry->{author}))
+            {
+                cache_extra_file_info($instance->{mtn},
+                                      $instance->{revision_id},
+                                      $manifest_entry);
+            }
+            $author = $manifest_entry->{author};
+            $file_id = $manifest_entry->{file_id};
+            $last_changed_revision = $manifest_entry->{last_changed_revision};
+            $last_update = $manifest_entry->{last_update};
+            $last_update =~ s/T/ /;
+        }
     }
     else
     {
-	$author = $file_id = $last_changed_revision = $last_update = "";
+        $author = $file_id = $last_changed_revision = $last_update = "";
     }
     set_label_value($instance->{author_value_label}, $author);
     set_label_value($instance->{file_id_value_label}, $file_id);
     set_label_value($instance->{last_update_value_label}, $last_update);
     set_label_value($instance->{file_revision_id_value_label},
-		    $last_changed_revision);
+                    $last_changed_revision);
 
 }
 #
@@ -587,53 +587,53 @@ sub results_treeview_row_activated_cb($$$$)
     # Get the manifest entry details for the item that was double-clicked.
 
     $widget->get_selection()->selected_foreach
-	(sub {
-	     my ($model, $path, $iter) = @_;
-	     $manifest_entry = $model->get($iter, RLS_MANIFEST_ENTRY_COLUMN);
-	 });
+        (sub {
+             my ($model, $path, $iter) = @_;
+             $manifest_entry = $model->get($iter, RLS_MANIFEST_ENTRY_COLUMN);
+         });
 
     if (defined($manifest_entry))
     {
 
-	my ($branch,
-	    @certs_list);
+        my ($branch,
+            @certs_list);
 
-	# First find out what branch the revision is on (take the first one).
+        # First find out what branch the revision is on (take the first one).
 
-	$instance->{mtn}->certs(\@certs_list, $instance->{revision_id});
-	$branch = "";
-	foreach my $cert (@certs_list)
-	{
-	    if ($cert->{name} eq "branch")
-	    {
-		$branch = $cert->{value};
-		last;
-	    }
-	}
+        $instance->{mtn}->certs(\@certs_list, $instance->{revision_id});
+        $branch = "";
+        foreach my $cert (@certs_list)
+        {
+            if ($cert->{name} eq "branch")
+            {
+                $branch = $cert->{value};
+                last;
+            }
+        }
 
-	# Either display the file or the directory depending upon the entry's
-	# type.
+        # Either display the file or the directory depending upon the entry's
+        # type.
 
-	if ($manifest_entry->{type} eq "file")
-	{
-	    my ($dir,
-		$file);
-	    $dir = dirname($manifest_entry->{name});
-	    $dir = "" if ($dir eq ".");
-	    $file = basename($manifest_entry->{name});
-	    get_browser_window($instance->{mtn},
-			       $branch,
-			       $instance->{revision_id},
-			       $dir,
-			       $file);
-	}
-	else
-	{
-	    get_browser_window($instance->{mtn},
-			       $branch,
-			       $instance->{revision_id},
-			       $manifest_entry->{name});
-	}
+        if ($manifest_entry->{type} eq "file")
+        {
+            my ($dir,
+                $file);
+            $dir = dirname($manifest_entry->{name});
+            $dir = "" if ($dir eq ".");
+            $file = basename($manifest_entry->{name});
+            get_browser_window($instance->{mtn},
+                               $branch,
+                               $instance->{revision_id},
+                               $dir,
+                               $file);
+        }
+        else
+        {
+            get_browser_window($instance->{mtn},
+                               $branch,
+                               $instance->{revision_id},
+                               $manifest_entry->{name});
+        }
 
     }
 
@@ -665,171 +665,171 @@ sub get_find_files_window()
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my ($glade,
-	    $renderer,
-	    $tv_column);
+        my ($glade,
+            $renderer,
+            $tv_column);
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("appbar",
-			    "search_files_button",
-			    "stop_button",
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("appbar",
+                            "search_files_button",
+                            "stop_button",
 
-			    "searching_from_value_label",
-			    "files_named_comboboxentry",
-			    "name_case_sensitive_checkbutton",
-			    "search_subdirectories_checkbutton",
+                            "searching_from_value_label",
+                            "files_named_comboboxentry",
+                            "name_case_sensitive_checkbutton",
+                            "search_subdirectories_checkbutton",
 
-			    "files_containing_comboboxentry",
-			    "contents_case_sensitive_checkbutton",
-			    "regular_expression_checkbutton",
-			    "search_binary_files_checkbutton",
+                            "files_containing_comboboxentry",
+                            "contents_case_sensitive_checkbutton",
+                            "regular_expression_checkbutton",
+                            "search_binary_files_checkbutton",
 
-			    "date_range_checkbutton",
-			    "between_range_radiobutton",
-			    "older_date_dateedit",
-			    "and_label",
-			    "younger_date_dateedit",
-			    "during_range_radiobutton",
-			    "time_spinbutton",
-			    "time_units_combobox",
-			    "size_comparitor_combobox",
-			    "size_spinbutton",
-			    "size_units_combobox",
-			    "modified_by_comboboxentry",
+                            "date_range_checkbutton",
+                            "between_range_radiobutton",
+                            "older_date_dateedit",
+                            "and_label",
+                            "younger_date_dateedit",
+                            "during_range_radiobutton",
+                            "time_spinbutton",
+                            "time_units_combobox",
+                            "size_comparitor_combobox",
+                            "size_spinbutton",
+                            "size_units_combobox",
+                            "modified_by_comboboxentry",
 
-			    "results_scrolledwindow",
-			    "results_treeview",
-			    "author_value_label",
-			    "file_id_value_label",
-			    "last_update_value_label",
-			    "file_revision_id_value_label")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+                            "results_scrolledwindow",
+                            "results_treeview",
+                            "author_value_label",
+                            "file_id_value_label",
+                            "last_update_value_label",
+                            "file_revision_id_value_label")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup widget sensitivity groups.
+        # Setup widget sensitivity groups.
 
-	$instance->{size_sensitive_group} = [];
-	foreach my $widget ("size_spinbutton", "size_units_combobox")
-	{
-	    push(@{$instance->{size_sensitive_group}}, $instance->{$widget});
-	}
+        $instance->{size_sensitive_group} = [];
+        foreach my $widget ("size_spinbutton", "size_units_combobox")
+        {
+            push(@{$instance->{size_sensitive_group}}, $instance->{$widget});
+        }
 
-	# Setup the find files callbacks.
+        # Setup the find files callbacks.
 
-	$instance->{window}->signal_connect
-	    ("delete_event",
-	     sub {
-		 my ($widget, $event, $instance) = @_;
-		 return TRUE if ($instance->{in_cb});
-		 local $instance->{in_cb} = 1;
-		 $widget->hide();
-		 $instance->{manifest} = undef;
-		 $instance->{mtn} = undef;
-		 $instance->{results_liststore}->clear();
-		 return TRUE;
-	     },
-	     $instance);
-	$instance->{stop_button}->signal_connect
-	    ("clicked", sub { $_[1]->{stop} = 1; }, $instance);
+        $instance->{window}->signal_connect
+            ("delete_event",
+             sub {
+                 my ($widget, $event, $instance) = @_;
+                 return TRUE if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 $widget->hide();
+                 $instance->{manifest} = undef;
+                 $instance->{mtn} = undef;
+                 $instance->{results_liststore}->clear();
+                 return TRUE;
+             },
+             $instance);
+        $instance->{stop_button}->signal_connect
+            ("clicked", sub { $_[1]->{stop} = 1; }, $instance);
 
-	# Setup the comboboxes.
+        # Setup the comboboxes.
 
-	$instance->{files_named_comboboxentry}->
-	    set_model(Gtk2::ListStore->new("Glib::String"));
-	$instance->{files_named_comboboxentry}->set_text_column(0);
-	$instance->{files_containing_comboboxentry}->
-	    set_model(Gtk2::ListStore->new("Glib::String"));
-	$instance->{files_containing_comboboxentry}->set_text_column(0);
-	$instance->{modified_by_comboboxentry}->
-	    set_model(Gtk2::ListStore->new("Glib::String"));
-	$instance->{modified_by_comboboxentry}->set_text_column(0);
-	$instance->{size_comparitor_combobox}->set_active(CMP_ANY_SIZE);
-	$instance->{size_units_combobox}->set_active(SIZE_KB);
+        $instance->{files_named_comboboxentry}->
+            set_model(Gtk2::ListStore->new("Glib::String"));
+        $instance->{files_named_comboboxentry}->set_text_column(0);
+        $instance->{files_containing_comboboxentry}->
+            set_model(Gtk2::ListStore->new("Glib::String"));
+        $instance->{files_containing_comboboxentry}->set_text_column(0);
+        $instance->{modified_by_comboboxentry}->
+            set_model(Gtk2::ListStore->new("Glib::String"));
+        $instance->{modified_by_comboboxentry}->set_text_column(0);
+        $instance->{size_comparitor_combobox}->set_active(CMP_ANY_SIZE);
+        $instance->{size_units_combobox}->set_active(SIZE_KB);
 
-	# Setup the results list browser.
+        # Setup the results list browser.
 
-	$instance->{results_liststore} = Gtk2::ListStore->new("Glib::String",
-							      "Glib::Scalar");
-	$instance->{results_treeview}->
-	    set_model($instance->{results_liststore});
-	$tv_column = Gtk2::TreeViewColumn->new();
-	$tv_column->set_sort_column_id(0);
-	$renderer = Gtk2::CellRendererText->new();
-	$tv_column->pack_start($renderer, TRUE);
-	$tv_column->set_attributes($renderer, "text" => 0);
-	$instance->{results_treeview}->append_column($tv_column);
+        $instance->{results_liststore} = Gtk2::ListStore->new("Glib::String",
+                                                              "Glib::Scalar");
+        $instance->{results_treeview}->
+            set_model($instance->{results_liststore});
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $tv_column->set_sort_column_id(0);
+        $renderer = Gtk2::CellRendererText->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "text" => 0);
+        $instance->{results_treeview}->append_column($tv_column);
 
-	$instance->{results_treeview}->set_search_column(0);
-	$instance->{results_treeview}->
-	    set_search_equal_func(\&treeview_column_searcher);
+        $instance->{results_treeview}->set_search_column(0);
+        $instance->{results_treeview}->
+            set_search_equal_func(\&treeview_column_searcher);
 
-	$instance->{results_treeview}->get_selection()->
-	    signal_connect("changed",
-			   \&results_treeselection_changed_cb,
-			   $instance);
+        $instance->{results_treeview}->get_selection()->
+            signal_connect("changed",
+                           \&results_treeselection_changed_cb,
+                           $instance);
 
-	# Setup the date range widgets.
+        # Setup the date range widgets.
 
-	setup_date_range_widgets($instance);
+        setup_date_range_widgets($instance);
 
-	# Disable the appropriate widgets by default.
+        # Disable the appropriate widgets by default.
 
-	foreach my $widget (@{$instance->{size_sensitive_group}})
-	{
-	    $widget->set_sensitive(FALSE);
-	}
+        foreach my $widget (@{$instance->{size_sensitive_group}})
+        {
+            $widget->set_sensitive(FALSE);
+        }
 
-	# Register the window for management and set up the help callbacks.
+        # Register the window for management and set up the help callbacks.
 
-	$wm->manage($instance,
-		    $window_type,
-		    $instance->{window},
-		    $instance->{stop_button});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => "name_vbox",
-	      help_ref => __("mtnb-ffwarc-query-fields")},
-	     {widget   => "contents_vbox",
-	      help_ref => __("mtnb-ffwarc-query-fields")},
-	     {widget   => "properties_table",
-	      help_ref => __("mtnb-ffwarc-query-fields")},
-	     {widget   => "button_vbox",
-	      help_ref => __("mtnb-ffwarc-query-buttons")},
-	     {widget   => undef,
-	      help_ref => __("mtnb-ffwarc-the-find-files-window")});
+        $wm->manage($instance,
+                    $window_type,
+                    $instance->{window},
+                    $instance->{stop_button});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => "name_vbox",
+              help_ref => __("mtnb-ffwarc-query-fields")},
+             {widget   => "contents_vbox",
+              help_ref => __("mtnb-ffwarc-query-fields")},
+             {widget   => "properties_table",
+              help_ref => __("mtnb-ffwarc-query-fields")},
+             {widget   => "button_vbox",
+              help_ref => __("mtnb-ffwarc-query-buttons")},
+             {widget   => undef,
+              help_ref => __("mtnb-ffwarc-the-find-files-window")});
 
     }
     else
     {
 
-	my ($height,
-	    $width);
+        my ($height,
+            $width);
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
-	($width, $height) = $instance->{window}->get_default_size();
-	$instance->{window}->resize($width, $height);
-	$instance->{stop_button}->set_sensitive(FALSE);
-	$instance->{appbar}->set_progress_percentage(0);
-	$instance->{appbar}->clear_stack();
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
+        ($width, $height) = $instance->{window}->get_default_size();
+        $instance->{window}->resize($width, $height);
+        $instance->{stop_button}->set_sensitive(FALSE);
+        $instance->{appbar}->set_progress_percentage(0);
+        $instance->{appbar}->clear_stack();
 
     }
 
@@ -845,11 +845,11 @@ sub get_find_files_window()
     # Load in the comboboxentries histories.
 
     handle_comboxentry_history($instance->{files_named_comboboxentry},
-			       "find_files_named");
+                               "find_files_named");
     handle_comboxentry_history($instance->{files_containing_comboboxentry},
-			       "find_files_containing");
+                               "find_files_containing");
     handle_comboxentry_history($instance->{modified_by_comboboxentry},
-			       "find_files_modified_by");
+                               "find_files_modified_by");
 
     return $instance;
 
@@ -877,96 +877,96 @@ sub save_query_from_gui_and_validate($)
     my $instance = $_[0];
 
     my ($from_date,
-	%query,
-	$re_text,
-	$to_date);
+        %query,
+        $re_text,
+        $to_date);
 
     # Do the name page.
 
     $query{file_glob} =
-	$instance->{files_named_comboboxentry}->child()->get_text();
+        $instance->{files_named_comboboxentry}->child()->get_text();
     $query{file_glob_case_sensitive} =
-	$instance->{name_case_sensitive_checkbutton}->get_active() ? 1 : 0;
+        $instance->{name_case_sensitive_checkbutton}->get_active() ? 1 : 0;
     $query{file_glob_search_subdirectories} =
-	$instance->{search_subdirectories_checkbutton}->get_active() ? 1 : 0;
+        $instance->{search_subdirectories_checkbutton}->get_active() ? 1 : 0;
 
     # Do the contents page.
 
     $query{contents_pattern} =
-	$instance->{files_containing_comboboxentry}->child()->get_text();
+        $instance->{files_containing_comboboxentry}->child()->get_text();
     $query{contents_case_sensitive} =
-	$instance->{contents_case_sensitive_checkbutton}->get_active() ? 1 : 0;
+        $instance->{contents_case_sensitive_checkbutton}->get_active() ? 1 : 0;
     $query{contents_pattern_is_regexp} =
-	$instance->{regular_expression_checkbutton}->get_active() ? 1 : 0;
+        $instance->{regular_expression_checkbutton}->get_active() ? 1 : 0;
     $query{contents_search_binary_files} =
-	$instance->{search_binary_files_checkbutton}->get_active() ? 1 : 0;
+        $instance->{search_binary_files_checkbutton}->get_active() ? 1 : 0;
 
     # Do the properties page.
 
     return unless (get_date_range($instance, \$from_date, \$to_date));
     if (defined($to_date))
     {
-	$query{older_date} = $from_date;
-	$query{younger_date} = $to_date;
+        $query{older_date} = $from_date;
+        $query{younger_date} = $to_date;
     }
     elsif (defined($from_date))
     {
-	$query{period} = $from_date;
+        $query{period} = $from_date;
     }
     if ($instance->{size_comparitor_combobox}->get_active() != CMP_ANY_SIZE)
     {
-	$query{file_size} = $instance->{size_spinbutton}->get_value_as_int();
-	$query{file_size_operator} =
-	    $instance->{size_comparitor_combobox}->get_active();
-	$query{file_size_units} =
-	    $instance->{size_units_combobox}->get_active();
+        $query{file_size} = $instance->{size_spinbutton}->get_value_as_int();
+        $query{file_size_operator} =
+            $instance->{size_comparitor_combobox}->get_active();
+        $query{file_size_units} =
+            $instance->{size_units_combobox}->get_active();
     }
     $query{modified_by} =
-	$instance->{modified_by_comboboxentry}->child()->get_text();
+        $instance->{modified_by_comboboxentry}->child()->get_text();
 
     # Check that the file name glob is valid.
 
     $re_text = file_glob_to_regexp($query{file_glob});
     eval
     {
-	qr/$re_text/;
+        qr/$re_text/;
     };
     if ($@)
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("`{pattern}' is an invalid\nfile name pattern.",
-		 pattern => $query{file_glob}));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "warning",
+             "close",
+             __x("`{pattern}' is an invalid\nfile name pattern.",
+                 pattern => $query{file_glob}));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Check that the search pattern is valid.
 
     if ($query{contents_pattern_is_regexp})
     {
-	$re_text = file_glob_to_regexp($query{contents_pattern});
-	eval
-	{
-	    qr/$re_text/;
-	};
-	if ($@)
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("`{pattern}' is an invalid\ncontent search pattern.",
-		     pattern => $query{contents_pattern}));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
+        $re_text = file_glob_to_regexp($query{contents_pattern});
+        eval
+        {
+            qr/$re_text/;
+        };
+        if ($@)
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($instance->{window},
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __x("`{pattern}' is an invalid\ncontent search pattern.",
+                     pattern => $query{contents_pattern}));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
     }
 
     return \%query;

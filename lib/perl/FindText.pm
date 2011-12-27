@@ -95,7 +95,7 @@ sub find_text($$)
     # if there isn't one already mapped for the specified textview widget.
 
     get_find_text_window($parent, $text_view)
-	if (! defined(find_current_window($text_view)));
+        if (! defined(find_current_window($text_view)));
 
     delete($text_view->{find_text_disabled});
 
@@ -125,7 +125,7 @@ sub reset_find_text($)
     # Simply reset the search context for the found find text window.
 
     $instance->{match_offset_start} = $instance->{match_offset_end} = -1
-	if (defined($instance = find_current_window($text_view)));
+        if (defined($instance = find_current_window($text_view)));
 
 }
 #
@@ -156,19 +156,19 @@ sub enable_find_text($$)
 
     if (defined($instance = find_current_window($text_view)))
     {
-	if ($enable)
-	{
-	    $instance->{main_vbox}->set_sensitive(TRUE);
-	    $instance->{find_text_button}->set_sensitive
-		((length($instance->{find_comboboxentry}->child()->get_text())
-		  > 0) ?
-		 TRUE : FALSE);
-	}
-	else
-	{
-	    $instance->{main_vbox}->set_sensitive(FALSE);
-	    $instance->{find_text_button}->set_sensitive(FALSE);
-	}
+        if ($enable)
+        {
+            $instance->{main_vbox}->set_sensitive(TRUE);
+            $instance->{find_text_button}->set_sensitive
+                ((length($instance->{find_comboboxentry}->child()->get_text())
+                  > 0) ?
+                 TRUE : FALSE);
+        }
+        else
+        {
+            $instance->{main_vbox}->set_sensitive(FALSE);
+            $instance->{find_text_button}->set_sensitive(FALSE);
+        }
     }
 
     # Amend the textview object to reflect its file text enabled/disabled
@@ -176,11 +176,11 @@ sub enable_find_text($$)
 
     if ($enable)
     {
-	delete($text_view->{find_text_disabled});
+        delete($text_view->{find_text_disabled});
     }
     else
     {
-	$text_view->{find_text_disabled} = 1;
+        $text_view->{find_text_disabled} = 1;
     }
 
 }
@@ -209,7 +209,7 @@ sub hide_find_text($)
     # Simply hide the found find text window.
 
     $instance->{window}->hide()
-	if (defined($instance = find_current_window($text_view)));
+        if (defined($instance = find_current_window($text_view)));
 
 }
 #
@@ -238,7 +238,7 @@ sub find_text_textview_populate_popup_cb($$$)
     local $instance->{in_cb} = 1;
 
     my ($menu_item,
-	$separator);
+        $separator);
 
     # Add a `Find' option to the right-click menu that displays the find text
     # dialog.
@@ -246,21 +246,21 @@ sub find_text_textview_populate_popup_cb($$$)
     $menu_item = Gtk2::MenuItem->new(__("_Find"));
     if ($widget->{find_text_disabled})
     {
-	$menu_item->set_sensitive(FALSE);
+        $menu_item->set_sensitive(FALSE);
     }
     else
     {
-	$menu_item->signal_connect
-	    ("activate",
-	     sub {
-		 my ($widget, $details) = @_;
-		 return if ($details->{instance}->{in_cb});
-		 local $details->{instance}->{in_cb} = 1;
-		 find_text($details->{instance}->{window},
-			   $details->{textview_widget});
-	     },
-	     {instance        => $instance,
-	      textview_widget => $widget});
+        $menu_item->signal_connect
+            ("activate",
+             sub {
+                 my ($widget, $details) = @_;
+                 return if ($details->{instance}->{in_cb});
+                 local $details->{instance}->{in_cb} = 1;
+                 find_text($details->{instance}->{window},
+                           $details->{textview_widget});
+             },
+             {instance        => $instance,
+              textview_widget => $widget});
     }
     $menu_item->show();
     $separator = Gtk2::SeparatorMenuItem->new();
@@ -300,9 +300,9 @@ sub find_text_textview_key_press_event_cb($$$)
     local $instance->{in_cb} = 1;
 
     my ($consumed_modifiers,
-	$keymap,
-	$keyval,
-	$state);
+        $keymap,
+        $keyval,
+        $state);
 
     # Ignore the state of the caps-lock key.
 
@@ -312,18 +312,18 @@ sub find_text_textview_key_press_event_cb($$$)
     # (except caps-lock).
 
     $keymap =
-	Gtk2::Gdk::Keymap->get_for_display(Gtk2::Gdk::Display->get_default());
+        Gtk2::Gdk::Keymap->get_for_display(Gtk2::Gdk::Display->get_default());
     ($keyval, $consumed_modifiers) =
-	($keymap->translate_keyboard_state
-	 ($event->hardware_keycode(), $state, $event->group()))[0, 3];
+        ($keymap->translate_keyboard_state
+         ($event->hardware_keycode(), $state, $event->group()))[0, 3];
 
     # We are only interested in Ctrl-f.
 
     if (defined($keyval) && $keyval == $Gtk2::Gdk::Keysyms{f}
-	&& ($state - $consumed_modifiers) eq "control-mask")
+        && ($state - $consumed_modifiers) eq "control-mask")
     {
-	find_text($instance->{window}, $widget);
-	return TRUE;
+        find_text($instance->{window}, $widget);
+        return TRUE;
     }
 
     return FALSE;
@@ -354,17 +354,17 @@ sub find_text_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($case_sensitive,
-	$done,
-	$end_iter,
-	$expr,
-	$forward,
-	$found,
-	$line,
-	$match_len,
-	$rect,
-	$search_term,
-	$start_iter,
-	$use_regexp);
+        $done,
+        $end_iter,
+        $expr,
+        $forward,
+        $found,
+        $line,
+        $match_len,
+        $rect,
+        $search_term,
+        $start_iter,
+        $use_regexp);
 
     # Get the search parameters.
 
@@ -378,116 +378,116 @@ sub find_text_button_clicked_cb($$)
 
     if ($use_regexp)
     {
-	eval
-	{
-	    if ($case_sensitive)
-	    {
-		$expr = qr/$search_term/;
-	    }
-	    else
-	    {
-		$expr = qr/$search_term/i;
-	    }
-	};
-	if ($@)
-	{
-	    my $dialog = Gtk2::MessageDialog->new
-		($instance->{window},
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("`{pattern}' is an invalid\ncontent search pattern.",
-		     pattern => $search_term));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
+        eval
+        {
+            if ($case_sensitive)
+            {
+                $expr = qr/$search_term/;
+            }
+            else
+            {
+                $expr = qr/$search_term/i;
+            }
+        };
+        if ($@)
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($instance->{window},
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __x("`{pattern}' is an invalid\ncontent search pattern.",
+                     pattern => $search_term));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
     }
     else
     {
-	if ($case_sensitive)
-	{
-	    $expr = qr/\Q$search_term\E/;
-	}
-	else
-	{
-	    $expr = qr/\Q$search_term\E/i;
-	}
+        if ($case_sensitive)
+        {
+            $expr = qr/\Q$search_term\E/;
+        }
+        else
+        {
+            $expr = qr/\Q$search_term\E/i;
+        }
     }
 
     # Store the search term in the history.
 
     handle_comboxentry_history($instance->{find_comboboxentry},
-			       "find_text",
-			       $search_term);
+                               "find_text",
+                               $search_term);
 
     # Work out where to start searching from.
 
     $rect = $instance->{text_view}->get_visible_rect();
     $done = 0;
     if ($search_term eq $instance->{old_search_term}
-	&& $instance->{old_y} == $rect->y()
-	&& $instance->{match_offset_start} >= 0)
+        && $instance->{old_y} == $rect->y()
+        && $instance->{match_offset_start} >= 0)
     {
 
-	# Resume searching from where we left off. Adjust the iters so as to
-	# encompass the remaining text on the line, or if there isn't any then
-	# move them to the next/previous line.
+        # Resume searching from where we left off. Adjust the iters so as to
+        # encompass the remaining text on the line, or if there isn't any then
+        # move them to the next/previous line.
 
-	if ($forward)
-	{
-	    $start_iter = $instance->{text_buffer}->
-		get_iter_at_offset($instance->{match_offset_end});
-	    $end_iter = $instance->{text_buffer}->
-		get_iter_at_offset($instance->{match_offset_end});
-	    if ($start_iter->ends_line())
-	    {
-		$done = ! $start_iter->forward_line();
-		$end_iter->forward_to_line_end();
-	    }
-	    else
-	    {
-		$end_iter->forward_to_line_end();
-	    }
-	}
-	else
-	{
-	    $start_iter = $instance->{text_buffer}->
-		get_iter_at_offset($instance->{match_offset_start});
-	    $end_iter = $instance->{text_buffer}->
-		get_iter_at_offset($instance->{match_offset_start});
-	    if ($start_iter->starts_line())
-	    {
-		$done = ! $start_iter->backward_line();
-		$end_iter->backward_line();
-		$end_iter->forward_to_line_end()
-		    unless ($end_iter->ends_line());
-	    }
-	    else
-	    {
-		$start_iter->backward_line();
-	    }
-	}
+        if ($forward)
+        {
+            $start_iter = $instance->{text_buffer}->
+                get_iter_at_offset($instance->{match_offset_end});
+            $end_iter = $instance->{text_buffer}->
+                get_iter_at_offset($instance->{match_offset_end});
+            if ($start_iter->ends_line())
+            {
+                $done = ! $start_iter->forward_line();
+                $end_iter->forward_to_line_end();
+            }
+            else
+            {
+                $end_iter->forward_to_line_end();
+            }
+        }
+        else
+        {
+            $start_iter = $instance->{text_buffer}->
+                get_iter_at_offset($instance->{match_offset_start});
+            $end_iter = $instance->{text_buffer}->
+                get_iter_at_offset($instance->{match_offset_start});
+            if ($start_iter->starts_line())
+            {
+                $done = ! $start_iter->backward_line();
+                $end_iter->backward_line();
+                $end_iter->forward_to_line_end()
+                    unless ($end_iter->ends_line());
+            }
+            else
+            {
+                $start_iter->backward_line();
+            }
+        }
 
     }
     else
     {
 
-	# Start searching from the visible part of the file.
+        # Start searching from the visible part of the file.
 
-	my $y;
+        my $y;
 
-	if ($forward)
-	{
-	    $y = $rect->y();
-	}
-	else
-	{
-	    $y = $rect->y() + $rect->height();
-	}
-	$start_iter = ($instance->{text_view}->get_line_at_y($y))[0];
-	$end_iter = ($instance->{text_view}->get_line_at_y($y))[0];
-	$end_iter->forward_to_line_end() unless ($end_iter->ends_line());
+        if ($forward)
+        {
+            $y = $rect->y();
+        }
+        else
+        {
+            $y = $rect->y() + $rect->height();
+        }
+        $start_iter = ($instance->{text_view}->get_line_at_y($y))[0];
+        $end_iter = ($instance->{text_view}->get_line_at_y($y))[0];
+        $end_iter->forward_to_line_end() unless ($end_iter->ends_line());
 
     }
 
@@ -496,48 +496,48 @@ sub find_text_button_clicked_cb($$)
     $found = 0;
     while (! $done)
     {
-	my $pos;
-	$line =
-	    $instance->{text_buffer}->get_text($start_iter, $end_iter, TRUE);
-	if ($forward)
-	{
-	    if ($found = scalar($line =~ m/$expr/g))
-	    {
-		$pos = pos($line);
-		$match_len = length($&);
-	    }
-	}
-	else
-	{
-	    while ($line =~ m/$expr/g)
-	    {
-		$pos = pos($line);
-		$match_len = length($&);
-		$found = 1;
-	    }
-	}
-	if ($found)
-	{
-	    $instance->{match_offset_start} =
-		$start_iter->get_offset() + $pos - $match_len;
-	    $instance->{match_offset_end} = $start_iter->get_offset() + $pos;
-	    $done = 1;
-	}
-	else
-	{
-	    if ($forward)
-	    {
-		$done = ! $start_iter->forward_line();
-		$end_iter->forward_to_line_end();
-	    }
-	    else
-	    {
-		$done = ! $start_iter->backward_line();
-		$end_iter->backward_line();
-		$end_iter->forward_to_line_end()
-		    unless ($end_iter->ends_line());
-	    }
-	}
+        my $pos;
+        $line =
+            $instance->{text_buffer}->get_text($start_iter, $end_iter, TRUE);
+        if ($forward)
+        {
+            if ($found = scalar($line =~ m/$expr/g))
+            {
+                $pos = pos($line);
+                $match_len = length($&);
+            }
+        }
+        else
+        {
+            while ($line =~ m/$expr/g)
+            {
+                $pos = pos($line);
+                $match_len = length($&);
+                $found = 1;
+            }
+        }
+        if ($found)
+        {
+            $instance->{match_offset_start} =
+                $start_iter->get_offset() + $pos - $match_len;
+            $instance->{match_offset_end} = $start_iter->get_offset() + $pos;
+            $done = 1;
+        }
+        else
+        {
+            if ($forward)
+            {
+                $done = ! $start_iter->forward_line();
+                $end_iter->forward_to_line_end();
+            }
+            else
+            {
+                $done = ! $start_iter->backward_line();
+                $end_iter->backward_line();
+                $end_iter->forward_to_line_end()
+                    unless ($end_iter->ends_line());
+            }
+        }
     }
 
     # Either select the found text or tell the user that nothing could be
@@ -545,32 +545,32 @@ sub find_text_button_clicked_cb($$)
 
     if ($found)
     {
-	my $start_line_iter;
-	$start_iter = $instance->{text_buffer}->
-	    get_iter_at_offset($instance->{match_offset_start});
-	$start_line_iter = $instance->{text_buffer}->
-	    get_iter_at_offset($instance->{match_offset_start});
-	$start_line_iter->backward_line()
-	    unless $start_line_iter->starts_line();
-	$end_iter = $instance->{text_buffer}->
-	    get_iter_at_offset($instance->{match_offset_end});
-	$instance->{text_buffer}->select_range($start_iter, $end_iter);
-	$instance->{text_view}->scroll_to_iter
-	    ($start_line_iter, 0.05, FALSE, 0, 0);
-	$instance->{text_view}->scroll_to_iter($end_iter, 0.05, FALSE, 0, 0);
+        my $start_line_iter;
+        $start_iter = $instance->{text_buffer}->
+            get_iter_at_offset($instance->{match_offset_start});
+        $start_line_iter = $instance->{text_buffer}->
+            get_iter_at_offset($instance->{match_offset_start});
+        $start_line_iter->backward_line()
+            unless $start_line_iter->starts_line();
+        $end_iter = $instance->{text_buffer}->
+            get_iter_at_offset($instance->{match_offset_end});
+        $instance->{text_buffer}->select_range($start_iter, $end_iter);
+        $instance->{text_view}->scroll_to_iter
+            ($start_line_iter, 0.05, FALSE, 0, 0);
+        $instance->{text_view}->scroll_to_iter($end_iter, 0.05, FALSE, 0, 0);
     }
     else
     {
-	my $dialog;
-	$dialog = Gtk2::MessageDialog->new
-	    ($instance->{window},
-	     ["modal"],
-	     "info",
-	     "close",
-	     __x("Could not find\n`{search_term}'.",
-		 search_term => $search_term));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
+        my $dialog;
+        $dialog = Gtk2::MessageDialog->new
+            ($instance->{window},
+             ["modal"],
+             "info",
+             "close",
+             __x("Could not find\n`{search_term}'.",
+                 search_term => $search_term));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
     }
 
     $rect = $instance->{text_view}->get_visible_rect();
@@ -604,8 +604,8 @@ sub find_comboboxentry_changed_cb($$)
     local $instance->{in_cb} = 1;
 
     $instance->{find_text_button}->set_sensitive
-	((length($instance->{find_comboboxentry}->child()->get_text()) > 0) ?
-	 TRUE : FALSE);
+        ((length($instance->{find_comboboxentry}->child()->get_text()) > 0) ?
+         TRUE : FALSE);
 
 }
 #
@@ -628,14 +628,14 @@ sub find_current_window($)
     my $text_view = $_[0];
 
     return WindowManager->instance()->cond_find
-	($window_type,
-	 sub {
-	     my $instance = $_[0];
-	     return 1
-		 if ($instance->{window}->mapped()
-		     && $instance->{text_view} == $text_view);
-	     return;
-	 });
+        ($window_type,
+         sub {
+             my $instance = $_[0];
+             return 1
+                 if ($instance->{window}->mapped()
+                     && $instance->{text_view} == $text_view);
+             return;
+         });
 
 }
 #
@@ -661,7 +661,7 @@ sub get_find_text_window($$)
     my ($parent, $text_view) = @_;
 
     my ($glade,
-	$instance);
+        $instance);
     my $wm = WindowManager->instance();
 
     # Create a new find text window if an unused one wasn't found, otherwise
@@ -669,73 +669,73 @@ sub get_find_text_window($$)
 
     if (! defined($instance = $wm->find_unused($window_type)))
     {
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("main_vbox",
-			    "find_comboboxentry",
-			    "case_sensitive_checkbutton",
-			    "search_backwards_checkbutton",
-			    "regular_expression_checkbutton",
-			    "find_text_button")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("main_vbox",
+                            "find_comboboxentry",
+                            "case_sensitive_checkbutton",
+                            "search_backwards_checkbutton",
+                            "regular_expression_checkbutton",
+                            "find_text_button")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup the find text window deletion handlers.
+        # Setup the find text window deletion handlers.
 
-	$instance->{window}->signal_connect
-	    ("delete_event",
-	     sub {
-		 my ($widget, $event, $instance) = @_;
-		 return TRUE if ($instance->{in_cb});
-		 local $instance->{in_cb} = 1;
-		 $instance->{window}->hide();
-		 return TRUE;
-	     },
-	     $instance);
-	$glade->get_widget("close_button")->signal_connect
-	    ("clicked",
-	     sub {
-		 my ($widget, $instance) = @_;
-		 return TRUE if ($instance->{in_cb});
-		 local $instance->{in_cb} = 1;
-		 $instance->{window}->hide();
-	     },
-	     $instance);
+        $instance->{window}->signal_connect
+            ("delete_event",
+             sub {
+                 my ($widget, $event, $instance) = @_;
+                 return TRUE if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 $instance->{window}->hide();
+                 return TRUE;
+             },
+             $instance);
+        $glade->get_widget("close_button")->signal_connect
+            ("clicked",
+             sub {
+                 my ($widget, $instance) = @_;
+                 return TRUE if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 $instance->{window}->hide();
+             },
+             $instance);
 
-	# Setup the comboboxentry changed signal handler.
+        # Setup the comboboxentry changed signal handler.
 
-	$instance->{find_comboboxentry}->child()->
-	    signal_connect("changed",
-			   \&find_comboboxentry_changed_cb,
-			   $instance);
+        $instance->{find_comboboxentry}->child()->
+            signal_connect("changed",
+                           \&find_comboboxentry_changed_cb,
+                           $instance);
 
-	# Setup the combobox.
+        # Setup the combobox.
 
-	$instance->{find_comboboxentry}->
-	    set_model(Gtk2::ListStore->new("Glib::String"));
-	$instance->{find_comboboxentry}->set_text_column(0);
+        $instance->{find_comboboxentry}->
+            set_model(Gtk2::ListStore->new("Glib::String"));
+        $instance->{find_comboboxentry}->set_text_column(0);
     }
     else
     {
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
-	$instance->{main_vbox}->set_sensitive(TRUE);
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
+        $instance->{main_vbox}->set_sensitive(TRUE);
     }
 
     local $instance->{in_cb} = 1;
@@ -754,8 +754,8 @@ sub get_find_text_window($$)
     # into the comboboxentry widget.
 
     $instance->{find_text_button}->set_sensitive
-	((length($instance->{find_comboboxentry}->child()->get_text()) > 0) ?
-	 TRUE : FALSE);
+        ((length($instance->{find_comboboxentry}->child()->get_text()) > 0) ?
+         TRUE : FALSE);
 
     # Store the associated textview and textbuffer.
 
@@ -778,12 +778,12 @@ sub get_find_text_window($$)
 
     if (defined($glade))
     {
-	$wm->manage($instance, $window_type, $instance->{window});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => undef,
-	      help_ref => __("mtnb-gsc-browser-buttons")});
+        $wm->manage($instance, $window_type, $instance->{window});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => undef,
+              help_ref => __("mtnb-gsc-browser-buttons")});
     }
 
     return $instance;

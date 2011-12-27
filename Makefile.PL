@@ -12,12 +12,12 @@ my($dest_dir,
    $no_use_dists_mas,
    $prefix_dir);
 my %valid_options = (DESTDIR          => \$dest_dir,
-		     FILE_COMPARISON  => \$file_comparison,
-		     GLOBS_FILE       => \$globs_file,
-		     HTML_VIEWER      => \$html_viewer,
-		     LIBDIR           => \$lib_dir,
-		     NO_USE_DISTS_MAS => \$no_use_dists_mas,
-		     PREFIX           => \$prefix_dir);
+                     FILE_COMPARISON  => \$file_comparison,
+                     GLOBS_FILE       => \$globs_file,
+                     HTML_VIEWER      => \$html_viewer,
+                     LIBDIR           => \$lib_dir,
+                     NO_USE_DISTS_MAS => \$no_use_dists_mas,
+                     PREFIX           => \$prefix_dir);
 
 # Parse command line options.
 
@@ -29,18 +29,18 @@ foreach my $arg (@ARGV)
     $name = uc($name);
     if (exists($valid_options{$name}))
     {
-	${$valid_options{$name}} = $value;
+        ${$valid_options{$name}} = $value;
     }
     else
     {
-	print(STDERR
-	      "usage: perl Makefile.PL [PREFIX=<PATH>] [DESTDIR=<PATH>] "
-	          . "[LIBDIR=<PATH>]\n"
-	          . "                        [GLOBS_FILE=<PATH>] "
-	          . "[HTML_VIEWER=<PATH>]\n"
-	          . "                        [FILE_COMPARISON=<PATH>] "
-	          . "[NO_USE_DISTS_MAS=1]\n");
-	exit(1);
+        print(STDERR
+              "usage: perl Makefile.PL [PREFIX=<PATH>] [DESTDIR=<PATH>] "
+                  . "[LIBDIR=<PATH>]\n"
+                  . "                        [GLOBS_FILE=<PATH>] "
+                  . "[HTML_VIEWER=<PATH>]\n"
+                  . "                        [FILE_COMPARISON=<PATH>] "
+                  . "[NO_USE_DISTS_MAS=1]\n");
+        exit(1);
     }
 }
 
@@ -70,10 +70,10 @@ PREFIX="$prefix_dir"
 INSTALLER=./linux-installer
 
 all: \$(INSTALLER)
-	\@echo "Ok."
+        \@echo "Ok."
 
 test: \$(INSTALLER)
-	\@echo "Ok."
+        \@echo "Ok."
 
 install: \$(INSTALLER)
 EOF

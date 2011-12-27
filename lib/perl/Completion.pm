@@ -95,9 +95,9 @@ sub new($;$)
     my $list = $_[1];
 
     my ($char,
-	$item,
-	$level,
-	$this);
+        $item,
+        $level,
+        $this);
 
     $this = {tree => {}};
 
@@ -106,25 +106,25 @@ sub new($;$)
     foreach $item (@$list)
     {
 
-	# Build up nodes for an item.
+        # Build up nodes for an item.
 
-	$level = $this->{tree};
-	foreach $char (split(//, $item))
-	{
-	    if (! exists($level->{$char}))
-	    {
-		$level->{$char} = {};
-	    }
-	    $level = $level->{$char};
-	}
+        $level = $this->{tree};
+        foreach $char (split(//, $item))
+        {
+            if (! exists($level->{$char}))
+            {
+                $level->{$char} = {};
+            }
+            $level = $level->{$char};
+        }
 
-	# By adding this dummy node here it stops the auto-complete moving too
-	# far should another item extend beyond this point. I.e. auto
-	# completion stops at `net.venge.monotone.contrib' and not
-	# `net.venge.monotone.contrib.'. You could simply think of this node as
-	# an `end of string' token if you prefer.
+        # By adding this dummy node here it stops the auto-complete moving too
+        # far should another item extend beyond this point. I.e. auto
+        # completion stops at `net.venge.monotone.contrib' and not
+        # `net.venge.monotone.contrib.'. You could simply think of this node as
+        # an `end of string' token if you prefer.
 
-	$level->{""} = {};
+        $level->{""} = {};
 
     }
 
@@ -167,66 +167,66 @@ sub get_completion($$$$)
     if (scalar(%{$this->{tree}}))
     {
 
-	my ($char,
-	    $level);
+        my ($char,
+            $level);
 
-	# Lookup value, stopping when it becomes ambiguous, we get no match or
-	# we get to the end of $value.
+        # Lookup value, stopping when it becomes ambiguous, we get no match or
+        # we get to the end of $value.
 
-	$level = $this->{tree};
-	foreach $char (split(//, $value))
-	{
-	    last unless (exists($level->{$char}));
-	    $level = $level->{$char};
-	    $$result .= $char;
-	}
+        $level = $this->{tree};
+        foreach $char (split(//, $value))
+        {
+            last unless (exists($level->{$char}));
+            $level = $level->{$char};
+            $$result .= $char;
+        }
 
-	# Detect truncations.
+        # Detect truncations.
 
-	if (length($value) > length($$result))
-	{
+        if (length($value) > length($$result))
+        {
 
-	    # The result is smaller and so the latter part of $value doesn't
-	    # match.
+            # The result is smaller and so the latter part of $value doesn't
+            # match.
 
-	    $match = undef;
+            $match = undef;
 
-	}
-	else
-	{
+        }
+        else
+        {
 
-	    # $value matches so far so now try and expand it further.
+            # $value matches so far so now try and expand it further.
 
-	    while (scalar(keys(%$level)) == 1)
-	    {
-		($char) = keys(%$level);
-		$$result .= $char;
-		$level = $level->{$char};
-	    }
+            while (scalar(keys(%$level)) == 1)
+            {
+                ($char) = keys(%$level);
+                $$result .= $char;
+                $level = $level->{$char};
+            }
 
-	}
+        }
 
-	# Detect complete completions (doesn't mean to say that it can't be
-	# extended, just that as it stands at the moment $$result does contain
-	# a valid unique value).
+        # Detect complete completions (doesn't mean to say that it can't be
+        # extended, just that as it stands at the moment $$result does contain
+        # a valid unique value).
 
-	if (! scalar(%$level) || exists($level->{""}))
-	{
-	    $$complete = 1;
-	}
-	else
-	{
-	    $$complete = 0;
-	}
+        if (! scalar(%$level) || exists($level->{""}))
+        {
+            $$complete = 1;
+        }
+        else
+        {
+            $$complete = 0;
+        }
 
     }
     else
     {
 
-	# The completion list is empty and so nothing can be matched.
+        # The completion list is empty and so nothing can be matched.
 
-	$$complete = 0;
-	$match = undef;
+        $$complete = 0;
+        $match = undef;
 
     }
 

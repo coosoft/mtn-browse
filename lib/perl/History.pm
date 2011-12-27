@@ -62,19 +62,19 @@ my $__browse_file           = __("Browse File");
 my $__browse_file_ttip      = __("Browse the file in\na new browser window");
 my $__browse_rev            = __("Browse Revision");
 my $__browse_rev_ttip       = __("Browse the revision in\n"
-				 . "a new browser window");
+                                 . "a new browser window");
 my $__full_changelog        = __("Full Change Log");
 my $__full_changelog_ttip   = __("View the revision's full change log");
 my $__select_id_1           = __("Select As Id 1");
 my $__select_id_2           = __("Select As Id 2");
 my $__select_id_file_1_ttip = __("Select this file revision for\n"
-				 . "comparison as the first file");
+                                 . "comparison as the first file");
 my $__select_id_file_2_ttip = __("Select this file revision for\n"
-				 . "comparison as the second file");
+                                 . "comparison as the second file");
 my $__select_id_rev_1_ttip  = __("Select this revision for comparison\n"
-				 . "as the first revision");
+                                 . "as the first revision");
 my $__select_id_rev_2_ttip  = __("Select this revision for comparison\n"
-				 . "as the second revision");
+                                 . "as the second revision");
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
@@ -141,8 +141,8 @@ sub display_revision_change_history($$$)
     $instance->{first_revision_id} = "";
     $instance->{second_revision_id} = "";
     $instance->{window}->set_title(__x("Revision History For {rev}",
-				       rev => defined($tag) ?
-				           $tag : $revision_id));
+                                       rev => defined($tag) ?
+                                           $tag : $revision_id));
     $instance->{history_label}->set_markup(__("<b>Revision History</b>"));
     $instance->{window}->show_all();
     $instance->{window}->present();
@@ -168,7 +168,7 @@ sub display_revision_change_history($$$)
     $wm->update_gui();
     $instance->{history} = [];
     $instance->{mtn}->toposort($instance->{history},
-			       keys(%{$instance->{revision_hits}}));
+                               keys(%{$instance->{revision_hits}}));
     $instance->{revision_hits} = undef;
     @{$instance->{history}} = reverse(@{$instance->{history}});
     $instance->{appbar}->set_progress_percentage(1);
@@ -221,7 +221,7 @@ sub display_file_change_history($$$)
     $instance->{first_revision_id} = "";
     $instance->{second_revision_id} = "";
     $instance->{window}->set_title(__x("File History For {file}",
-				       file => $instance->{file_name}));
+                                       file => $instance->{file_name}));
     $instance->{history_label}->set_markup(__("<b>File History</b>"));
     $instance->{window}->show_all();
     $instance->{window}->present();
@@ -240,10 +240,10 @@ sub display_file_change_history($$$)
     $wm->update_gui();
     $instance->{revision_hits} = {};
     {
-	local $suppress_mtn_warnings = 1;
-	get_file_history_helper($instance,
-				$revision_id,
-				\$instance->{file_name});
+        local $suppress_mtn_warnings = 1;
+        get_file_history_helper($instance,
+                                $revision_id,
+                                \$instance->{file_name});
     }
 
     # Sort the list.
@@ -253,7 +253,7 @@ sub display_file_change_history($$$)
     $wm->update_gui();
     $instance->{history} = [];
     $instance->{mtn}->toposort($instance->{history},
-			       keys(%{$instance->{revision_hits}}));
+                               keys(%{$instance->{revision_hits}}));
     @{$instance->{history}} = reverse(@{$instance->{history}});
     $instance->{appbar}->set_progress_percentage(1);
     $wm->update_gui();
@@ -300,27 +300,27 @@ sub display_revision_comparison($$$;$)
     my ($mtn, $revision_id_1, $revision_id_2, $file_name) = @_;
 
     my (@files,
-	$i,
-	$instance,
-	$iter);
+        $i,
+        $instance,
+        $iter);
     my $wm = WindowManager->instance();
 
     $instance = get_revision_comparison_window($mtn);
     local $instance->{in_cb} = 1;
 
     $instance->{window}->
-	set_title(__x("Differences Between Revisions {rev_1} and {rev_2}",
-		      rev_1 => $revision_id_1,
-		      rev_2 => $revision_id_2));
+        set_title(__x("Differences Between Revisions {rev_1} and {rev_2}",
+                      rev_1 => $revision_id_1,
+                      rev_2 => $revision_id_2));
     if (defined($file_name))
     {
-	$instance->{comparison_label}->
-	    set_markup(__("<b>File Comparison</b>"));
+        $instance->{comparison_label}->
+            set_markup(__("<b>File Comparison</b>"));
     }
     else
     {
-	$instance->{comparison_label}->
-	    set_markup(__("<b>Revision Comparison</b>"));
+        $instance->{comparison_label}->
+            set_markup(__("<b>Revision Comparison</b>"));
     }
     $instance->{window}->show_all();
     $instance->{window}->present();
@@ -342,60 +342,60 @@ sub display_revision_comparison($$$;$)
     if ($mtn->supports(MTN_CONTENT_DIFF_EXTRA_OPTIONS))
     {
 
-	my $exception;
+        my $exception;
 
-	local $instance->{kill_mtn_subprocess} = 1;
+        local $instance->{kill_mtn_subprocess} = 1;
 
-	# The stop button callback will kill off the mtn subprocess so suppress
-	# any resultant errors.
+        # The stop button callback will kill off the mtn subprocess so suppress
+        # any resultant errors.
 
-	$mtn->suppress_utf8_conversion(1);
-	CachingAutomateStdio->register_error_handler
-	    (MTN_SEVERITY_ALL,
-	     sub {
-		 my ($severity, $message, $instance) = @_;
-		 mtn_error_handler($severity, $message)
-		     if ($severity == MTN_SEVERITY_WARNING
-			 || ! $instance->{stop});
-	     },
-	     $instance);
-	eval
-	{
-	    $mtn->content_diff($instance->{diff_output},
-			       ["with-header"],
-			       $revision_id_1,
-			       $revision_id_2,
-			       $file_name);
-	};
-	$exception = $@;
-	CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
-						     \&mtn_error_handler);
-	$mtn->suppress_utf8_conversion(0);
+        $mtn->suppress_utf8_conversion(1);
+        CachingAutomateStdio->register_error_handler
+            (MTN_SEVERITY_ALL,
+             sub {
+                 my ($severity, $message, $instance) = @_;
+                 mtn_error_handler($severity, $message)
+                     if ($severity == MTN_SEVERITY_WARNING
+                         || ! $instance->{stop});
+             },
+             $instance);
+        eval
+        {
+            $mtn->content_diff($instance->{diff_output},
+                               ["with-header"],
+                               $revision_id_1,
+                               $revision_id_2,
+                               $file_name);
+        };
+        $exception = $@;
+        CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
+                                                     \&mtn_error_handler);
+        $mtn->suppress_utf8_conversion(0);
 
-	# If we have aborted the comparison by killing off the mtn subprocess
-	# then cleanly closedown and restart it, otherwise rethrow any raised
-	# exceptions.
+        # If we have aborted the comparison by killing off the mtn subprocess
+        # then cleanly closedown and restart it, otherwise rethrow any raised
+        # exceptions.
 
-	if ($instance->{stop})
-	{
-	    my $dummy;
-	    $mtn->closedown();
-	    $mtn->interface_version(\$dummy);
-	}
-	elsif ($exception)
-	{
-	    die($exception);
-	}
+        if ($instance->{stop})
+        {
+            my $dummy;
+            $mtn->closedown();
+            $mtn->interface_version(\$dummy);
+        }
+        elsif ($exception)
+        {
+            die($exception);
+        }
 
     }
     else
     {
-	mtn_diff($instance->{diff_output},
-		 \$instance->{stop},
-		 $mtn->get_db_name(),
-		 $revision_id_1,
-		 $revision_id_2,
-		 $file_name);
+        mtn_diff($instance->{diff_output},
+                 \$instance->{stop},
+                 $mtn->get_db_name(),
+                 $revision_id_1,
+                 $revision_id_2,
+                 $file_name);
     }
 
     # Does the user want pretty printed differences output?
@@ -403,366 +403,366 @@ sub display_revision_comparison($$$;$)
     if ($user_preferences->{coloured_diffs})
     {
 
-	my ($char,
-	    $file_id_1,
-	    $file_id_2,
-	    $is_binary,
-	    $len,
-	    $line,
-	    @lines,
-	    $max_len,
-	    $name,
-	    $padding,
-	    $rest,
-	    $separator);
+        my ($char,
+            $file_id_1,
+            $file_id_2,
+            $is_binary,
+            $len,
+            $line,
+            @lines,
+            $max_len,
+            $name,
+            $padding,
+            $rest,
+            $separator);
 
-	# Yes the user wants pretty printed differences output.
+        # Yes the user wants pretty printed differences output.
 
-	@lines = @{$instance->{diff_output}};
+        @lines = @{$instance->{diff_output}};
 
-	# Find the longest line for future padding, having expanded tabs
-	# (except for file details lines as tab is used as a separator (these
-	# are expanded later)). Please note that the use of unpack un-utf8s the
-	# returned strings.
+        # Find the longest line for future padding, having expanded tabs
+        # (except for file details lines as tab is used as a separator (these
+        # are expanded later)). Please note that the use of unpack un-utf8s the
+        # returned strings.
 
-	$max_len = $separator = 0;
-	foreach my $line (@lines)
-	{
-	    if ($line =~ m/^==/)
-	    {
-		$separator = 1;
-	    }
-	    elsif ($separator)
-	    {
-		$rest = expand(substr($line, 3)) . " ";
-		$max_len = $len if (($len = length($rest)) > $max_len);
-		$separator = 0 if ($line =~ m/^\+\+\+ .+$/);
-	    }
-	    else
-	    {
-		($char, $rest) = unpack("a1a*", $line);
-		eval
-		{
-		    $rest = decode($file_encoding, $rest, Encode::FB_CROAK);
-		};
-		$rest =~ s/\s+$//;
-		$rest = expand($rest);
-		$max_len = $len if (($len = length($rest)) > $max_len);
-		$line = $char . $rest;
-	    }
-	}
+        $max_len = $separator = 0;
+        foreach my $line (@lines)
+        {
+            if ($line =~ m/^==/)
+            {
+                $separator = 1;
+            }
+            elsif ($separator)
+            {
+                $rest = expand(substr($line, 3)) . " ";
+                $max_len = $len if (($len = length($rest)) > $max_len);
+                $separator = 0 if ($line =~ m/^\+\+\+ .+$/);
+            }
+            else
+            {
+                ($char, $rest) = unpack("a1a*", $line);
+                eval
+                {
+                    $rest = decode($file_encoding, $rest, Encode::FB_CROAK);
+                };
+                $rest =~ s/\s+$//;
+                $rest = expand($rest);
+                $max_len = $len if (($len = length($rest)) > $max_len);
+                $line = $char . $rest;
+            }
+        }
 
-	# Display the result, highlighting according to the diff output.
-	# Remember the first two lines are just empty comment lines.
+        # Display the result, highlighting according to the diff output.
+        # Remember the first two lines are just empty comment lines.
 
-	$instance->{appbar}->
-	    set_status(__("Formatting and displaying differences"));
-	$wm->update_gui();
-	$padding = " " x $max_len;
-	$line = substr(" Summary" . $padding, 0, $max_len);
-	$instance->{comparison_buffer}->insert_with_tags_by_name
-	    ($instance->{comparison_buffer}->get_end_iter(),
-	     $line . "\n",
-	     "compare-info");
-	for ($i = 1; $i < scalar(@lines); ++ $i)
-	{
+        $instance->{appbar}->
+            set_status(__("Formatting and displaying differences"));
+        $wm->update_gui();
+        $padding = " " x $max_len;
+        $line = substr(" Summary" . $padding, 0, $max_len);
+        $instance->{comparison_buffer}->insert_with_tags_by_name
+            ($instance->{comparison_buffer}->get_end_iter(),
+             $line . "\n",
+             "compare-info");
+        for ($i = 1; $i < scalar(@lines); ++ $i)
+        {
 
-	    # Deal with the initial comment lines that summarise the entire set
-	    # of differences between the revisions.
+            # Deal with the initial comment lines that summarise the entire set
+            # of differences between the revisions.
 
-	    if ($lines[$i] =~ m/^\#/)
-	    {
-		$line = substr($lines[$i], 1);
-		$instance->{comparison_buffer}->insert
-		    ($instance->{comparison_buffer}->get_end_iter(),
-		     $line . "\n");
-	    }
+            if ($lines[$i] =~ m/^\#/)
+            {
+                $line = substr($lines[$i], 1);
+                $instance->{comparison_buffer}->insert
+                    ($instance->{comparison_buffer}->get_end_iter(),
+                     $line . "\n");
+            }
 
-	    # Deal with lines that introduce a new file comparison.
+            # Deal with lines that introduce a new file comparison.
 
-	    elsif ($lines[$i] =~ m/^==/)
-	    {
+            elsif ($lines[$i] =~ m/^==/)
+            {
 
-		# Check for aborts.
+                # Check for aborts.
 
-		last if ($instance->{stop});
+                last if ($instance->{stop});
 
-		# Print separator.
+                # Print separator.
 
-		$instance->{comparison_buffer}->
-		    insert_pixbuf($instance->{comparison_buffer}->
-				      get_end_iter(),
-				  $line_image);
-		$instance->{comparison_buffer}->
-		    insert($instance->{comparison_buffer}->get_end_iter(),
-			   "\n");
+                $instance->{comparison_buffer}->
+                    insert_pixbuf($instance->{comparison_buffer}->
+                                      get_end_iter(),
+                                  $line_image);
+                $instance->{comparison_buffer}->
+                    insert($instance->{comparison_buffer}->get_end_iter(),
+                           "\n");
 
-		# Attempt to extract the file name and its id, if this doesn't
-		# work then it is probably a comment stating that the file is
-		# binary.
+                # Attempt to extract the file name and its id, if this doesn't
+                # work then it is probably a comment stating that the file is
+                # binary.
 
-		++ $i;
-		if ($lines[$i] =~ m/^--- (.+)\t[0-9a-f]{40}$/)
-		{
-		    $name = $1;
-		}
-		elsif (($i + 1) < scalar(@lines)
-		       && $lines[$i + 1] =~ m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
-		{
-		    $name = $1;
-		}
-		else
-		{
-		    $name = undef;
-		}
-		if (defined($name))
-		{
-		    $is_binary = 0;
-		    if ($lines[$i] =~ m/^--- .+\t([0-9a-f]{40})$/)
-		    {
-			$file_id_1 = $1;
-		    }
-		    else
-		    {
-			$file_id_1 = "";
-		    }
-		    if ($lines[$i + 1] =~ m/^\+\+\+ .+\t([0-9a-f]{40})$/)
-		    {
-			$file_id_2 = $1;
-		    }
-		    else
-		    {
-			$file_id_2 = "";
-		    }
-		}
-		else
-		{
-		    $is_binary = 1;
-		    ($name) = ($lines[$i] =~ m/^\# (.+) is binary$/);
-		    $file_id_1 = $file_id_2 = "";
-		}
+                ++ $i;
+                if ($lines[$i] =~ m/^--- (.+)\t[0-9a-f]{40}$/)
+                {
+                    $name = $1;
+                }
+                elsif (($i + 1) < scalar(@lines)
+                       && $lines[$i + 1] =~ m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
+                {
+                    $name = $1;
+                }
+                else
+                {
+                    $name = undef;
+                }
+                if (defined($name))
+                {
+                    $is_binary = 0;
+                    if ($lines[$i] =~ m/^--- .+\t([0-9a-f]{40})$/)
+                    {
+                        $file_id_1 = $1;
+                    }
+                    else
+                    {
+                        $file_id_1 = "";
+                    }
+                    if ($lines[$i + 1] =~ m/^\+\+\+ .+\t([0-9a-f]{40})$/)
+                    {
+                        $file_id_2 = $1;
+                    }
+                    else
+                    {
+                        $file_id_2 = "";
+                    }
+                }
+                else
+                {
+                    $is_binary = 1;
+                    ($name) = ($lines[$i] =~ m/^\# (.+) is binary$/);
+                    $file_id_1 = $file_id_2 = "";
+                }
 
-		# Print out the details for the first file.
+                # Print out the details for the first file.
 
-		$line = substr(expand(substr($lines[$i], $is_binary ? 1 : 3))
-			           . $padding,
-			       0,
-			       $max_len);
-		$instance->{comparison_buffer}->insert_with_tags_by_name
-		    ($instance->{comparison_buffer}->get_end_iter(),
-		     $line . "\n",
-		     "compare-file-info-1");
+                $line = substr(expand(substr($lines[$i], $is_binary ? 1 : 3))
+                                   . $padding,
+                               0,
+                               $max_len);
+                $instance->{comparison_buffer}->insert_with_tags_by_name
+                    ($instance->{comparison_buffer}->get_end_iter(),
+                     $line . "\n",
+                     "compare-file-info-1");
 
-		# Store the file name and the starting line number so that the
-		# user can later jump straight to it using the file combobox.
+                # Store the file name and the starting line number so that the
+                # user can later jump straight to it using the file combobox.
 
-		$iter = $instance->{comparison_buffer}->get_end_iter();
-		$iter->backward_line();
-		push(@files, {file_name => $name,
-			      line_nr   => $iter->get_line(),
-			      file_id_1 => $file_id_1,
-			      file_id_2 => $file_id_2});
+                $iter = $instance->{comparison_buffer}->get_end_iter();
+                $iter->backward_line();
+                push(@files, {file_name => $name,
+                              line_nr   => $iter->get_line(),
+                              file_id_1 => $file_id_1,
+                              file_id_2 => $file_id_2});
 
-		# Print out the details for the second file if there is one.
+                # Print out the details for the second file if there is one.
 
-		if (! $is_binary)
-		{
-		    ++ $i;
-		    $line = substr(expand(substr($lines[$i], 3)) . $padding,
-				   0,
-				   $max_len);
-		    $instance->{comparison_buffer}->insert_with_tags_by_name
-			($instance->{comparison_buffer}->get_end_iter(),
-			 $line . "\n",
-			 "compare-file-info-2");
-		}
+                if (! $is_binary)
+                {
+                    ++ $i;
+                    $line = substr(expand(substr($lines[$i], 3)) . $padding,
+                                   0,
+                                   $max_len);
+                    $instance->{comparison_buffer}->insert_with_tags_by_name
+                        ($instance->{comparison_buffer}->get_end_iter(),
+                         $line . "\n",
+                         "compare-file-info-2");
+                }
 
-	    }
+            }
 
-	    # Deal with difference context lines.
+            # Deal with difference context lines.
 
-	    elsif ($lines[$i] =~ m/^@@/)
-	    {
-		$line = substr(substr($lines[$i], 2) . $padding, 0, $max_len);
-		$instance->{comparison_buffer}->insert_with_tags_by_name
-		    ($instance->{comparison_buffer}->get_end_iter(),
-		     $line . "\n",
-		     "compare-info");
-	    }
+            elsif ($lines[$i] =~ m/^@@/)
+            {
+                $line = substr(substr($lines[$i], 2) . $padding, 0, $max_len);
+                $instance->{comparison_buffer}->insert_with_tags_by_name
+                    ($instance->{comparison_buffer}->get_end_iter(),
+                     $line . "\n",
+                     "compare-info");
+            }
 
-	    # Deal with - change lines.
+            # Deal with - change lines.
 
-	    elsif ($lines[$i] =~ m/^-/)
-	    {
-		$line = substr(substr($lines[$i], 1) . $padding, 0, $max_len);
-		$instance->{comparison_buffer}->insert_with_tags_by_name
-		    ($instance->{comparison_buffer}->get_end_iter(),
-		     $line . "\n",
-		     "compare-file-1");
-	    }
+            elsif ($lines[$i] =~ m/^-/)
+            {
+                $line = substr(substr($lines[$i], 1) . $padding, 0, $max_len);
+                $instance->{comparison_buffer}->insert_with_tags_by_name
+                    ($instance->{comparison_buffer}->get_end_iter(),
+                     $line . "\n",
+                     "compare-file-1");
+            }
 
-	    # Deal with + change lines.
+            # Deal with + change lines.
 
-	    elsif ($lines[$i] =~ m/^\+/)
-	    {
-		$line = substr(substr($lines[$i], 1) . $padding, 0, $max_len);
-		$instance->{comparison_buffer}->insert_with_tags_by_name
-		    ($instance->{comparison_buffer}->get_end_iter(),
-		     $line . "\n",
-		     "compare-file-2");
-	    }
+            elsif ($lines[$i] =~ m/^\+/)
+            {
+                $line = substr(substr($lines[$i], 1) . $padding, 0, $max_len);
+                $instance->{comparison_buffer}->insert_with_tags_by_name
+                    ($instance->{comparison_buffer}->get_end_iter(),
+                     $line . "\n",
+                     "compare-file-2");
+            }
 
-	    # Print out the rest.
+            # Print out the rest.
 
-	    else
-	    {
-		$line = substr($lines[$i], 1);
-		$instance->{comparison_buffer}->insert
-		    ($instance->{comparison_buffer}->get_end_iter(),
-		     $line . "\n");
-	    }
+            else
+            {
+                $line = substr($lines[$i], 1);
+                $instance->{comparison_buffer}->insert
+                    ($instance->{comparison_buffer}->get_end_iter(),
+                     $line . "\n");
+            }
 
-	    if (($i % 100) == 0)
-	    {
-		$instance->{appbar}->set_progress_percentage
-		    (($i + 1) / scalar(@lines));
-		$wm->update_gui();
-	    }
+            if (($i % 100) == 0)
+            {
+                $instance->{appbar}->set_progress_percentage
+                    (($i + 1) / scalar(@lines));
+                $wm->update_gui();
+            }
 
-	}
+        }
 
     }
     else
     {
 
-	my ($file_id_1,
-	    $file_id_2,
-	    $is_binary,
-	    $name);
+        my ($file_id_1,
+            $file_id_2,
+            $is_binary,
+            $name);
 
-	# No the user wants the raw differences output.
+        # No the user wants the raw differences output.
 
-	# Display the result, storing the locations of the files.
+        # Display the result, storing the locations of the files.
 
-	$instance->{appbar}->set_status(__("Displaying differences"));
-	$wm->update_gui();
-	for ($i = 0; $i < scalar(@{$instance->{diff_output}}); ++ $i)
-	{
+        $instance->{appbar}->set_status(__("Displaying differences"));
+        $wm->update_gui();
+        for ($i = 0; $i < scalar(@{$instance->{diff_output}}); ++ $i)
+        {
 
-	    # Deal with lines that introduce a new file comparison.
+            # Deal with lines that introduce a new file comparison.
 
-	    if ($instance->{diff_output}->[$i] =~ m/^==/)
-	    {
+            if ($instance->{diff_output}->[$i] =~ m/^==/)
+            {
 
-		# Check for aborts.
+                # Check for aborts.
 
-		last if ($instance->{stop});
+                last if ($instance->{stop});
 
-		# Extract the file name, if this doesn't work then it is
-		# probably a comment stating that the file is binary.
+                # Extract the file name, if this doesn't work then it is
+                # probably a comment stating that the file is binary.
 
-		++ $i;
-		if ($instance->{diff_output}->[$i] =~
-		    m/^--- (.+)\t[0-9a-f]{40}$/)
-		{
-		    $name = $1;
-		}
-		elsif (($i + 1) < scalar(@{$instance->{diff_output}})
-		       && $instance->{diff_output}->[$i + 1] =~
-		           m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
-		{
-		    $name = $1;
-		}
-		else
-		{
-		    $name = undef;
-		}
-		if (defined($name))
-		{
-		    $is_binary = 0;
-		    if ($instance->{diff_output}->[$i] =~
-			m/^--- .+\t([0-9a-f]{40})$/)
-		    {
-			$file_id_1 = $1;
-		    }
-		    else
-		    {
-			$file_id_1 = "";
-		    }
-		    if ($instance->{diff_output}->[$i + 1]
-			=~ m/^\+\+\+ .+\t([0-9a-f]{40})$/)
-		    {
-			$file_id_2 = $1;
-		    }
-		    else
-		    {
-			$file_id_2 = "";
-		    }
-		}
-		else
-		{
-		    ($name) = ($instance->{diff_output}->[$i] =~
-			       m/^\# (.+) is binary$/);
-		    $is_binary = 1;
-		    $file_id_1 = $file_id_2 = "";
-		}
+                ++ $i;
+                if ($instance->{diff_output}->[$i] =~
+                    m/^--- (.+)\t[0-9a-f]{40}$/)
+                {
+                    $name = $1;
+                }
+                elsif (($i + 1) < scalar(@{$instance->{diff_output}})
+                       && $instance->{diff_output}->[$i + 1] =~
+                           m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
+                {
+                    $name = $1;
+                }
+                else
+                {
+                    $name = undef;
+                }
+                if (defined($name))
+                {
+                    $is_binary = 0;
+                    if ($instance->{diff_output}->[$i] =~
+                        m/^--- .+\t([0-9a-f]{40})$/)
+                    {
+                        $file_id_1 = $1;
+                    }
+                    else
+                    {
+                        $file_id_1 = "";
+                    }
+                    if ($instance->{diff_output}->[$i + 1]
+                        =~ m/^\+\+\+ .+\t([0-9a-f]{40})$/)
+                    {
+                        $file_id_2 = $1;
+                    }
+                    else
+                    {
+                        $file_id_2 = "";
+                    }
+                }
+                else
+                {
+                    ($name) = ($instance->{diff_output}->[$i] =~
+                               m/^\# (.+) is binary$/);
+                    $is_binary = 1;
+                    $file_id_1 = $file_id_2 = "";
+                }
 
-		# Print out the separator line that we previously skipped over.
+                # Print out the separator line that we previously skipped over.
 
-		$instance->{comparison_buffer}->insert
-		    ($instance->{comparison_buffer}->get_end_iter(),
-		     $instance->{diff_output}->[$i - 1] . "\n");
+                $instance->{comparison_buffer}->insert
+                    ($instance->{comparison_buffer}->get_end_iter(),
+                     $instance->{diff_output}->[$i - 1] . "\n");
 
-		# Print out the details for the first file.
+                # Print out the details for the first file.
 
-		$instance->{comparison_buffer}->insert
-		    ($instance->{comparison_buffer}->get_end_iter(),
-		     $instance->{diff_output}->[$i] . "\n");
+                $instance->{comparison_buffer}->insert
+                    ($instance->{comparison_buffer}->get_end_iter(),
+                     $instance->{diff_output}->[$i] . "\n");
 
-		# Store the file name and the starting line number so that the
-		# user can later jump straight to it using the file combobox.
+                # Store the file name and the starting line number so that the
+                # user can later jump straight to it using the file combobox.
 
-		$iter = $instance->{comparison_buffer}->get_end_iter();
-		$iter->backward_line();
-		push(@files, {file_name => $name,
-			      line_nr   => $iter->get_line(),
-			      file_id_1 => $file_id_1,
-			      file_id_2 => $file_id_2});
+                $iter = $instance->{comparison_buffer}->get_end_iter();
+                $iter->backward_line();
+                push(@files, {file_name => $name,
+                              line_nr   => $iter->get_line(),
+                              file_id_1 => $file_id_1,
+                              file_id_2 => $file_id_2});
 
-		# Print out the details for the second file if there is one.
+                # Print out the details for the second file if there is one.
 
-		if (! $is_binary)
-		{
-		    ++ $i;
-		    $instance->{comparison_buffer}->insert
-			($instance->{comparison_buffer}->get_end_iter(),
-			 $instance->{diff_output}->[$i] . "\n");
-		}
+                if (! $is_binary)
+                {
+                    ++ $i;
+                    $instance->{comparison_buffer}->insert
+                        ($instance->{comparison_buffer}->get_end_iter(),
+                         $instance->{diff_output}->[$i] . "\n");
+                }
 
-	    }
+            }
 
-	    # Print out the rest.
+            # Print out the rest.
 
-	    else
-	    {
-		my $line = $instance->{diff_output}->[$i];
-		eval
-		{
-		    $line = decode($file_encoding, $line, Encode::FB_CROAK);
-		};
-		$instance->{comparison_buffer}->insert
-		    ($instance->{comparison_buffer}->get_end_iter(),
-		     $line . "\n");
-	    }
+            else
+            {
+                my $line = $instance->{diff_output}->[$i];
+                eval
+                {
+                    $line = decode($file_encoding, $line, Encode::FB_CROAK);
+                };
+                $instance->{comparison_buffer}->insert
+                    ($instance->{comparison_buffer}->get_end_iter(),
+                     $line . "\n");
+            }
 
-	    if (($i % 100) == 0)
-	    {
-		$instance->{appbar}->set_progress_percentage
-		    (($i + 1) / scalar(@{$instance->{diff_output}}));
-		$wm->update_gui();
-	    }
+            if (($i % 100) == 0)
+            {
+                $instance->{appbar}->set_progress_percentage
+                    (($i + 1) / scalar(@{$instance->{diff_output}}));
+                $wm->update_gui();
+            }
 
-	}
+        }
 
     }
 
@@ -775,8 +775,8 @@ sub display_revision_comparison($$$;$)
 
     $iter = $instance->{comparison_buffer}->get_end_iter();
     $instance->{comparison_buffer}->delete
-	($iter, $instance->{comparison_buffer}->get_end_iter())
-	if ($iter->backward_char());
+        ($iter, $instance->{comparison_buffer}->get_end_iter())
+        if ($iter->backward_char());
 
     # Populate the file combobox.
 
@@ -787,26 +787,26 @@ sub display_revision_comparison($$$;$)
     $i = 1;
     $instance->{file_comparison_combobox}->get_model()->clear();
     $instance->{file_comparison_combobox}->get_model()->set
-	($instance->{file_comparison_combobox}->get_model()->append(),
-	 CLS_FILE_NAME_COLUMN, __("Summary"),
-	 CLS_LINE_NR_COLUMN,
-	     $instance->{comparison_buffer}->get_start_iter()->get_line(),
-	 CLS_FILE_ID_1_COLUMN, "",
-	 CLS_FILE_ID_2_COLUMN, "");
+        ($instance->{file_comparison_combobox}->get_model()->append(),
+         CLS_FILE_NAME_COLUMN, __("Summary"),
+         CLS_LINE_NR_COLUMN,
+             $instance->{comparison_buffer}->get_start_iter()->get_line(),
+         CLS_FILE_ID_1_COLUMN, "",
+         CLS_FILE_ID_2_COLUMN, "");
     foreach my $file (@files)
     {
-	$instance->{file_comparison_combobox}->get_model()->set
-	    ($instance->{file_comparison_combobox}->get_model()->append(),
-	     CLS_FILE_NAME_COLUMN, $file->{file_name},
-	     CLS_LINE_NR_COLUMN, $file->{line_nr},
-	     CLS_FILE_ID_1_COLUMN, $file->{file_id_1},
-	     CLS_FILE_ID_2_COLUMN, $file->{file_id_2});
-	if (($i % 10) == 0)
-	{
-	    $instance->{appbar}->set_progress_percentage($i / scalar(@files));
-	    $wm->update_gui();
-	}
-	++ $i;
+        $instance->{file_comparison_combobox}->get_model()->set
+            ($instance->{file_comparison_combobox}->get_model()->append(),
+             CLS_FILE_NAME_COLUMN, $file->{file_name},
+             CLS_LINE_NR_COLUMN, $file->{line_nr},
+             CLS_FILE_ID_1_COLUMN, $file->{file_id_1},
+             CLS_FILE_ID_2_COLUMN, $file->{file_id_2});
+        if (($i % 10) == 0)
+        {
+            $instance->{appbar}->set_progress_percentage($i / scalar(@files));
+            $wm->update_gui();
+        }
+        ++ $i;
     }
     $instance->{file_comparison_combobox}->set_active(0);
     $instance->{appbar}->set_progress_percentage(1);
@@ -814,7 +814,7 @@ sub display_revision_comparison($$$;$)
     # Make sure we are at the top.
 
     $instance->{comparison_buffer}->
-	place_cursor($instance->{comparison_buffer}->get_start_iter());
+        place_cursor($instance->{comparison_buffer}->get_start_iter());
     $instance->{comparison_scrolledwindow}->get_vadjustment()->set_value(0);
     $instance->{comparison_scrolledwindow}->get_hadjustment()->set_value(0);
     $wm->update_gui();
@@ -824,12 +824,12 @@ sub display_revision_comparison($$$;$)
     if (defined($file_name) && scalar(@files) > 0)
     {
 
-	# Simply let the combobox's change callback fire after setting its
-	# value.
+        # Simply let the combobox's change callback fire after setting its
+        # value.
 
-	local $instance->{in_cb} = 0;
-	$instance->{file_comparison_combobox}->set_active(1);
-	$wm->update_gui();
+        local $instance->{in_cb} = 0;
+        $instance->{file_comparison_combobox}->set_active(1);
+        $wm->update_gui();
 
     }
 
@@ -869,27 +869,27 @@ sub display_renamed_file_comparison($$$$$$)
 {
 
     my ($parent,
-	$mtn,
-	$old_revision_id,
-	$old_file_name,
-	$new_revision_id,
-	$new_file_name) = @_;
+        $mtn,
+        $old_revision_id,
+        $old_file_name,
+        $new_revision_id,
+        $new_file_name) = @_;
 
     my ($answer,
-	$dialog,
-	@manifest,
-	$new_file_id,
-	$old_file_id);
+        $dialog,
+        @manifest,
+        $new_file_id,
+        $old_file_id);
 
     $dialog = Gtk2::MessageDialog->new
-	($parent,
-	 ["modal"],
-	 "question",
-	 "yes-no",
-	 __("The name of the selected file has changed\n"
-	    . "between the two selected revisions and cannot\n"
-	    . "be compared internally. Would you like to do\n"
-	    . "the comparison using the external helper application?"));
+        ($parent,
+         ["modal"],
+         "question",
+         "yes-no",
+         __("The name of the selected file has changed\n"
+            . "between the two selected revisions and cannot\n"
+            . "be compared internally. Would you like to do\n"
+            . "the comparison using the external helper application?"));
     $dialog->set_title(__("External Comparison"));
     $answer = busy_dialog_run($dialog);
     $dialog->destroy();
@@ -899,54 +899,54 @@ sub display_renamed_file_comparison($$$$$$)
     if ($answer eq "yes")
     {
 
-	# Get the manifests of the two revisions and look for the files in
-	# order to get their file ids.
+        # Get the manifests of the two revisions and look for the files in
+        # order to get their file ids.
 
-	$mtn->get_manifest_of(\@manifest, $old_revision_id);
-	foreach my $entry (@manifest)
-	{
-	    if ($entry->{name} eq $old_file_name)
-	    {
-		$old_file_id = $entry->{file_id};
-		last;
-	    }
-	}
-	$mtn->get_manifest_of(\@manifest, $new_revision_id);
-	foreach my $entry (@manifest)
-	{
-	    if ($entry->{name} eq $new_file_name)
-	    {
-		$new_file_id = $entry->{file_id};
-		last;
-	    }
-	}
+        $mtn->get_manifest_of(\@manifest, $old_revision_id);
+        foreach my $entry (@manifest)
+        {
+            if ($entry->{name} eq $old_file_name)
+            {
+                $old_file_id = $entry->{file_id};
+                last;
+            }
+        }
+        $mtn->get_manifest_of(\@manifest, $new_revision_id);
+        foreach my $entry (@manifest)
+        {
+            if ($entry->{name} eq $new_file_name)
+            {
+                $new_file_id = $entry->{file_id};
+                last;
+            }
+        }
 
-	# Make sure we have the file ids.
+        # Make sure we have the file ids.
 
-	if (! defined($old_file_id) || ! defined ($new_file_id))
-	{
-	    my $dialog;
-	    $dialog = Gtk2::MessageDialog->new
-		($parent,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __("The file contents cannot be\n"
-		    . "found in the selected revisions.\n"
-		    . "This should not be happening."));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
+        if (! defined($old_file_id) || ! defined ($new_file_id))
+        {
+            my $dialog;
+            $dialog = Gtk2::MessageDialog->new
+                ($parent,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __("The file contents cannot be\n"
+                    . "found in the selected revisions.\n"
+                    . "This should not be happening."));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
 
-	# Use the external helper application to compare the files.
+        # Use the external helper application to compare the files.
 
-	external_diffs($parent,
-		       $mtn,
-		       $old_file_name,
-		       $old_file_id,
-		       $new_file_name,
-		       $new_file_id);
+        external_diffs($parent,
+                       $mtn,
+                       $old_file_name,
+                       $old_file_id,
+                       $new_file_name,
+                       $new_file_id);
 
     }
 
@@ -1004,7 +1004,7 @@ sub history_list_button_clicked_cb($$)
     my ($widget, $details) = @_;
 
     my ($instance,
-	$revision_id);
+        $revision_id);
 
     $instance = $details->{instance};
     $revision_id = $details->{revision_id};
@@ -1014,108 +1014,108 @@ sub history_list_button_clicked_cb($$)
 
     if ($details->{button_type} eq "1" || $details->{button_type} eq "2")
     {
-	if ($details->{button_type} eq "1")
-	{
-	    $instance->{first_revision_id} = $revision_id;
-	    set_label_value($instance->{revision_id_1_value_label},
-			    $revision_id);
-	    if ($instance->{first_revision_id}
-		eq $instance->{second_revision_id})
-	    {
-		$instance->{second_revision_id} = "";
-		set_label_value($instance->{revision_id_2_value_label}, "");
-	    }
-	}
-	else
-	{
-	    $instance->{second_revision_id} = $revision_id;
-	    set_label_value($instance->{revision_id_2_value_label},
-			    $revision_id);
-	    if ($instance->{second_revision_id}
-		eq $instance->{first_revision_id})
-	    {
-		$instance->{first_revision_id} = "";
-		set_label_value($instance->{revision_id_1_value_label}, "");
-	    }
-	}
-	if ($instance->{first_revision_id} ne ""
-	    && $instance->{second_revision_id} ne "")
-	{
-	    $instance->{compare_button}->set_sensitive(TRUE);
-	}
-	else
-	{
-	    $instance->{compare_button}->set_sensitive(FALSE);
-	}
+        if ($details->{button_type} eq "1")
+        {
+            $instance->{first_revision_id} = $revision_id;
+            set_label_value($instance->{revision_id_1_value_label},
+                            $revision_id);
+            if ($instance->{first_revision_id}
+                eq $instance->{second_revision_id})
+            {
+                $instance->{second_revision_id} = "";
+                set_label_value($instance->{revision_id_2_value_label}, "");
+            }
+        }
+        else
+        {
+            $instance->{second_revision_id} = $revision_id;
+            set_label_value($instance->{revision_id_2_value_label},
+                            $revision_id);
+            if ($instance->{second_revision_id}
+                eq $instance->{first_revision_id})
+            {
+                $instance->{first_revision_id} = "";
+                set_label_value($instance->{revision_id_1_value_label}, "");
+            }
+        }
+        if ($instance->{first_revision_id} ne ""
+            && $instance->{second_revision_id} ne "")
+        {
+            $instance->{compare_button}->set_sensitive(TRUE);
+        }
+        else
+        {
+            $instance->{compare_button}->set_sensitive(FALSE);
+        }
     }
     elsif ($details->{button_type} eq "browse-revision")
     {
 
-	my ($branch,
-	    @certs_list);
+        my ($branch,
+            @certs_list);
 
-	# First find out what branch the revision is on (take the first one).
+        # First find out what branch the revision is on (take the first one).
 
-	$instance->{mtn}->certs(\@certs_list, $revision_id);
-	$branch = "";
-	foreach my $cert (@certs_list)
-	{
-	    if ($cert->{name} eq "branch")
-	    {
-		$branch = $cert->{value};
-		last;
-	    }
-	}
+        $instance->{mtn}->certs(\@certs_list, $revision_id);
+        $branch = "";
+        foreach my $cert (@certs_list)
+        {
+            if ($cert->{name} eq "branch")
+            {
+                $branch = $cert->{value};
+                last;
+            }
+        }
 
-	# Get a new browser window preloaded with the desired file.
+        # Get a new browser window preloaded with the desired file.
 
-	get_browser_window($instance->{mtn}, $branch, $revision_id);
+        get_browser_window($instance->{mtn}, $branch, $revision_id);
 
     }
     elsif ($details->{button_type} eq "browse-file")
     {
 
-	my ($branch,
-	    @certs_list,
-	    $dir,
-	    $file,
-	    $path_ref);
+        my ($branch,
+            @certs_list,
+            $dir,
+            $file,
+            $path_ref);
 
-	# First find out what branch the revision is on (take the first one).
+        # First find out what branch the revision is on (take the first one).
 
-	$instance->{mtn}->certs(\@certs_list, $revision_id);
-	$branch = "";
-	foreach my $cert (@certs_list)
-	{
-	    if ($cert->{name} eq "branch")
-	    {
-		$branch = $cert->{value};
-		last;
-	    }
-	}
+        $instance->{mtn}->certs(\@certs_list, $revision_id);
+        $branch = "";
+        foreach my $cert (@certs_list)
+        {
+            if ($cert->{name} eq "branch")
+            {
+                $branch = $cert->{value};
+                last;
+            }
+        }
 
-	# Split the file name into directory and file components.
+        # Split the file name into directory and file components.
 
-	$path_ref = $instance->{revision_hits}->{$revision_id};
-	$dir = dirname($$path_ref);
-	$dir = "" if ($dir eq ".");
-	$file = basename($$path_ref);
+        $path_ref = $instance->{revision_hits}->{$revision_id};
+        $dir = dirname($$path_ref);
+        $dir = "" if ($dir eq ".");
+        $file = basename($$path_ref);
 
-	# Get a new browser window preloaded with the desired file.
+        # Get a new browser window preloaded with the desired file.
 
-	get_browser_window($instance->{mtn},
-			   $branch,
-			   $revision_id,
-			   $dir,
-			   $file);
+        get_browser_window($instance->{mtn},
+                           $branch,
+                           $revision_id,
+                           $dir,
+                           $file);
 
     }
     else
     {
 
-	# Display the full revision change log.
+        # Display the full revision change log.
 
-	display_change_log($instance->{mtn}, $revision_id);
+        display_change_log($instance->{mtn}, $revision_id);
 
     }
 
@@ -1146,7 +1146,7 @@ sub restrict_to_combobox_changed_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($branch,
-	$iter);
+        $iter);
     my $wm = WindowManager->instance();
 
     # Get the name of the selected branch, treating the first entry of `All
@@ -1163,12 +1163,12 @@ sub restrict_to_combobox_changed_cb($$)
     $wm->update_gui();
     if ($instance->{restrict_to_combobox}->get_active() == 0)
     {
-	generate_history_report($instance, $instance->{history});
+        generate_history_report($instance, $instance->{history});
     }
     else
     {
-	generate_history_report($instance,
-				$instance->{branch_history}->{$branch});
+        generate_history_report($instance,
+                                $instance->{branch_history}->{$branch});
     }
     $instance->{stop_button}->set_sensitive(FALSE);
     $wm->update_gui();
@@ -1205,7 +1205,7 @@ sub compare_button_clicked_cb($$)
     # Sort the revisions by date, oldest first.
 
     @revision_ids = ($instance->{first_revision_id},
-		     $instance->{second_revision_id});
+                     $instance->{second_revision_id});
     $instance->{mtn}->toposort(\@revision_ids, @revision_ids);
 
     # If a file is being compared and it has been renamed between the two
@@ -1213,30 +1213,30 @@ sub compare_button_clicked_cb($$)
     # application, otherwise we can use Monotone's comparison feature.
 
     if (defined($instance->{file_name})
-	&& $instance->{revision_hits}->{$revision_ids[0]}
-	!= $instance->{revision_hits}->{$revision_ids[1]})
+        && $instance->{revision_hits}->{$revision_ids[0]}
+        != $instance->{revision_hits}->{$revision_ids[1]})
     {
-	display_renamed_file_comparison($instance->{window},
-					$instance->{mtn},
-					$revision_ids[0],
-					${$instance->{revision_hits}->
-					  {$revision_ids[0]}},
-					$revision_ids[1],
-					${$instance->{revision_hits}->
-					  {$revision_ids[1]}});
+        display_renamed_file_comparison($instance->{window},
+                                        $instance->{mtn},
+                                        $revision_ids[0],
+                                        ${$instance->{revision_hits}->
+                                          {$revision_ids[0]}},
+                                        $revision_ids[1],
+                                        ${$instance->{revision_hits}->
+                                          {$revision_ids[1]}});
     }
     else
     {
 
-	# Use Monotone's comparison feature.
+        # Use Monotone's comparison feature.
 
-	display_revision_comparison($instance->{mtn},
-				    $revision_ids[0],
-				    $revision_ids[1],
-				    defined($instance->{file_name})
-				        ? ${$instance->{revision_hits}->
-					    {$revision_ids[0]}}
-				        : undef);
+        display_revision_comparison($instance->{mtn},
+                                    $revision_ids[0],
+                                    $revision_ids[1],
+                                    defined($instance->{file_name})
+                                        ? ${$instance->{revision_hits}->
+                                            {$revision_ids[0]}}
+                                        : undef);
 
     }
 
@@ -1265,8 +1265,8 @@ sub compare_arbitrary_revision_advanced_find_button_clicked_cb($$)
     my ($widget, $details) = @_;
 
     my (@dummy,
-	$instance,
-	$revision_id);
+        $instance,
+        $revision_id);
 
     $instance = $details->{instance};
 
@@ -1278,41 +1278,41 @@ sub compare_arbitrary_revision_advanced_find_button_clicked_cb($$)
 
     if (advanced_find($instance, \$revision_id, \@dummy))
     {
-	if ($details->{button} == 1)
-	{
-	    $instance->{first_revision_id} = $revision_id;
-	    set_label_value($instance->{arbitrary_revision_id_1_value_label},
-			    $revision_id);
-	    if ($instance->{first_revision_id}
-		eq $instance->{second_revision_id})
-	    {
-		$instance->{second_revision_id} = "";
-		set_label_value
-		    ($instance->{arbitrary_revision_id_2_value_label}, "");
-	    }
-	}
-	else
-	{
-	    $instance->{second_revision_id} = $revision_id;
-	    set_label_value($instance->{arbitrary_revision_id_2_value_label},
-			    $revision_id);
-	    if ($instance->{second_revision_id}
-		eq $instance->{first_revision_id})
-	    {
-		$instance->{first_revision_id} = "";
-		set_label_value
-		    ($instance->{arbitrary_revision_id_1_value_label}, "");
-	    }
-	}
-	if ($instance->{first_revision_id} ne ""
-	    && $instance->{second_revision_id} ne "")
-	{
-	    $instance->{arbitrary_compare_button}->set_sensitive(TRUE);
-	}
-	else
-	{
-	    $instance->{arbitrary_compare_button}->set_sensitive(FALSE);
-	}
+        if ($details->{button} == 1)
+        {
+            $instance->{first_revision_id} = $revision_id;
+            set_label_value($instance->{arbitrary_revision_id_1_value_label},
+                            $revision_id);
+            if ($instance->{first_revision_id}
+                eq $instance->{second_revision_id})
+            {
+                $instance->{second_revision_id} = "";
+                set_label_value
+                    ($instance->{arbitrary_revision_id_2_value_label}, "");
+            }
+        }
+        else
+        {
+            $instance->{second_revision_id} = $revision_id;
+            set_label_value($instance->{arbitrary_revision_id_2_value_label},
+                            $revision_id);
+            if ($instance->{second_revision_id}
+                eq $instance->{first_revision_id})
+            {
+                $instance->{first_revision_id} = "";
+                set_label_value
+                    ($instance->{arbitrary_revision_id_1_value_label}, "");
+            }
+        }
+        if ($instance->{first_revision_id} ne ""
+            && $instance->{second_revision_id} ne "")
+        {
+            $instance->{arbitrary_compare_button}->set_sensitive(TRUE);
+        }
+        else
+        {
+            $instance->{arbitrary_compare_button}->set_sensitive(FALSE);
+        }
     }
 
 }
@@ -1342,39 +1342,39 @@ sub file_comparison_combobox_changed_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($iter,
-	$line_iter,
-	$line_nr);
+        $line_iter,
+        $line_nr);
 
     # Get the line number related to the selected file and then jump to it.
 
     $iter = $instance->{file_comparison_combobox}->get_active_iter();
     $line_nr = $instance->{file_comparison_combobox}->get_model()->
-	get($iter, CLS_LINE_NR_COLUMN);
+        get($iter, CLS_LINE_NR_COLUMN);
     $line_iter = $instance->{comparison_buffer}->get_iter_at_line($line_nr);
     $instance->{comparison_textview}->
-	scroll_to_iter($line_iter, 0, TRUE, 0, 0);
+        scroll_to_iter($line_iter, 0, TRUE, 0, 0);
 
     # Only enable the external differences button if an actual file is
     # selected.
 
     if ($line_nr > 0)
     {
-	my $file_id_1 = $instance->{file_comparison_combobox}->get_model()->
-	    get($iter, CLS_FILE_ID_1_COLUMN);
-	my $file_id_2 = $instance->{file_comparison_combobox}->get_model()->
-	    get($iter, CLS_FILE_ID_2_COLUMN);
-	if ($file_id_1 ne "" && $file_id_2 ne "" && $file_id_1 ne $file_id_2)
-	{
-	    $instance->{external_diffs_button}->set_sensitive(TRUE);
-	}
-	else
-	{
-	    $instance->{external_diffs_button}->set_sensitive(FALSE);
-	}
+        my $file_id_1 = $instance->{file_comparison_combobox}->get_model()->
+            get($iter, CLS_FILE_ID_1_COLUMN);
+        my $file_id_2 = $instance->{file_comparison_combobox}->get_model()->
+            get($iter, CLS_FILE_ID_2_COLUMN);
+        if ($file_id_1 ne "" && $file_id_2 ne "" && $file_id_1 ne $file_id_2)
+        {
+            $instance->{external_diffs_button}->set_sensitive(TRUE);
+        }
+        else
+        {
+            $instance->{external_diffs_button}->set_sensitive(FALSE);
+        }
     }
     else
     {
-	$instance->{external_diffs_button}->set_sensitive(FALSE);
+        $instance->{external_diffs_button}->set_sensitive(FALSE);
     }
 
 }
@@ -1404,28 +1404,28 @@ sub external_diffs_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($file_id_1,
-	$file_id_2,
-	$file_name,
-	$iter);
+        $file_id_2,
+        $file_name,
+        $iter);
 
     # Get the details associated with the currently selected file.
 
     $iter = $instance->{file_comparison_combobox}->get_active_iter();
     $file_name = $instance->{file_comparison_combobox}->get_model()->
-	get($iter, CLS_FILE_NAME_COLUMN);
+        get($iter, CLS_FILE_NAME_COLUMN);
     $file_id_1 = $instance->{file_comparison_combobox}->get_model()->
-	get($iter, CLS_FILE_ID_1_COLUMN);
+        get($iter, CLS_FILE_ID_1_COLUMN);
     $file_id_2 = $instance->{file_comparison_combobox}->get_model()->
-	get($iter, CLS_FILE_ID_2_COLUMN);
+        get($iter, CLS_FILE_ID_2_COLUMN);
 
     # Use the external helper application to compare the files.
 
     external_diffs($instance->{window},
-		   $instance->{mtn},
-		   $file_name,
-		   $file_id_1,
-		   $file_name,
-		   $file_id_2);
+                   $instance->{mtn},
+                   $file_name,
+                   $file_id_1,
+                   $file_name,
+                   $file_id_2);
 
 }
 #
@@ -1485,42 +1485,42 @@ sub comparison_revision_change_log_button_clicked_cb($$)
     local $instance->{in_cb} = 1;
 
     my ($colour,
-	$revision_id,
-	$revision_name);
+        $revision_id,
+        $revision_name);
 
     # Work out what to do.
 
     if ($widget == $instance->{revision_change_log_1_button})
     {
-	$revision_id = $instance->{revision_id_1};
-	if ($user_preferences->{coloured_diffs})
-	{
-	    $colour = "compare-1";
-	}
-	else
-	{
-	    $revision_name = "- " . $revision_id;
-	}
+        $revision_id = $instance->{revision_id_1};
+        if ($user_preferences->{coloured_diffs})
+        {
+            $colour = "compare-1";
+        }
+        else
+        {
+            $revision_name = "- " . $revision_id;
+        }
     }
     else
     {
-	$revision_id = $instance->{revision_id_2};
-	if ($user_preferences->{coloured_diffs})
-	{
-	    $colour = "compare-2";
-	}
-	else
-	{
-	    $revision_name = "+ " . $revision_id;
-	}
+        $revision_id = $instance->{revision_id_2};
+        if ($user_preferences->{coloured_diffs})
+        {
+            $colour = "compare-2";
+        }
+        else
+        {
+            $revision_name = "+ " . $revision_id;
+        }
     }
 
     # Display the full revision change log.
 
     display_change_log($instance->{mtn},
-		       $revision_id,
-		       $colour,
-		       $revision_name);
+                       $revision_id,
+                       $colour,
+                       $revision_name);
 
 }
 #
@@ -1546,15 +1546,15 @@ sub generate_history_report($$)
     my ($instance, $history) = @_;
 
     my (@branches,
-	$browse_button,
-	$browse_button_ttip,
-	$browse_button_type,
-	$button,
-	@certs_list,
-	$no_branch_history,
-	$select_id_1_ttip,
-	$select_id_2_ttip,
-	$update_interval);
+        $browse_button,
+        $browse_button_ttip,
+        $browse_button_type,
+        $button,
+        @certs_list,
+        $no_branch_history,
+        $select_id_1_ttip,
+        $select_id_2_ttip,
+        $update_interval);
     my $counter = 0;
     my $wm = WindowManager->instance();
 
@@ -1563,11 +1563,11 @@ sub generate_history_report($$)
     $instance->{appbar}->set_progress_percentage(0);
     if (defined($instance->{file_name}))
     {
-	$instance->{appbar}->set_status(__("Displaying file history"));
+        $instance->{appbar}->set_status(__("Displaying file history"));
     }
     else
     {
-	$instance->{appbar}->set_status(__("Displaying revision history"));
+        $instance->{appbar}->set_status(__("Displaying revision history"));
     }
     $instance->{history_buffer}->set_text("");
     set_label_value($instance->{numbers_value_label}, scalar(@$history));
@@ -1579,8 +1579,8 @@ sub generate_history_report($$)
 
     if (! defined($instance->{branch_history}))
     {
-	$no_branch_history = 1;
-	$instance->{branch_history} = {};
+        $no_branch_history = 1;
+        $instance->{branch_history} = {};
     }
 
     # Determine the buttons to display, their tool tips and update interval
@@ -1588,21 +1588,21 @@ sub generate_history_report($$)
 
     if (defined($instance->{file_name}))
     {
-	$select_id_1_ttip = \$__select_id_file_1_ttip;
-	$select_id_2_ttip = \$__select_id_file_2_ttip;
-	$browse_button_ttip = \$__browse_file_ttip;
-	$browse_button = \$__browse_file;
-	$browse_button_type = "browse-file";
-	$update_interval = 10;
+        $select_id_1_ttip = \$__select_id_file_1_ttip;
+        $select_id_2_ttip = \$__select_id_file_2_ttip;
+        $browse_button_ttip = \$__browse_file_ttip;
+        $browse_button = \$__browse_file;
+        $browse_button_type = "browse-file";
+        $update_interval = 10;
     }
     else
     {
-	$select_id_1_ttip = \$__select_id_rev_1_ttip;
-	$select_id_2_ttip = \$__select_id_rev_2_ttip;
-	$browse_button_ttip = \$__browse_rev_ttip;
-	$browse_button = \$__browse_rev;
-	$browse_button_type = "browse-revision";
-	$update_interval = 100;
+        $select_id_1_ttip = \$__select_id_rev_1_ttip;
+        $select_id_2_ttip = \$__select_id_rev_2_ttip;
+        $browse_button_ttip = \$__browse_rev_ttip;
+        $browse_button = \$__browse_rev;
+        $browse_button_type = "browse-revision";
+        $update_interval = 100;
     }
 
     # Display revision details and associated buttons for each revision in the
@@ -1611,129 +1611,129 @@ sub generate_history_report($$)
     foreach my $revision_id (@$history)
     {
 
-	++ $counter;
+        ++ $counter;
 
-	$instance->{mtn}->certs(\@certs_list, $revision_id);
+        $instance->{mtn}->certs(\@certs_list, $revision_id);
 
-	# If we haven't done so already, file this revision under the
-	# appropriate branch history lists.
+        # If we haven't done so already, file this revision under the
+        # appropriate branch history lists.
 
-	if ($no_branch_history)
-	{
-	    foreach my $cert (@certs_list)
-	    {
-		if ($cert->{name} eq "branch")
-		{
-		    if (exists($instance->{branch_history}->{$cert->{value}}))
-		    {
-			push(@{$instance->{branch_history}->{$cert->{value}}},
-			     $revision_id);
-		    }
-		    else
-		    {
-			$instance->{branch_history}->{$cert->{value}} =
-			    [$revision_id];
-		    }
-		}
-	    }
-	}
+        if ($no_branch_history)
+        {
+            foreach my $cert (@certs_list)
+            {
+                if ($cert->{name} eq "branch")
+                {
+                    if (exists($instance->{branch_history}->{$cert->{value}}))
+                    {
+                        push(@{$instance->{branch_history}->{$cert->{value}}},
+                             $revision_id);
+                    }
+                    else
+                    {
+                        $instance->{branch_history}->{$cert->{value}} =
+                            [$revision_id];
+                    }
+                }
+            }
+        }
 
-	# Print out the revision summary.
+        # Print out the revision summary.
 
-	generate_revision_report($instance->{history_buffer},
-				 $revision_id,
-				 \@certs_list,
-				 "");
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), "\n\n ");
+        generate_revision_report($instance->{history_buffer},
+                                 $revision_id,
+                                 \@certs_list,
+                                 "");
+        $instance->{history_buffer}->
+            insert($instance->{history_buffer}->get_end_iter(), "\n\n ");
 
-	# Add the buttons.
+        # Add the buttons.
 
-	$button = Gtk2::Button->new($__select_id_1);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => "1"});
-	$tooltips->set_tip($button, $$select_id_1_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), " ");
+        $button = Gtk2::Button->new($__select_id_1);
+        $button->signal_connect("clicked",
+                                \&history_list_button_clicked_cb,
+                                {instance    => $instance,
+                                 revision_id => $revision_id,
+                                 button_type => "1"});
+        $tooltips->set_tip($button, $$select_id_1_ttip);
+        $instance->{history_textview}->add_child_at_anchor
+            ($button,
+             $instance->{history_buffer}->
+                 create_child_anchor($instance->{history_buffer}->
+                                     get_end_iter()));
+        $button->show_all();
+        $instance->{history_buffer}->
+            insert($instance->{history_buffer}->get_end_iter(), " ");
 
-	$button = Gtk2::Button->new($__select_id_2);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => "2"});
-	$tooltips->set_tip($button, $$select_id_2_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), " ");
+        $button = Gtk2::Button->new($__select_id_2);
+        $button->signal_connect("clicked",
+                                \&history_list_button_clicked_cb,
+                                {instance    => $instance,
+                                 revision_id => $revision_id,
+                                 button_type => "2"});
+        $tooltips->set_tip($button, $$select_id_2_ttip);
+        $instance->{history_textview}->add_child_at_anchor
+            ($button,
+             $instance->{history_buffer}->
+                 create_child_anchor($instance->{history_buffer}->
+                                     get_end_iter()));
+        $button->show_all();
+        $instance->{history_buffer}->
+            insert($instance->{history_buffer}->get_end_iter(), " ");
 
-	$button = Gtk2::Button->new($$browse_button);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => $browse_button_type});
-	$tooltips->set_tip($button, $$browse_button_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
-	$instance->{history_buffer}->
-	    insert($instance->{history_buffer}->get_end_iter(), " ");
+        $button = Gtk2::Button->new($$browse_button);
+        $button->signal_connect("clicked",
+                                \&history_list_button_clicked_cb,
+                                {instance    => $instance,
+                                 revision_id => $revision_id,
+                                 button_type => $browse_button_type});
+        $tooltips->set_tip($button, $$browse_button_ttip);
+        $instance->{history_textview}->add_child_at_anchor
+            ($button,
+             $instance->{history_buffer}->
+                 create_child_anchor($instance->{history_buffer}->
+                                     get_end_iter()));
+        $button->show_all();
+        $instance->{history_buffer}->
+            insert($instance->{history_buffer}->get_end_iter(), " ");
 
-	$button = Gtk2::Button->new($__full_changelog);
-	$button->signal_connect("clicked",
-				\&history_list_button_clicked_cb,
-				{instance    => $instance,
-				 revision_id => $revision_id,
-				 button_type => "revision-changelog"});
-	$tooltips->set_tip($button, $__full_changelog_ttip);
-	$instance->{history_textview}->add_child_at_anchor
-	    ($button,
-	     $instance->{history_buffer}->
-	         create_child_anchor($instance->{history_buffer}->
-				     get_end_iter()));
-	$button->show_all();
+        $button = Gtk2::Button->new($__full_changelog);
+        $button->signal_connect("clicked",
+                                \&history_list_button_clicked_cb,
+                                {instance    => $instance,
+                                 revision_id => $revision_id,
+                                 button_type => "revision-changelog"});
+        $tooltips->set_tip($button, $__full_changelog_ttip);
+        $instance->{history_textview}->add_child_at_anchor
+            ($button,
+             $instance->{history_buffer}->
+                 create_child_anchor($instance->{history_buffer}->
+                                     get_end_iter()));
+        $button->show_all();
 
-	if (($counter % $update_interval) == 0)
-	{
-	    $instance->{appbar}->set_progress_percentage
-		($counter / scalar(@$history));
-	    $wm->update_gui();
-	}
+        if (($counter % $update_interval) == 0)
+        {
+            $instance->{appbar}->set_progress_percentage
+                ($counter / scalar(@$history));
+            $wm->update_gui();
+        }
 
-	# Stop if the user wants to.
+        # Stop if the user wants to.
 
-	last if ($instance->{stop});
+        last if ($instance->{stop});
 
-	# If we aren't at the end, print out the revision separator.
+        # If we aren't at the end, print out the revision separator.
 
-	if ($counter < scalar(@$history))
-	{
-	    $instance->{history_buffer}->
-		insert($instance->{history_buffer}->get_end_iter(), "\n");
-	    $instance->{history_buffer}->
-		insert_pixbuf($instance->{history_buffer}->get_end_iter(),
-			      $line_image);
-	    $instance->{history_buffer}->
-		insert($instance->{history_buffer}->get_end_iter(), "\n");
-	}
+        if ($counter < scalar(@$history))
+        {
+            $instance->{history_buffer}->
+                insert($instance->{history_buffer}->get_end_iter(), "\n");
+            $instance->{history_buffer}->
+                insert_pixbuf($instance->{history_buffer}->get_end_iter(),
+                              $line_image);
+            $instance->{history_buffer}->
+                insert($instance->{history_buffer}->get_end_iter(), "\n");
+        }
 
     }
     $instance->{appbar}->set_progress_percentage(1);
@@ -1746,14 +1746,14 @@ sub generate_history_report($$)
 
     if ($instance->{stop})
     {
-	set_label_value($instance->{numbers_value_label}, $counter);
-	@$history = splice(@$history, 0, $counter) if ($no_branch_history);
+        set_label_value($instance->{numbers_value_label}, $counter);
+        @$history = splice(@$history, 0, $counter) if ($no_branch_history);
     }
 
     # Make sure we are at the top.
 
     $instance->{history_buffer}->
-	place_cursor($instance->{history_buffer}->get_start_iter());
+        place_cursor($instance->{history_buffer}->get_start_iter());
     $instance->{history_scrolledwindow}->get_vadjustment()->set_value(0);
     $instance->{history_scrolledwindow}->get_hadjustment()->set_value(0);
 
@@ -1761,31 +1761,31 @@ sub generate_history_report($$)
 
     if ($no_branch_history)
     {
-	$instance->{appbar}->set_progress_percentage(0);
-	$instance->{appbar}->set_status(__("Populating branch list"));
-	$wm->update_gui();
-	@branches = sort(keys(%{$instance->{branch_history}}));
-	$counter = 1;
-	$instance->{restrict_to_combobox}->get_model()->clear();
-	$instance->{restrict_to_combobox}->get_model()->set
-	    ($instance->{restrict_to_combobox}->get_model()->append(),
-	     0, __("All Branches"));
-	foreach my $branch (@branches)
-	{
-	    $instance->{restrict_to_combobox}->get_model()->set
-		($instance->{restrict_to_combobox}->get_model()->append(),
-		 0, $branch);
-	    if (($counter % 10) == 0)
-	    {
-		$instance->{appbar}->set_progress_percentage
-		    ($counter / scalar(@branches));
-		$wm->update_gui();
-	    }
-	    ++ $counter;
-	}
-	$instance->{restrict_to_combobox}->set_active(0);
-	$instance->{appbar}->set_progress_percentage(1);
-	$wm->update_gui();
+        $instance->{appbar}->set_progress_percentage(0);
+        $instance->{appbar}->set_status(__("Populating branch list"));
+        $wm->update_gui();
+        @branches = sort(keys(%{$instance->{branch_history}}));
+        $counter = 1;
+        $instance->{restrict_to_combobox}->get_model()->clear();
+        $instance->{restrict_to_combobox}->get_model()->set
+            ($instance->{restrict_to_combobox}->get_model()->append(),
+             0, __("All Branches"));
+        foreach my $branch (@branches)
+        {
+            $instance->{restrict_to_combobox}->get_model()->set
+                ($instance->{restrict_to_combobox}->get_model()->append(),
+                 0, $branch);
+            if (($counter % 10) == 0)
+            {
+                $instance->{appbar}->set_progress_percentage
+                    ($counter / scalar(@branches));
+                $wm->update_gui();
+            }
+            ++ $counter;
+        }
+        $instance->{restrict_to_combobox}->set_active(0);
+        $instance->{appbar}->set_progress_percentage(1);
+        $wm->update_gui();
     }
 
     $instance->{appbar}->set_progress_percentage(0);
@@ -1811,8 +1811,8 @@ sub get_history_window()
 {
 
     my ($height,
-	$instance,
-	$width);
+        $instance,
+        $width);
     my $window_type = "history_window";
     my $wm = WindowManager->instance();
 
@@ -1822,135 +1822,135 @@ sub get_history_window()
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my ($glade,
-	    $renderer);
+        my ($glade,
+            $renderer);
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("appbar",
-			    "history_label",
-			    "history_textview",
-			    "history_scrolledwindow",
-			    "numbers_value_label",
-			    "restrict_to_combobox",
-			    "stop_button",
-			    "revision_id_1_value_label",
-			    "revision_id_2_value_label",
-			    "compare_button")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("appbar",
+                            "history_label",
+                            "history_textview",
+                            "history_scrolledwindow",
+                            "numbers_value_label",
+                            "restrict_to_combobox",
+                            "stop_button",
+                            "revision_id_1_value_label",
+                            "revision_id_2_value_label",
+                            "compare_button")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup the history callbacks.
+        # Setup the history callbacks.
 
-	$instance->{window}->signal_connect
-	    ("delete_event",
-	     sub {
-		 my ($widget, $event, $instance) = @_;
-		 return TRUE if ($instance->{in_cb});
-		 local $instance->{in_cb} = 1;
-		 hide_find_text($instance->{history_textview});
-		 $widget->hide();
-		 $instance->{history_buffer}->set_text("");
-		 $instance->{restrict_to_combobox}->get_model()->clear();
-		 $instance->{branch_history} = undef;
-		 $instance->{history} = undef;
-		 $instance->{revision_hits} = undef;
-		 $instance->{mtn} = undef;
-		 return TRUE;
-	     },
-	     $instance);
-	$instance->{stop_button}->signal_connect
-	    ("clicked", sub { $_[1]->{stop} = 1; }, $instance);
+        $instance->{window}->signal_connect
+            ("delete_event",
+             sub {
+                 my ($widget, $event, $instance) = @_;
+                 return TRUE if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 hide_find_text($instance->{history_textview});
+                 $widget->hide();
+                 $instance->{history_buffer}->set_text("");
+                 $instance->{restrict_to_combobox}->get_model()->clear();
+                 $instance->{branch_history} = undef;
+                 $instance->{history} = undef;
+                 $instance->{revision_hits} = undef;
+                 $instance->{mtn} = undef;
+                 return TRUE;
+             },
+             $instance);
+        $instance->{stop_button}->signal_connect
+            ("clicked", sub { $_[1]->{stop} = 1; }, $instance);
 
-	# Setup the history viewer.
+        # Setup the history viewer.
 
-	$instance->{history_buffer} =
-	    $instance->{history_textview}->get_buffer();
-	create_format_tags($instance->{history_buffer});
-	$instance->{history_textview}->modify_font($mono_font);
+        $instance->{history_buffer} =
+            $instance->{history_textview}->get_buffer();
+        create_format_tags($instance->{history_buffer});
+        $instance->{history_textview}->modify_font($mono_font);
 
-	# Lock the width of the numbers value label so that the combobox button
-	# to its right does not keep shrinking as this label's value increases.
-	# This label has had its value set to 8888888 in Glade (so as to allow
-	# room for a number in the millions) and has been dynamically sized
-	# accordingly by the layout manager. So now take its width and lock its
-	# size to that. Doing it this way neatly avoids issues of font sizes
-	# etc. Once done set the lable's value to be blank.
+        # Lock the width of the numbers value label so that the combobox button
+        # to its right does not keep shrinking as this label's value increases.
+        # This label has had its value set to 8888888 in Glade (so as to allow
+        # room for a number in the millions) and has been dynamically sized
+        # accordingly by the layout manager. So now take its width and lock its
+        # size to that. Doing it this way neatly avoids issues of font sizes
+        # etc. Once done set the lable's value to be blank.
 
-	($width, $height) =
-	    ($instance->{numbers_value_label}->window()->get_geometry())[2, 3];
-	$instance->{numbers_value_label}->set_size_request($width, $height);
-	set_label_value($instance->{numbers_value_label}, "");
+        ($width, $height) =
+            ($instance->{numbers_value_label}->window()->get_geometry())[2, 3];
+        $instance->{numbers_value_label}->set_size_request($width, $height);
+        set_label_value($instance->{numbers_value_label}, "");
 
-	# Setup the restrict to combobox.
+        # Setup the restrict to combobox.
 
-	$instance->{restrict_to_combobox}->
-	    set_model(Gtk2::ListStore->new("Glib::String"));
-	$renderer = Gtk2::CellRendererText->new();
-	$instance->{restrict_to_combobox}->pack_start($renderer, TRUE);
-	$instance->{restrict_to_combobox}->add_attribute($renderer,
-							 "text" => 0);
-	$instance->{restrict_to_combobox}->get_model()->clear();
-	$instance->{restrict_to_combobox}->get_model()->set
-	    ($instance->{restrict_to_combobox}->get_model()->append(),
-	     0, __("All Branches"));
-	$instance->{restrict_to_combobox}->set_active(0);
+        $instance->{restrict_to_combobox}->
+            set_model(Gtk2::ListStore->new("Glib::String"));
+        $renderer = Gtk2::CellRendererText->new();
+        $instance->{restrict_to_combobox}->pack_start($renderer, TRUE);
+        $instance->{restrict_to_combobox}->add_attribute($renderer,
+                                                         "text" => 0);
+        $instance->{restrict_to_combobox}->get_model()->clear();
+        $instance->{restrict_to_combobox}->get_model()->set
+            ($instance->{restrict_to_combobox}->get_model()->append(),
+             0, __("All Branches"));
+        $instance->{restrict_to_combobox}->set_active(0);
 
-	# Register the window for management and set up the help callbacks.
+        # Register the window for management and set up the help callbacks.
 
-	$wm->manage($instance,
-		    $window_type,
-		    $instance->{window},
-		    $instance->{stop_button});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => "restrict_to_combobox",
-	      help_ref => __("mtnb-lachc-history-buttons")},
-	     {widget   => "stop_button",
-	      help_ref => __("mtnb-lachc-history-buttons")},
-	     {widget   => "compare_button",
-	      help_ref => __("mtnb-lachc-history-buttons")},
-	     {widget   => undef,
-	      help_ref => __("mtnb-lachc-the-revision-and-file-history-"
-			     . "windows")});
+        $wm->manage($instance,
+                    $window_type,
+                    $instance->{window},
+                    $instance->{stop_button});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => "restrict_to_combobox",
+              help_ref => __("mtnb-lachc-history-buttons")},
+             {widget   => "stop_button",
+              help_ref => __("mtnb-lachc-history-buttons")},
+             {widget   => "compare_button",
+              help_ref => __("mtnb-lachc-history-buttons")},
+             {widget   => undef,
+              help_ref => __("mtnb-lachc-the-revision-and-file-history-"
+                             . "windows")});
     }
     else
     {
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	($width, $height) = $instance->{window}->get_default_size();
-	$instance->{window}->resize($width, $height);
-	$instance->{restrict_to_combobox}->get_model()->clear();
-	$instance->{restrict_to_combobox}->get_model()->set
-	    ($instance->{restrict_to_combobox}->get_model()->append(),
-	     0, __("All Branches"));
-	$instance->{restrict_to_combobox}->set_active(0);
-	$instance->{stop_button}->set_sensitive(FALSE);
-	$instance->{compare_button}->set_sensitive(FALSE);
-	set_label_value($instance->{numbers_value_label}, "");
-	set_label_value($instance->{revision_id_1_value_label}, "");
-	set_label_value($instance->{revision_id_2_value_label}, "");
-	$instance->{appbar}->set_progress_percentage(0);
-	$instance->{appbar}->clear_stack();
+        ($width, $height) = $instance->{window}->get_default_size();
+        $instance->{window}->resize($width, $height);
+        $instance->{restrict_to_combobox}->get_model()->clear();
+        $instance->{restrict_to_combobox}->get_model()->set
+            ($instance->{restrict_to_combobox}->get_model()->append(),
+             0, __("All Branches"));
+        $instance->{restrict_to_combobox}->set_active(0);
+        $instance->{stop_button}->set_sensitive(FALSE);
+        $instance->{compare_button}->set_sensitive(FALSE);
+        set_label_value($instance->{numbers_value_label}, "");
+        set_label_value($instance->{revision_id_1_value_label}, "");
+        set_label_value($instance->{revision_id_2_value_label}, "");
+        $instance->{appbar}->set_progress_percentage(0);
+        $instance->{appbar}->clear_stack();
 
     }
 
@@ -1993,57 +1993,57 @@ sub get_file_history_helper($$$)
     my @changed_ancestors;
 
     $instance->{mtn}->get_content_changed(\@changed_ancestors,
-					  $revision_id,
-					  $$file_name_ref);
+                                          $revision_id,
+                                          $$file_name_ref);
     foreach my $chg_ancestor (@changed_ancestors)
     {
-	if (! exists($instance->{revision_hits}->{$chg_ancestor}))
-	{
+        if (! exists($instance->{revision_hits}->{$chg_ancestor}))
+        {
 
-	    my @parents;
+            my @parents;
 
-	    # Track file renames in the changed ancestor revisions (no need to
-	    # bother if the ancestor revision is the same as the current one as
-	    # we were passed the file name).
+            # Track file renames in the changed ancestor revisions (no need to
+            # bother if the ancestor revision is the same as the current one as
+            # we were passed the file name).
 
-	    if ($chg_ancestor ne $revision_id)
-	    {
-		my $file_name;
-		$instance->{mtn}->
-		    get_corresponding_path(\$file_name,
-					   $revision_id,
-					   $$file_name_ref,
-					   $chg_ancestor);
-		$file_name_ref = \$file_name
-		    if ($file_name ne $$file_name_ref);
-	    }
+            if ($chg_ancestor ne $revision_id)
+            {
+                my $file_name;
+                $instance->{mtn}->
+                    get_corresponding_path(\$file_name,
+                                           $revision_id,
+                                           $$file_name_ref,
+                                           $chg_ancestor);
+                $file_name_ref = \$file_name
+                    if ($file_name ne $$file_name_ref);
+            }
 
-	    # Store a reference to the current file name in the revision hit
-	    # hash, this can be used later to refer to the correct file name
-	    # for a given changed ancestor revision.
+            # Store a reference to the current file name in the revision hit
+            # hash, this can be used later to refer to the correct file name
+            # for a given changed ancestor revision.
 
-	    $instance->{revision_hits}->{$chg_ancestor} = $file_name_ref;
+            $instance->{revision_hits}->{$chg_ancestor} = $file_name_ref;
 
-	    set_label_value($instance->{numbers_value_label},
-			    scalar(keys(%{$instance->{revision_hits}})));
-	    WindowManager->update_gui();
+            set_label_value($instance->{numbers_value_label},
+                            scalar(keys(%{$instance->{revision_hits}})));
+            WindowManager->update_gui();
 
-	    # Now repeat for each parent, remembering to track file renames.
+            # Now repeat for each parent, remembering to track file renames.
 
-	    $instance->{mtn}->parents(\@parents, $chg_ancestor);
-	    foreach my $parent (@parents)
-	    {
-		my $file_name;
-		$instance->{mtn}->get_corresponding_path(\$file_name,
-							 $chg_ancestor,
-							 $$file_name_ref,
-							 $parent);
-		$file_name_ref = \$file_name
-		    if ($file_name ne $$file_name_ref);
-		get_file_history_helper($instance, $parent, $file_name_ref);
-	    }
+            $instance->{mtn}->parents(\@parents, $chg_ancestor);
+            foreach my $parent (@parents)
+            {
+                my $file_name;
+                $instance->{mtn}->get_corresponding_path(\$file_name,
+                                                         $chg_ancestor,
+                                                         $$file_name_ref,
+                                                         $parent);
+                $file_name_ref = \$file_name
+                    if ($file_name ne $$file_name_ref);
+                get_file_history_helper($instance, $parent, $file_name_ref);
+            }
 
-	}
+        }
     }
 
 }
@@ -2074,13 +2074,13 @@ sub get_revision_history_helper($$)
 
     $instance->{revision_hits}->{$revision_id} = 1;
     set_label_value($instance->{numbers_value_label},
-		    scalar(keys(%{$instance->{revision_hits}})));
+                    scalar(keys(%{$instance->{revision_hits}})));
     WindowManager->update_gui();
     $instance->{mtn}->parents(\@parents, $revision_id);
     foreach my $parent (@parents)
     {
-	get_revision_history_helper($instance, $parent)
-	    if (! exists($instance->{revision_hits}->{$parent}));
+        get_revision_history_helper($instance, $parent)
+            if (! exists($instance->{revision_hits}->{$parent}));
     }
 
 }
@@ -2112,94 +2112,94 @@ sub get_compare_arbitrary_revisions_window()
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my $glade;
+        my $glade;
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("arbitrary_revision_id_1_value_label",
-			    "arbitrary_revision_id_2_value_label",
-			    "arbitrary_revision_1_advanced_find_button",
-			    "arbitrary_revision_2_advanced_find_button",
-			    "arbitrary_compare_button")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("arbitrary_revision_id_1_value_label",
+                            "arbitrary_revision_id_2_value_label",
+                            "arbitrary_revision_1_advanced_find_button",
+                            "arbitrary_revision_2_advanced_find_button",
+                            "arbitrary_compare_button")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup the arbitrary compare callbacks.
+        # Setup the arbitrary compare callbacks.
 
-	$instance->{window}->signal_connect
-	    ("delete_event",
-	     sub {
-		 my ($widget, $event, $instance) = @_;
-		 return TRUE if ($instance->{in_cb});
-		 local $instance->{in_cb} = 1;
-		 $widget->hide();
-		 $instance->{mtn} = undef;
-		 return TRUE;
-	     },
-	     $instance);
-	foreach my $button (1 .. 2)
-	{
-	    my $widget =
-		"arbitrary_revision_" . $button . "_advanced_find_button";
-	    $instance->{$widget}->signal_connect
-		("clicked",
-		 \&compare_arbitrary_revision_advanced_find_button_clicked_cb,
-		 {instance => $instance,
-		  button   => $button});
-	}
+        $instance->{window}->signal_connect
+            ("delete_event",
+             sub {
+                 my ($widget, $event, $instance) = @_;
+                 return TRUE if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 $widget->hide();
+                 $instance->{mtn} = undef;
+                 return TRUE;
+             },
+             $instance);
+        foreach my $button (1 .. 2)
+        {
+            my $widget =
+                "arbitrary_revision_" . $button . "_advanced_find_button";
+            $instance->{$widget}->signal_connect
+                ("clicked",
+                 \&compare_arbitrary_revision_advanced_find_button_clicked_cb,
+                 {instance => $instance,
+                  button   => $button});
+        }
 
-	# Display the window.
+        # Display the window.
 
-	$instance->{window}->show_all();
-	$instance->{window}->present();
+        $instance->{window}->show_all();
+        $instance->{window}->present();
 
-	# Register the window for management and set up the help callbacks.
+        # Register the window for management and set up the help callbacks.
 
-	$wm->manage($instance,
-		    $window_type,
-		    $instance->{window});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => "arbitrary_revision_1_advanced_find_button",
-	      help_ref => __("mtnb-lachc-compare-arbitrary-revisions-"
-			     . "buttons")},
-	     {widget   => "arbitrary_revision_1_advanced_find_button",
-	      help_ref => __("mtnb-lachc-compare-arbitrary-revisions-"
-			     . "buttons")},
-	     {widget   => "arbitrary_compare_button",
-	      help_ref => __("mtnb-lachc-compare-arbitrary-revisions-"
-			     . "buttons")},
-	     {widget   => undef,
-	      help_ref => __("mtnb-lachc-the-compare-arbitrary-revisions-"
-			     . "window")});
+        $wm->manage($instance,
+                    $window_type,
+                    $instance->{window});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => "arbitrary_revision_1_advanced_find_button",
+              help_ref => __("mtnb-lachc-compare-arbitrary-revisions-"
+                             . "buttons")},
+             {widget   => "arbitrary_revision_1_advanced_find_button",
+              help_ref => __("mtnb-lachc-compare-arbitrary-revisions-"
+                             . "buttons")},
+             {widget   => "arbitrary_compare_button",
+              help_ref => __("mtnb-lachc-compare-arbitrary-revisions-"
+                             . "buttons")},
+             {widget   => undef,
+              help_ref => __("mtnb-lachc-the-compare-arbitrary-revisions-"
+                             . "window")});
 
     }
     else
     {
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
-	$instance->{arbitrary_compare_button}->set_sensitive(FALSE);
-	set_label_value($instance->{arbitrary_revision_id_1_value_label}, "");
-	set_label_value($instance->{arbitrary_revision_id_2_value_label}, "");
-	$instance->{window}->show_all();
-	$instance->{window}->present();
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
+        $instance->{arbitrary_compare_button}->set_sensitive(FALSE);
+        set_label_value($instance->{arbitrary_revision_id_1_value_label}, "");
+        set_label_value($instance->{arbitrary_revision_id_2_value_label}, "");
+        $instance->{window}->show_all();
+        $instance->{window}->present();
     }
 
     return $instance;
@@ -2237,161 +2237,161 @@ sub get_revision_comparison_window($)
     if (! defined($instance = $wm->find_unused($window_type)))
     {
 
-	my ($glade,
-	    $renderer);
+        my ($glade,
+            $renderer);
 
-	$instance = {};
-	$glade = Gtk2::GladeXML->new($glade_file,
-				     $window_type,
-				     APPLICATION_NAME);
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $window_type,
+                                     APPLICATION_NAME);
 
-	# Flag to stop recursive calling of callbacks.
+        # Flag to stop recursive calling of callbacks.
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	# Connect Glade registered signal handlers.
+        # Connect Glade registered signal handlers.
 
-	glade_signal_autoconnect($glade, $instance);
+        glade_signal_autoconnect($glade, $instance);
 
-	# Get the widgets that we are interested in.
+        # Get the widgets that we are interested in.
 
-	$instance->{window} = $glade->get_widget($window_type);
-	foreach my $widget ("appbar",
-			    "comparison_label",
-			    "file_comparison_combobox",
-			    "external_diffs_button",
-			    "stop_button",
-			    "comparison_textview",
-			    "comparison_scrolledwindow",
-			    "revision_change_log_1_button",
-			    "revision_change_log_1_button_label",
-			    "revision_change_log_2_button_label")
-	{
-	    $instance->{$widget} = $glade->get_widget($widget);
-	}
+        $instance->{window} = $glade->get_widget($window_type);
+        foreach my $widget ("appbar",
+                            "comparison_label",
+                            "file_comparison_combobox",
+                            "external_diffs_button",
+                            "stop_button",
+                            "comparison_textview",
+                            "comparison_scrolledwindow",
+                            "revision_change_log_1_button",
+                            "revision_change_log_1_button_label",
+                            "revision_change_log_2_button_label")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
 
-	# Setup the file history callbacks.
+        # Setup the file history callbacks.
 
-	$instance->{window}->signal_connect
-	    ("delete_event",
-	     sub {
-		 my ($widget, $event, $instance) = @_;
-		 return TRUE if ($instance->{in_cb});
-		 local $instance->{in_cb} = 1;
-		 hide_find_text($instance->{comparison_textview});
-		 $widget->hide();
-		 $instance->{file_comparison_combobox}->get_model()->clear();
-		 $instance->{comparison_buffer}->set_text("");
-		 $instance->{diff_output} = [];
-		 $instance->{mtn} = undef;
-		 return TRUE;
-	     },
-	     $instance);
-	if ($mtn->supports(MTN_CONTENT_DIFF_EXTRA_OPTIONS))
-	{
-	    $instance->{kill_mtn_subprocess} = 0;
-	    $instance->{stop_button}->signal_connect
-		("clicked",
-		 sub {
-		     my ($widget, $instance) = @_;
-		     $instance->{stop} = 1;
-		     kill("TERM", $instance->{mtn}->get_pid())
-			 if ($instance->{kill_mtn_subprocess});
-		 },
-		 $instance);
-	}
-	else
-	{
-	    $instance->{stop_button}->signal_connect
-		("clicked", sub { $_[1]->{stop} = 1; }, $instance);
-	}
+        $instance->{window}->signal_connect
+            ("delete_event",
+             sub {
+                 my ($widget, $event, $instance) = @_;
+                 return TRUE if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 hide_find_text($instance->{comparison_textview});
+                 $widget->hide();
+                 $instance->{file_comparison_combobox}->get_model()->clear();
+                 $instance->{comparison_buffer}->set_text("");
+                 $instance->{diff_output} = [];
+                 $instance->{mtn} = undef;
+                 return TRUE;
+             },
+             $instance);
+        if ($mtn->supports(MTN_CONTENT_DIFF_EXTRA_OPTIONS))
+        {
+            $instance->{kill_mtn_subprocess} = 0;
+            $instance->{stop_button}->signal_connect
+                ("clicked",
+                 sub {
+                     my ($widget, $instance) = @_;
+                     $instance->{stop} = 1;
+                     kill("TERM", $instance->{mtn}->get_pid())
+                         if ($instance->{kill_mtn_subprocess});
+                 },
+                 $instance);
+        }
+        else
+        {
+            $instance->{stop_button}->signal_connect
+                ("clicked", sub { $_[1]->{stop} = 1; }, $instance);
+        }
 
-	# Setup the file combobox.
+        # Setup the file combobox.
 
-	$instance->{file_comparison_combobox}->
-	    set_model(Gtk2::ListStore->new("Glib::String",
-					   "Glib::Int",
-					   "Glib::String",
-					   "Glib::String"));
-	$renderer = Gtk2::CellRendererText->new();
-	$instance->{file_comparison_combobox}->pack_start($renderer, TRUE);
-	$instance->{file_comparison_combobox}->add_attribute($renderer,
-							     "text" => 0);
-	$instance->{file_comparison_combobox}->get_model()->set
-	    ($instance->{file_comparison_combobox}->get_model()->append(),
-	     CLS_FILE_NAME_COLUMN, " ",
-	     CLS_LINE_NR_COLUMN, 0,
-	     CLS_FILE_ID_1_COLUMN, "",
-	     CLS_FILE_ID_2_COLUMN, "");
+        $instance->{file_comparison_combobox}->
+            set_model(Gtk2::ListStore->new("Glib::String",
+                                           "Glib::Int",
+                                           "Glib::String",
+                                           "Glib::String"));
+        $renderer = Gtk2::CellRendererText->new();
+        $instance->{file_comparison_combobox}->pack_start($renderer, TRUE);
+        $instance->{file_comparison_combobox}->add_attribute($renderer,
+                                                             "text" => 0);
+        $instance->{file_comparison_combobox}->get_model()->set
+            ($instance->{file_comparison_combobox}->get_model()->append(),
+             CLS_FILE_NAME_COLUMN, " ",
+             CLS_LINE_NR_COLUMN, 0,
+             CLS_FILE_ID_1_COLUMN, "",
+             CLS_FILE_ID_2_COLUMN, "");
 
-	# Setup the revision comparison viewer.
+        # Setup the revision comparison viewer.
 
-	$instance->{comparison_buffer} =
-	    $instance->{comparison_textview}->get_buffer();
-	create_format_tags($instance->{comparison_buffer});
-	$instance->{comparison_textview}->modify_font($mono_font);
+        $instance->{comparison_buffer} =
+            $instance->{comparison_textview}->get_buffer();
+        create_format_tags($instance->{comparison_buffer});
+        $instance->{comparison_textview}->modify_font($mono_font);
 
-	# Setup the revision log button labels.
+        # Setup the revision log button labels.
 
-	if ($user_preferences->{coloured_diffs})
-	{
-	    $instance->{revision_change_log_1_button_label}->
-		set_markup("<span foreground='"
-			   . $user_preferences->{colours}->{cmp_revision_1}->
-			       {fg}
-			   . "'>"
-			   . __("Revision Change Log")
-			   . "</span>");
-	    $instance->{revision_change_log_2_button_label}->
-		set_markup("<span foreground='"
-			   . $user_preferences->{colours}->{cmp_revision_2}->
-			       {fg}
-			   . "'>"
-			   . __("Revision Change Log")
-			   . "</span>");
-	}
-	else
-	{
-	    $instance->{revision_change_log_1_button_label}->
-		set_text(__("- Revision Change Log"));
-	    $instance->{revision_change_log_2_button_label}->
-		set_text(__("+ Revision Change Log"));
-	}
+        if ($user_preferences->{coloured_diffs})
+        {
+            $instance->{revision_change_log_1_button_label}->
+                set_markup("<span foreground='"
+                           . $user_preferences->{colours}->{cmp_revision_1}->
+                               {fg}
+                           . "'>"
+                           . __("Revision Change Log")
+                           . "</span>");
+            $instance->{revision_change_log_2_button_label}->
+                set_markup("<span foreground='"
+                           . $user_preferences->{colours}->{cmp_revision_2}->
+                               {fg}
+                           . "'>"
+                           . __("Revision Change Log")
+                           . "</span>");
+        }
+        else
+        {
+            $instance->{revision_change_log_1_button_label}->
+                set_text(__("- Revision Change Log"));
+            $instance->{revision_change_log_2_button_label}->
+                set_text(__("+ Revision Change Log"));
+        }
 
-	# Register the window for management and set up the help callbacks.
+        # Register the window for management and set up the help callbacks.
 
-	$wm->manage($instance,
-		    $window_type,
-		    $instance->{window},
-		    $instance->{stop_button});
-	register_help_callbacks
-	    ($instance,
-	     $glade,
-	     {widget   => "file_comparison_hbox",
-	      help_ref => __("mtnb-lachc-differences-buttons")},
-	     {widget   => "comparison_hbuttonbox",
-	      help_ref => __("mtnb-lachc-differences-buttons")},
-	     {widget   => undef,
-	      help_ref => __("mtnb-lachc-the-differences-window")});
+        $wm->manage($instance,
+                    $window_type,
+                    $instance->{window},
+                    $instance->{stop_button});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => "file_comparison_hbox",
+              help_ref => __("mtnb-lachc-differences-buttons")},
+             {widget   => "comparison_hbuttonbox",
+              help_ref => __("mtnb-lachc-differences-buttons")},
+             {widget   => undef,
+              help_ref => __("mtnb-lachc-the-differences-window")});
 
     }
     else
     {
 
-	my ($height,
-	    $width);
+        my ($height,
+            $width);
 
-	$instance->{in_cb} = 0;
-	local $instance->{in_cb} = 1;
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
 
-	($width, $height) = $instance->{window}->get_default_size();
-	$instance->{window}->resize($width, $height);
-	$instance->{external_diffs_button}->set_sensitive(FALSE);
-	$instance->{stop_button}->set_sensitive(FALSE);
-	$instance->{file_comparison_combobox}->get_model()->clear();
-	$instance->{appbar}->set_progress_percentage(0);
-	$instance->{appbar}->clear_stack();
+        ($width, $height) = $instance->{window}->get_default_size();
+        $instance->{window}->resize($width, $height);
+        $instance->{external_diffs_button}->set_sensitive(FALSE);
+        $instance->{stop_button}->set_sensitive(FALSE);
+        $instance->{file_comparison_combobox}->get_model()->clear();
+        $instance->{appbar}->set_progress_percentage(0);
+        $instance->{appbar}->clear_stack();
 
     }
 
@@ -2436,76 +2436,76 @@ sub external_diffs($$$$$$)
 {
 
     my ($parent,
-	$mtn,
-	$old_file_name,
-	$old_file_id,
-	$new_file_name,
-	$new_file_id) = @_;
+        $mtn,
+        $old_file_name,
+        $old_file_id,
+        $new_file_name,
+        $new_file_id) = @_;
 
     my ($cmd,
-	$data,
-	$new_fh,
-	$new_file,
-	$old_fh,
-	$old_file);
+        $data,
+        $new_fh,
+        $new_file,
+        $old_fh,
+        $old_file);
 
     # Just check that we do actually have an external helper application to
     # call.
 
     if (! defined($user_preferences->{diffs_application})
-	|| $user_preferences->{diffs_application} =~ m/^\s*$/)
+        || $user_preferences->{diffs_application} =~ m/^\s*$/)
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($parent,
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __("Cannot call the external helper application\n"
-		. "to do the comparison as one has not been\n"
-		. "specified in the user's preferences."));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($parent,
+             ["modal"],
+             "warning",
+             "close",
+             __("Cannot call the external helper application\n"
+                . "to do the comparison as one has not been\n"
+                . "specified in the user's preferences."));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
     return unless (program_valid((split(/[[:blank:]]/,
-					$user_preferences->{diffs_application})
-				  )[0],
-				 $parent));
+                                        $user_preferences->{diffs_application})
+                                  )[0],
+                                 $parent));
 
     # Generate temporary disk file names.
 
     if (! defined($old_file = generate_tmp_path(__("OLDER_")
-						. basename($old_file_name)))
-	|| ! defined($new_file =
-		     generate_tmp_path(__("NEWER_")
-				       . basename($new_file_name))))
+                                                . basename($old_file_name)))
+        || ! defined($new_file =
+                     generate_tmp_path(__("NEWER_")
+                                       . basename($new_file_name))))
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($parent,
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("Cannot generate temporary file name:\n{error_message}.",
-		 error_message => $!));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($parent,
+             ["modal"],
+             "warning",
+             "close",
+             __x("Cannot generate temporary file name:\n{error_message}.",
+                 error_message => $!));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
 
     # Attempt to save the contents to the files.
 
     if (! defined($old_fh = IO::File->new($old_file, "w"))
-	|| ! defined($new_fh = IO::File->new($new_file, "w")))
+        || ! defined($new_fh = IO::File->new($new_file, "w")))
     {
-	my $dialog = Gtk2::MessageDialog->new
-	    ($parent,
-	     ["modal"],
-	     "warning",
-	     "close",
-	     __x("{error_message}.", error_message => $!));
-	busy_dialog_run($dialog);
-	$dialog->destroy();
-	return;
+        my $dialog = Gtk2::MessageDialog->new
+            ($parent,
+             ["modal"],
+             "warning",
+             "close",
+             __x("{error_message}.", error_message => $!));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
     }
     binmode($old_fh);
     binmode($new_fh);
@@ -2564,17 +2564,17 @@ sub mtn_diff($$$$$;$)
 {
 
     my ($list,
-	$abort,
-	$mtn_db,
-	$revision_id_1,
-	$revision_id_2,
-	$file_name) = @_;
+        $abort,
+        $mtn_db,
+        $revision_id_1,
+        $revision_id_2,
+        $file_name) = @_;
 
     my ($buffer,
-	@cmd,
-	$cwd,
-	$exception,
-	$ret_val);
+        @cmd,
+        $cwd,
+        $exception,
+        $ret_val);
 
     # Run mtn diff in the root directory so as to avoid any workspace
     # conflicts.
@@ -2591,37 +2591,37 @@ sub mtn_diff($$$$$;$)
     $cwd = getcwd();
     eval
     {
-	die("chdir failed: " . $!) unless (chdir(File::Spec->rootdir()));
-	$ret_val = run_command(\$buffer, undef, undef, $abort, @cmd);
+        die("chdir failed: " . $!) unless (chdir(File::Spec->rootdir()));
+        $ret_val = run_command(\$buffer, undef, undef, $abort, @cmd);
     };
     $exception = $@;
     chdir($cwd);
     if (! $$abort)
     {
-	if ($exception)
-	{
-	    my $dialog = Gtk2::MessageDialog->new_with_markup
-		(undef,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("Problem running mtn diff, got:\n"
-		         . "<b><i>{error_message}</i></b>\n"
-		         . "This should not be happening!",
-		     error_message => Glib::Markup::escape_text($exception)));
-	    busy_dialog_run($dialog);
-	    $dialog->destroy();
-	    return;
-	}
+        if ($exception)
+        {
+            my $dialog = Gtk2::MessageDialog->new_with_markup
+                (undef,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __x("Problem running mtn diff, got:\n"
+                         . "<b><i>{error_message}</i></b>\n"
+                         . "This should not be happening!",
+                     error_message => Glib::Markup::escape_text($exception)));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
 
-	# Break up the input into a list of lines.
+        # Break up the input into a list of lines.
 
-	@$list = split(/\n/, $buffer);
+        @$list = split(/\n/, $buffer);
 
     }
     else
     {
-	@$list = ();
+        @$list = ();
     }
 
     return $ret_val;
