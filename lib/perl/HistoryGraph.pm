@@ -122,6 +122,7 @@ sub get_node_tag($$);
 sub go_to_selected_revision_button_clicked_cb($$);
 sub graph_advanced_find_button_clicked_cb($$);
 sub graph_reconnect_helper($$);
+sub graph_refresh_button_clicked_cb($$);
 sub graph_revision_change_history_button_clicked_cb($$);
 sub graph_revision_change_log_button_clicked_cb($$);
 sub hsv_to_rgb($$$$$$);
@@ -301,6 +302,33 @@ sub tag_weightings_button_clicked_cb($$)
 	     });
 
     }
+
+}
+#
+##############################################################################
+#
+#   Routine      - graph_refresh_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the refresh
+#                  history graph button in the history graph window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub graph_refresh_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    generate_history_graph($instance);
 
 }
 #
