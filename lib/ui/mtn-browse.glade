@@ -10461,21 +10461,19 @@ its default setting</property>
 			  </child>
 
 			  <child>
-			    <widget class="GtkButton" id="graph_advanced_find_button">
+			    <widget class="GtkButton" id="go_to_selected_revision_button">
 			      <property name="visible">True</property>
 			      <property name="sensitive">False</property>
-			      <property name="tooltip" translatable="yes">Use more advanced selection
-criteria for selecting a revision
-within the current history graph</property>
+			      <property name="tooltip" translatable="yes">Go to the currently selected revision</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NONE</property>
 			      <property name="focus_on_click">False</property>
-			      <signal name="clicked" handler="graph_advanced_find_button_clicked_cb" last_modification_time="Thu, 05 May 2011 14:27:30 GMT"/>
+			      <signal name="clicked" handler="go_to_selected_revision_button_clicked_cb" last_modification_time="Fri, 06 May 2011 16:52:44 GMT"/>
 
 			      <child>
-				<widget class="GtkImage" id="image183">
+				<widget class="GtkImage" id="image184">
 				  <property name="visible">True</property>
-				  <property name="stock">gtk-find</property>
+				  <property name="stock">gtk-jump-to</property>
 				  <property name="icon_size">4</property>
 				  <property name="xalign">0.5</property>
 				  <property name="yalign">0.5</property>
@@ -10492,19 +10490,21 @@ within the current history graph</property>
 			  </child>
 
 			  <child>
-			    <widget class="GtkButton" id="go_to_selected_revision_button">
+			    <widget class="GtkButton" id="graph_advanced_find_button">
 			      <property name="visible">True</property>
 			      <property name="sensitive">False</property>
-			      <property name="tooltip" translatable="yes">Go to the currently selected revision</property>
+			      <property name="tooltip" translatable="yes">Use more advanced selection
+criteria for selecting a revision
+within the current history graph</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NONE</property>
 			      <property name="focus_on_click">False</property>
-			      <signal name="clicked" handler="go_to_selected_revision_button_clicked_cb" last_modification_time="Fri, 06 May 2011 16:52:44 GMT"/>
+			      <signal name="clicked" handler="graph_advanced_find_button_clicked_cb" last_modification_time="Thu, 05 May 2011 14:27:30 GMT"/>
 
 			      <child>
-				<widget class="GtkImage" id="image184">
+				<widget class="GtkImage" id="image183">
 				  <property name="visible">True</property>
-				  <property name="stock">gtk-jump-to</property>
+				  <property name="stock">gtk-find</property>
 				  <property name="icon_size">4</property>
 				  <property name="xalign">0.5</property>
 				  <property name="yalign">0.5</property>
@@ -10566,6 +10566,35 @@ change log</property>
 				  <property name="visible">True</property>
 				  <property name="stock">gtk-dnd</property>
 				  <property name="icon_size">4</property>
+				  <property name="xalign">0.5</property>
+				  <property name="yalign">0.5</property>
+				  <property name="xpad">0</property>
+				  <property name="ypad">0</property>
+				</widget>
+			      </child>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkButton" id="browse_revision_button">
+			      <property name="visible">True</property>
+			      <property name="sensitive">False</property>
+			      <property name="tooltip" translatable="yes">Display the selected revision
+in a new browser window</property>
+			      <property name="can_focus">True</property>
+			      <property name="relief">GTK_RELIEF_NONE</property>
+			      <property name="focus_on_click">False</property>
+			      <signal name="clicked" handler="browse_revision_button_clicked_cb" last_modification_time="Sun, 29 May 2011 18:25:06 GMT"/>
+
+			      <child>
+				<widget class="GtkImage" id="image188">
+				  <property name="visible">True</property>
+				  <property name="pixbuf">mtn-browse-small.png</property>
 				  <property name="xalign">0.5</property>
 				  <property name="yalign">0.5</property>
 				  <property name="xpad">0</property>

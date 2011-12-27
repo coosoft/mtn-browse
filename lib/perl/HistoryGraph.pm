@@ -478,6 +478,38 @@ sub graph_revision_change_log_button_clicked_cb($$)
 #
 ##############################################################################
 #
+#   Routine      - browse_revision_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the
+#                  browse revision button in the history graph window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub browse_revision_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    my $branches = $instance->{graph_data}->{child_graph}->
+        {$instance->{selected_revision_id}}->{branches};
+
+    get_browser_window($instance->{mtn},
+		       (scalar(@$branches) > 0) ? $$branches[0] : "",
+		       $instance->{selected_revision_id});
+
+}
+#
+##############################################################################
+#
 #   Routine      - canvas_item_event_cb
 #
 #   Description  - Callback routine called when an event it delivered to a
@@ -600,6 +632,26 @@ sub canvas_item_event_cb($$$)
 			  get_node_tag($instance,
 				       $instance->{under_mouse_revision_id}),
 			  $instance->{under_mouse_revision_id});
+		 },
+		 $instance);
+	    $menu_item->show();
+
+	    $menu_item = Gtk2::SeparatorMenuItem->new();
+	    $menu_item->show();
+	    $menu->append($menu_item);
+
+	    $menu_item = Gtk2::MenuItem->new(__("_Browse Revision"));
+	    $menu->append($menu_item);
+	    $menu_item->signal_connect
+		("activate",
+		 sub {
+		     my ($widget, $instance) = @_;
+		     my $branches = $instance->{graph_data}->{child_graph}->
+		         {$instance->{under_mouse_revision_id}}->{branches};
+		     get_browser_window($instance->{mtn},
+					(scalar(@$branches) > 0)
+					    ? $$branches[0] : "",
+					$instance->{under_mouse_revision_id});
 		 },
 		 $instance);
 	    $menu_item->show();
@@ -2334,19 +2386,19 @@ sub get_node_colour($$)
 
     my ($instance, $node) = @_;
 
-    my ($colour,
-	$hash_values);
+    my $colour;
+    my $hash_values = [""];
 
     # Decide what to base the colour on depending upon the user's preferences
     # (either branch or author).
 
     if ($instance->{graph_data}->{parameters}->{colour_by_author})
     {
-	$hash_values = [$node->{author}];
+	$hash_values = [$node->{author}] if (defined($node->{author}));
     }
     else
     {
-	$hash_values = $node->{branches};
+	$hash_values = $node->{branches} if (scalar(@{$node->{branches}}) > 0);
     }
 
     # First look for an existing colour for any of the branches.
@@ -2367,8 +2419,6 @@ sub get_node_colour($$)
 
 	my ($blue,
 	    $green,
-	    $hash,
-	    $hash_value,
 	    $hue,
 	    $red,
 	    $saturation,
@@ -2380,15 +2430,7 @@ sub get_node_colour($$)
 	# using the first few bytes of that hash as HSV values (idea taken from
 	# monotone-viz).
 
-	if (scalar(@$hash_values) > 0)
-	{
-	    $hash_value = $$hash_values[0];
-	}
-	else
-	{
-	    $hash_value = "";
-	}
-	($hue, $saturation, $value) = unpack("CCC", md5($hash_value));
+	($hue, $saturation, $value) = unpack("CCC", md5($$hash_values[0]));
 
 	# Now scale values. Hue 0 to 359, saturation and value 0 to 1. In
 	# addition scale saturation to only go from 35% to 50% and value to
@@ -2407,7 +2449,7 @@ sub get_node_colour($$)
 
 	# Store colour under its hash value for possible reuse.
 
-	$instance->{colour_db}->{$hash_value} = $colour;
+	$instance->{colour_db}->{$$hash_values[0]} = $colour;
 
     }
 
@@ -2715,7 +2757,8 @@ sub get_history_graph_window()
 	$instance->{revision_sensitivity_group} = [];
 	foreach my $item ("go_to_selected_revision",
 			  "graph_revision_change_history",
-			  "graph_revision_change_log")
+			  "graph_revision_change_log",
+			  "browse_revision")
 	{
 	    push(@{$instance->{revision_sensitive_group}},
 		 $instance->{glade}->get_widget($item . "_button"));
