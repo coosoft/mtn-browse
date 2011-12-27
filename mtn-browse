@@ -106,11 +106,13 @@ use ChangeLog;
 use ComboAutoCompletion;
 use Common;
 use Completion;
+use DateRange;
 use FindFiles;
 use FindText;
 use History;
 use HistoryGraph;
 use ManageServerBookmarks;
+use ManageTagWeightings;
 use MultipleRevisions;
 use Preferences;
 use WindowManager;
@@ -211,6 +213,8 @@ sub view_button_clicked_cb($$);
 
     my ($branch,
 	$browser,
+	$icon_factory,
+	$icon_set,
 	$mtn,
 	$revision_id);
 
@@ -226,6 +230,15 @@ sub view_button_clicked_cb($$);
     $tooltips = Gtk2::Tooltips->new();
     $line_image = Gtk2::Gdk::Pixbuf->
 	new_from_file(File::Spec->catfile(UI_DIR, "line.png"));
+    Gtk2::Stock->add({stock_id => "mtnb-weighting",
+		      label    => __("Weighting")});
+    $icon_set = Gtk2::IconSet->new_from_pixbuf
+	(Gtk2::Gdk::Pixbuf->new_from_file(File::Spec->catfile
+					  (UI_DIR, "weightings.png")));
+    $icon_factory = Gtk2::IconFactory->new();
+    $icon_factory->add("mtnb-weighting", $icon_set);
+    $icon_factory->add_default();
+    $icon_factory = $icon_set = undef;
 
     # Set up the default database locked and I/O wait handlers for the Monotone
     # class.
@@ -1154,7 +1167,7 @@ sub monotone_viz_button_clicked_cb($$)
 	push(@branches, $browser->{branch_combo_details}->{value});
     }
 
-    display_history_graph($browser->{mtn}, \@branches, "2007-06");
+    display_history_graph($browser->{mtn}, \@branches, "2008-06-01T00:00:00", undef, 1);
 
     # Launch Monotone-Viz.
 
@@ -3502,7 +3515,7 @@ sub display_file($$)
 		    $browser->{file_view_svbuffer}->set_language($lang);
 		}
 
-		# Load in the contents (ensuring UTF-8 encoding).
+		# Load in the contents (ensuring UTF-8 encoding if possible).
 
 		eval
 		{

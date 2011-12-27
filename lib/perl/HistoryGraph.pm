@@ -2,9 +2,9 @@
 #
 #   File Name    - HistoryGraph.pm
 #
-#   Description  - The history graphing module for the mtn-browse application.
+#   Description  - The history graph module for the mtn-browse application.
 #                  This module contains all the routines for implementing the
-#                  history graphing windows.
+#                  history graph and change history graph windows.
 #
 #   Author       - A.E.Cooper.
 #
@@ -85,6 +85,10 @@ use constant BLS_COLUMN_TYPES    => ("Glib::Boolean",
 use constant BLS_SELECTED_COLUMN => 0;
 use constant BLS_BRANCH_COLUMN   => 1;
 
+# The type of window that is going to be managed by this module.
+
+my $window_type = "history_graph_window";
+
 # Default values for certain graphing parameters that are not specified by the
 # caller but are changeable via the change history graph window.
 
@@ -100,9 +104,11 @@ sub display_history_graph($;$$$$);
 
 # Private routines.
 
+sub browse_revision_button_clicked_cb($$);
 sub canvas_item_event_cb($$$);
 sub change_history_graph_button_clicked_cb($$);
 sub change_history_graph_parameters($$);
+sub compile_tag_weighting_patterns($);
 sub default_zoom_button_clicked_cb($$);
 sub destroy_history_graph($);
 sub dot_input_handler_cb($$);
@@ -126,6 +132,7 @@ sub scale_canvas($);
 sub scroll_to_node($$);
 sub select_node($$);
 sub select_pattern_button_clicked_cb($$);
+sub tag_weightings_button_clicked_cb($$);
 sub tick_untick_branches_button_clicked_cb($$);
 sub zoom_in_button_clicked_cb($$);
 sub zoom_out_button_clicked_cb($$);
@@ -234,6 +241,65 @@ sub change_history_graph_button_clicked_cb($$)
 	$instance->{graph_data}->{parameters}->{revision_id} =
 	    $instance->{selected_revision_id};
 	generate_history_graph($instance);
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - tag_weightings_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the change
+#                  history graph button in the history graph window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub tag_weightings_button_clicked_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    if (manage_tag_weightings($instance->{window},
+			      $user_preferences->{tag_weightings}))
+    {
+
+	eval
+	{
+	    save_preferences($user_preferences);
+	};
+	if ($@)
+	{
+	    chomp($@);
+	    my $dialog = Gtk2::MessageDialog->new
+		(undef,
+		 ["modal"],
+		 "warning",
+		 "close",
+		 __("Your preferences could not be saved:\n") . $@);
+	    $dialog->run();
+	    $dialog->destroy();
+	}
+
+	# Regenerate all of the compiled tag weightings tables.
+
+	WindowManager->instance()->cond_find
+	    ($window_type,
+	     sub {
+		 my $instance = $_[0];
+		 compile_tag_weighting_patterns
+		     ($instance->{compiled_tag_weightings});
+		 return;
+	     });
+
     }
 
 }
@@ -2706,12 +2772,80 @@ sub get_node_tag($$)
 
     my $node = $instance->{graph_data}->{child_graph}->{$revision_id};
 
+    # Are there any tags?
+
     if (scalar(@{$node->{tags}}) > 0)
     {
-	return $node->{tags}->[0];
+
+	# Yes there are so either return the highest weighted tag if we have a
+	# weightings list or just the first one if we don't.
+
+	if (scalar(@{$instance->{compiled_tag_weightings}}) > 0)
+	{
+
+	    my @results;
+
+	    # Ok so now find the tag with the highest weighting.
+
+	    foreach my $tag (@{$node->{tags}})
+	    {
+		my $weighting = 0;
+		foreach my $entry (@{$instance->{compiled_tag_weightings}})
+		{
+		    if ($tag =~ m/$entry->{compiled_re}/)
+		    {
+			$weighting = $entry->{weighting};
+			last;
+		    }
+		}
+		push(@results, {tag_name => $tag, weighting => $weighting});
+	    }
+
+	    # Now sort the results, highest weighting first and then sorted on
+	    # tag name.
+
+	    @results = sort({ $b->{weighting} <=> $a->{weighting}
+			      || $a->{tag_name} cmp $b->{tag_name} }
+			    @results);
+	    return $results[0]->{tag_name};
+
+	}
+	else
+	{
+	    return $node->{tags}->[0];
+	}
+
     }
 
     return;
+
+}
+#
+##############################################################################
+#
+#   Routine      - compile_tag_weighting_patterns
+#
+#   Description  - Compiles up a list of regular expresion records
+#                  reppresenting the user's tag weightings list.
+#
+#   Data         - $list : A reference to the list that is to populated with
+#                          the compiled regular expression weightings data.
+#
+##############################################################################
+
+
+
+sub compile_tag_weighting_patterns($)
+{
+
+    my $list = $_[0];
+
+    @$list = ();
+    foreach my $entry (@{$user_preferences->{tag_weightings}})
+    {
+	push(@$list, {weighting   => $entry->{weighting},
+		      compiled_re => qr/$entry->{pattern}/});
+    }
 
 }
 #
@@ -2733,7 +2867,6 @@ sub get_history_graph_window()
 {
 
     my $instance;
-    my $window_type = "history_graph_window";
     my $wm = WindowManager->instance();
 
     # Create a new history graph window if an unused one wasn't found,
@@ -2880,6 +3013,8 @@ sub get_history_graph_window()
     $instance->{scale} = 1;
     $instance->{stop} = 0;
     $instance->{selected_revision_id} = undef;
+    $instance->{compiled_tag_weightings} =[];
+    compile_tag_weighting_patterns($instance->{compiled_tag_weightings});
     reset_history_graph_instance($instance);
 
     return $instance;
@@ -2905,7 +3040,7 @@ sub reset_history_graph_instance($)
 
     destroy_history_graph($instance);
     $instance->{colour_db} = {};
-    $instance->{graph_data} = 
+    $instance->{graph_data} =
 	{parameters     =>
 	     {new                      => 0,
 	      branches                 => [],
@@ -3283,13 +3418,13 @@ sub get_change_history_graph_window($)
     my $parent_instance = $_[0];
 
     my $instance;
-    my $window_type = "change_history_graph_window";
+    my $change_window_type = "change_history_graph_window";
     my $wm = WindowManager->instance();
 
     # Create a new change history graph window if an unused one wasn't found,
     # otherwise reuse an existing unused one.
 
-    if (! defined($instance = $wm->find_unused($window_type)))
+    if (! defined($instance = $wm->find_unused($change_window_type)))
     {
 
 	my ($image,
@@ -3298,7 +3433,7 @@ sub get_change_history_graph_window($)
 
 	$instance = {};
 	$instance->{glade} = Gtk2::GladeXML->new($glade_file,
-						 $window_type,
+						 $change_window_type,
 						 APPLICATION_NAME);
 
 	# Flag to stop recursive calling of callbacks.
@@ -3312,7 +3447,8 @@ sub get_change_history_graph_window($)
 
 	# Get the widgets that we are interested in.
 
-	$instance->{window} = $instance->{glade}->get_widget($window_type);
+	$instance->{window} =
+	    $instance->{glade}->get_widget($change_window_type);
 	foreach my $widget ("branch_pattern_comboboxentry",
 			    "tick_branches_button",
 			    "case_sensitive_checkbutton",
@@ -3390,8 +3526,8 @@ sub get_change_history_graph_window($)
 
 	$tv_column = Gtk2::TreeViewColumn->new();
 	$tv_column->set_title(__("Branch"));
-	$tv_column->set_resizable(TRUE);
-	$tv_column->set_sizing("fixed");
+	$tv_column->set_resizable(FALSE);
+	$tv_column->set_sizing("grow-only");
 	$tv_column->set_sort_column_id(BLS_BRANCH_COLUMN);
 	$renderer = Gtk2::CellRendererText->new();
 	$tv_column->pack_start($renderer, TRUE);
@@ -3406,7 +3542,7 @@ sub get_change_history_graph_window($)
 
 	setup_date_range_widgets($instance);
 
-	# Reparent the advanced find window to the specified window.
+	# Reparent the change history graph window to the specified window.
 
 	$instance->{window}->set_transient_for($parent_instance->{window});
 
@@ -3417,7 +3553,7 @@ sub get_change_history_graph_window($)
 
 	# Register the window for management and set up the help callbacks.
 
-	$wm->manage($instance, $window_type, $instance->{window});
+	$wm->manage($instance, $change_window_type, $instance->{window});
 	register_help_callbacks
 	    ($instance,
 	     {widget   => "graph_button_vbox",
