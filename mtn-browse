@@ -46,11 +46,16 @@ BEGIN
 {
     use constant APPLICATION_NAME    => "mtn-browse";
     use constant APPLICATION_VERSION => 0.72;
-    use constant FILE_COMPARE_CMD    => "@INST:FILE_COMPARE_CMD@";
-    use constant HTML_VIEWER_CMD     => "@INST:HTML_VIEWER_CMD@";
-    use constant LIB_DIR             => "@INST:LIB_DIR@";
-    use constant MIME_GLOB_FILE      => "@INST:GLOBS_FILE@";
-    use constant PREFIX_DIR          => "@INST:PREFIX_DIR@";
+#    use constant FILE_COMPARE_CMD    => "@INST:FILE_COMPARE_CMD@";
+    use constant FILE_COMPARE_CMD    => "kompare";
+#    use constant HTML_VIEWER_CMD     => "@INST:HTML_VIEWER_CMD@";
+    use constant HTML_VIEWER_CMD     => "";
+#    use constant LIB_DIR             => "@INST:LIB_DIR@";
+    use constant LIB_DIR             => "/home/aecoope/code/monotone.ca/mtn-browse/lib";
+#    use constant MIME_GLOB_FILE      => "@INST:GLOBS_FILE@";
+    use constant MIME_GLOB_FILE      => "/usr/share/mime/globs";
+#    use constant PREFIX_DIR          => "@INST:PREFIX_DIR@";
+    use constant PREFIX_DIR          => "/home/aecoope/code/monotone.ca/mtn-browse";
 }
 use locale;
 use strict;

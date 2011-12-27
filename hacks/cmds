@@ -1,3 +1,0 @@
-dot -q -y -s72 -Tsvg < dot-graph-2009-05-22T16\:05.dot >| graph.svg
-dot -q -y -s72 -Txdot < dot-graph-2009-05-22T16\:05.dot >| graph.xdot
-dot -q -y -s72 -Tdot < dot-graph-2009-05-22T16\:05.dot >| graph.dot
