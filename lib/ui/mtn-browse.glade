@@ -10470,6 +10470,7 @@ its default setting</property>
 			  <child>
 			    <widget class="GtkButton" id="revision_change_history_button">
 			      <property name="visible">True</property>
+			      <property name="sensitive">False</property>
 			      <property name="tooltip" translatable="yes">View selected revision's
 change history</property>
 			      <property name="can_focus">True</property>
@@ -10498,6 +10499,7 @@ change history</property>
 			  <child>
 			    <widget class="GtkButton" id="revision_change_log_button">
 			      <property name="visible">True</property>
+			      <property name="sensitive">False</property>
 			      <property name="tooltip" translatable="yes">View selected revision's
 change log</property>
 			      <property name="can_focus">True</property>
@@ -10526,6 +10528,7 @@ change log</property>
 			  <child>
 			    <widget class="GtkButton" id="stop_button">
 			      <property name="visible">True</property>
+			      <property name="sensitive">False</property>
 			      <property name="tooltip" translatable="yes">Stop the history graphing</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NONE</property>

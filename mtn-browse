@@ -46,16 +46,11 @@ BEGIN
 {
     use constant APPLICATION_NAME    => "mtn-browse";
     use constant APPLICATION_VERSION => 0.72;
-#    use constant FILE_COMPARE_CMD    => "@INST:FILE_COMPARE_CMD@";
-    use constant FILE_COMPARE_CMD    => "kompare";
-#    use constant HTML_VIEWER_CMD     => "@INST:HTML_VIEWER_CMD@";
-    use constant HTML_VIEWER_CMD     => "";
-#    use constant LIB_DIR             => "@INST:LIB_DIR@";
-    use constant LIB_DIR             => "/home/aecoope/code/monotone.ca/mtn-browse-graph/lib";
-#    use constant MIME_GLOB_FILE      => "@INST:GLOBS_FILE@";
-    use constant MIME_GLOB_FILE      => "/usr/share/mime/globs";
-#    use constant PREFIX_DIR          => "@INST:PREFIX_DIR@";
-    use constant PREFIX_DIR          => "/home/aecoope/code/monotone.ca/mtn-browse-graph";
+    use constant FILE_COMPARE_CMD    => "@INST:FILE_COMPARE_CMD@";
+    use constant HTML_VIEWER_CMD     => "@INST:HTML_VIEWER_CMD@";
+    use constant LIB_DIR             => "@INST:LIB_DIR@";
+    use constant MIME_GLOB_FILE      => "@INST:GLOBS_FILE@";
+    use constant PREFIX_DIR          => "@INST:PREFIX_DIR@";
 }
 use locale;
 use strict;
@@ -111,6 +106,7 @@ use Completion;
 use FindFiles;
 use FindText;
 use History;
+use HistoryGraph;
 use ManageServerBookmarks;
 use MultipleRevisions;
 use Preferences;
@@ -1108,6 +1104,66 @@ sub advanced_find_button_clicked_cb($$)
 #
 ##############################################################################
 #
+#   Routine      - monotone_viz_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the
+#                  monotone-viz button in a main browser window.
+#
+#   Data         - $widget  : The widget object that received the signal.
+#                  $browser : The browser instance that is associated with
+#                             this widget.
+#
+##############################################################################
+
+
+
+sub monotone_viz_button_clicked_cb($$)
+{
+
+    my ($widget, $browser) = @_;
+
+    return if ($browser->{in_cb});
+    local $browser->{in_cb} = 1;
+
+    my (@branches,
+	$cmd,
+	$db_name,
+	@revision_ids);
+
+    # Make sure we have monotone-viz installed first.
+
+    return unless (program_valid(MONOTONE_VIZ, $browser->{window}));
+
+    # Build up the monotone-viz command, we need the database name and then
+    # optionally the branch and revision ids.
+
+    $cmd = MONOTONE_VIZ . " ";
+    if (! defined($db_name = $browser->{mtn}->get_db_name()))
+    {
+	$browser->{mtn}->get_option(\$db_name, "database");
+    }
+    $cmd .= $db_name;
+    if ($browser->{branch_combo_details}->{complete})
+    {
+	$cmd .= " " . $browser->{branch_combo_details}->{value};
+	if ($browser->{revision_combo_details}->{complete})
+	{
+	    get_revision_ids($browser, \@revision_ids);
+	    $cmd .= " " . $revision_ids[0];
+	}
+	push(@branches, $browser->{branch_combo_details}->{value});
+    }
+
+    display_history_graph($browser->{mtn}, \@branches, "2007-06");
+
+    # Launch Monotone-Viz.
+
+    # system($cmd . " &");
+
+}
+#
+##############################################################################
+#
 #   Routine      - revision_change_history_button_clicked_cb
 #
 #   Description  - Callback routine called when the user clicks on the
@@ -1167,62 +1223,6 @@ sub revision_change_log_button_clicked_cb($$)
 
     get_revision_ids($browser, \@revision_ids, \$tag);
     display_change_log($browser->{mtn}, $revision_ids[0], "", $tag);
-
-}
-#
-##############################################################################
-#
-#   Routine      - monotone_viz_button_clicked_cb
-#
-#   Description  - Callback routine called when the user clicks on the
-#                  monotone-viz button in a main browser window.
-#
-#   Data         - $widget  : The widget object that received the signal.
-#                  $browser : The browser instance that is associated with
-#                             this widget.
-#
-##############################################################################
-
-
-
-sub monotone_viz_button_clicked_cb($$)
-{
-
-    my ($widget, $browser) = @_;
-
-    return if ($browser->{in_cb});
-    local $browser->{in_cb} = 1;
-
-    my ($cmd,
-	$db_name,
-	@revision_ids);
-
-    # Make sure we have monotone-viz installed first.
-
-    return unless (program_valid(MONOTONE_VIZ, $browser->{window}));
-
-    # Build up the monotone-viz command, we need the database name and then
-    # optionally the branch and revision ids.
-
-    $cmd = MONOTONE_VIZ . " ";
-    if (! defined($db_name = $browser->{mtn}->get_db_name()))
-    {
-	$browser->{mtn}->get_option(\$db_name, "database");
-    }
-    $cmd .= $db_name;
-    if ($browser->{branch_combo_details}->{complete})
-    {
-	$cmd .= " " . $browser->{branch_combo_details}->{value};
-	if ($browser->{revision_combo_details}->{complete})
-	{
-	    get_revision_ids($browser, \@revision_ids);
-	    $cmd .= " " . $revision_ids[0];
-	}
-    }
-
-    # Launch Monotone-Viz.
-
-    system($cmd . " &");
 
 }
 #

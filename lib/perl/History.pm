@@ -2365,11 +2365,12 @@ sub get_revision_comparison_window($)
 	$instance->{appbar}->clear_stack();
     }
 
+    $instance->{stop} = 0;
+
     # Empty out the contents.
 
     $instance->{diff_output} = [];
     $instance->{comparison_buffer}->set_text("");
-    $instance->{stop} = 0;
 
     return $instance;
 
