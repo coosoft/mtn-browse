@@ -70,10 +70,10 @@ PREFIX="$prefix_dir"
 INSTALLER=./linux-installer
 
 all: \$(INSTALLER)
-        \@echo "Ok."
+\t\@echo "Ok."
 
 test: \$(INSTALLER)
-        \@echo "Ok."
+\t\@echo "Ok."
 
 install: \$(INSTALLER)
 EOF
