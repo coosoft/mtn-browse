@@ -1518,6 +1518,56 @@ GNOME or DocBook.
           </screenshot>
         </figure>
 
+        <figure>
+          <title>A History Graph Window Showing The Graph's Colour Key</title>
+          <screenshot>
+            <screeninfo>A <guilabel>History Graph</guilabel> window showing the graph's colour key.</screeninfo>
+            <graphic fileref="figures/history-graph-window-with-colour-keys.png" format="png"/>
+          </screenshot>
+        </figure>
+
+      </sect2>
+
+      <sect2 id="mtnb-uhg-graph-actions">
+        <title>Graph Actions</title>
+
+        <para>There are a few things that one can actually do on the history graph itself.</para>
+
+        <para>Firstly if one double left clicks on a revision node with a grey border (which indicates a propagation node) then a new <guilabel>History Graph</guilabel> window is displayed showing the other branch.</para>
+
+        <para>Secondly if you right click on a revision node then a menu pops up that allows you to perform certain actions. This menu is shown below.</para>
+
+        <figure>
+          <title>A History Graph Window Showing Its Context Menu</title>
+          <screenshot>
+            <screeninfo>A <guilabel>History Graph</guilabel> window showing its context menu.</screeninfo>
+            <graphic fileref="figures/history-graph-window-with-menu.png" format="png"/>
+          </screenshot>
+        </figure>
+
+        <para>Admittedly most of the menu is simply a convenient short cut to the buttons that are to the right of the history graph (see <xref linkend="mtnb-uhg-graph-buttons"/>), but there are a couple of exceptions:</para>
+
+        <informaltable>
+          <tgroup cols="2">
+            <thead>
+              <row>
+                <entry><para>Menu Option</para></entry>
+                <entry><para>Description</para></entry>
+              </row>
+            </thead>
+            <tbody>
+              <row valign="top">
+                <entry><para>Copy Revision Id To Clipboard</para></entry>
+                <entry><para>Copies the id of the revision node directly under the mouse cursor into the desktop's clipboard.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para>Compare Revision With Selected</para></entry>
+                <entry><para>Displays a <guilabel>Differences</guilabel> window showing the differences between the revision node directly under the mouse cursor and the currently selected node (see <xref linkend="mtnb-lachc-the-differences-window"/>).</para></entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable>
+
       </sect2>
 
       <sect2 id="mtnb-uhg-graph-buttons">
@@ -1585,48 +1635,6 @@ GNOME or DocBook.
               <row valign="top">
                 <entry><para><inlinegraphic fileref="figures/stop-button.png" format="png" valign="middle"/></para></entry>
                 <entry><para>Stops the currently running history graph drawing operation. Unlike other <guilabel>Stop</guilabel> buttons, when pressed, this will blank out any existing graph.</para></entry>
-              </row>
-            </tbody>
-          </tgroup>
-        </informaltable>
-
-      </sect2>
-
-      <sect2 id="mtnb-uhg-graph-actions">
-        <title>Graph Actions</title>
-
-        <para>There are a few things that one can actually do on the history graph itself.</para>
-
-        <para>Firstly if one double left clicks on a revision node with a grey border (which indicates a propagation node) then a new <guilabel>History Graph</guilabel> window is displayed showing the other branch.</para>
-
-        <para>Secondly if you right click on a revision node then a menu pops up that allows you to perform certain actions. This menu is shown below.</para>
-
-        <figure>
-          <title>A History Graph Window Showing Its Context Menu</title>
-          <screenshot>
-            <screeninfo>A <guilabel>History Graph</guilabel> window showing its context menu.</screeninfo>
-            <graphic fileref="figures/history-graph-window-with-menu.png" format="png"/>
-          </screenshot>
-        </figure>
-
-        <para>Admittedly most of the menu is simply a convenient short cut to the buttons that are to the right of the history graph (see <xref linkend="mtnb-uhg-graph-buttons"/>), but there are a couple of exceptions:</para>
-
-        <informaltable>
-          <tgroup cols="2">
-            <thead>
-              <row>
-                <entry><para>Menu Option</para></entry>
-                <entry><para>Description</para></entry>
-              </row>
-            </thead>
-            <tbody>
-              <row valign="top">
-                <entry><para>Copy Revision Id To Clipboard</para></entry>
-                <entry><para>Copies the id of the revision node directly under the mouse cursor into the desktop's clipboard.</para></entry>
-              </row>
-              <row valign="top">
-                <entry><para>Compare Revision With Selected</para></entry>
-                <entry><para>Displays a <guilabel>Differences</guilabel> window showing the differences between the revision node directly under the mouse cursor and the currently selected node (see <xref linkend="mtnb-lachc-the-differences-window"/>).</para></entry>
               </row>
             </tbody>
           </tgroup>

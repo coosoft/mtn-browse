@@ -3222,11 +3222,12 @@ sub get_history_graph_window()
         register_help_callbacks
             ($instance,
              $glade,
+             {widget   => "graph_scrolledwindow",
+              help_ref => __("mtnb-uhg-colouring-used-in-graphs")},
              {widget   => "graph_button_vbox",
-              help_ref => __("mtnb-lachc-history-buttons")},
+              help_ref => __("mtnb-uhg-graph-buttons")},
              {widget   => undef,
-              help_ref => __("mtnb-lachc-the-revision-and-file-history-"
-                             . "windows")});
+              help_ref => __("mtnb-uhg-the-history-graph-window")});
 
     }
     else
@@ -3867,11 +3868,8 @@ sub get_change_history_graph_window($)
         register_help_callbacks
             ($instance,
              $glade,
-             {widget   => "graph_button_vbox",
-              help_ref => __("mtnb-lachc-history-buttons")},
              {widget   => undef,
-              help_ref => __("mtnb-lachc-the-revision-and-file-history-"
-                             . "windows")});
+              help_ref => __("mtnb-uhg-the-change-history-graph-window")});
 
     }
     else

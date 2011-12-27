@@ -470,7 +470,7 @@ sub get_manage_tag_weightings_window($$)
             ($instance,
              $glade,
              {widget   => undef,
-              help_ref => __("TDB-mtnb-upc-the-manage-server-bookmarks-dialog-"
+              help_ref => __("mtnb-uhg-the-manage-tag-weightings-dialog-"
                              . "window")});
     }
 
