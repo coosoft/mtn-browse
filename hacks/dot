@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use IO::File;
+
+my ($fh,
+    $line);
+
+die("IO::File->new() failed with $!")
+    unless (defined($fh = IO::File->new("dot-file.txt", "w")));
+while (defined($line = STDIN->getline()))
+{
+    $fh->print($line);
+}
+$fh->close();
+
+exit(-1);
