@@ -6,7 +6,7 @@
 
     <!ENTITY APP "Monotone Browser">
     <!ENTITY APP-CMD "mtn-browse">
-    <!ENTITY VERSION "0.04">
+    <!ENTITY VERSION "0.05">
 
   ]
 >
@@ -126,8 +126,16 @@ GNOME or DocBook.
         </revdescription>
       </revision>
       <revision>
-        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <revnumber>&APP; Manual V0.04</revnumber>
         <date>04 January 2011</date>
+        <revdescription>
+          <para role="author">Anthony Cooper</para>
+          <para role="publisher">CooSoft</para>
+        </revdescription>
+      </revision>
+      <revision>
+        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <date>25 November 2011</date>
         <revdescription>
           <para role="author">Anthony Cooper</para>
           <para role="publisher">CooSoft</para>
@@ -252,27 +260,27 @@ GNOME or DocBook.
       <sect2 id="mtnb-gsc-selecting-a-branch-and-revision">
         <title>Selecting A Branch And Revision</title>
 
-        <para>Before any information can be viewed, one has to select not only the database to use, but also the branch and revision that you wish to view. This is done by using the <guilabel>Branch</guilabel> and <guilabel>Revision</guilabel> combobox entry fields inside the <guilabel>View</guilabel> panel. There are a number of things that <application>&APP;</application> will do to help you select the item you want.</para>
+        <para>Before any information can be viewed, one has to select not only the database to use, but also the branch and revision that you wish to view. This is done by using the <guilabel>Branch</guilabel> and <guilabel>Revision</guilabel> auto-completion entry fields inside the <guilabel>View</guilabel> panel. There are a number of things that <application>&APP;</application> will do to help you select the item you want.</para>
 
-        <para>For example, when entering the branch name one can simply select it from the pull down list that is provided when you left click on the <inlinegraphic fileref="figures/combobox-entry-down-button.png" format="png" valign="middle"/>&nbsp; button just to the right of the combobox entry field. However, the list of branch names can be very long and so it may be easier to start typing it in directly. As you start typing, <application>&APP;</application> will attempt to auto-complete it for you and update the pull down list so as to only contain those remaining valid completions.</para>
+        <para>For example, when entering the branch name one can simply select it from the completion list that is provided when you left click on the <inlinegraphic fileref="figures/auto-completion-entry-list-button-small.png" format="png" valign="middle"/>&nbsp; button just to the right of the entry field. However, the list of branch names can be very long and so it may be easier to start typing it in directly. As you type, <application>&APP;</application> will attempt to auto-complete it for you and update the completion list so as to only contain those remaining valid completions.</para>
 
-        <para>So if you typed in <literal>net.venge.monotone.contrib.lib.automate-stdio</literal> as the branch and then left clicked on the <inlinegraphic fileref="figures/combobox-entry-down-button.png" format="png" valign="middle"/>&nbsp; button then you would have something looking like that shown in the figure below.</para>
+        <para>So if you typed in <literal>net.venge.monotone.contrib.lib.automate-stdio</literal> as the branch and then left clicked on the <inlinegraphic fileref="figures/auto-completion-entry-list-button-small.png" format="png" valign="middle"/>&nbsp; button then you would have something like that shown in the figure below.</para>
 
         <figure>
-          <title>A Branch Combobox Entry Field Showing Its Completion List</title>
+          <title>A Branch Auto-Completion Entry Field Showing Its Completion List</title>
           <screenshot>
-            <screeninfo>Branch combobox entry field showing a reduced set of completion options via its pull down list.</screeninfo>
-            <graphic fileref="figures/branch-combobox-entry-with-completion.png" format="png"/>
+            <screeninfo>Branch auto-completion entry field showing the set of valid options via its completion list.</screeninfo>
+            <graphic fileref="figures/branch-auto-completion-entry-with-completion-list.png" format="png"/>
           </screenshot>
         </figure>
 
         <note>
           <orderedlist numeration="arabic">
             <listitem>
-              <para>Entering a space will trigger auto-completion. This is especially useful when starting off with a blank combobox entry field or when a value was pasted in and you want to update the display.</para>
+              <para>Entering a space will trigger auto-completion. This is especially useful when starting off with a blank auto-completion entry field or when a value was pasted in and you want to update the display.</para>
             </listitem>
             <listitem>
-              <para>With a very large number of branches, performance can suffer. There is a preference option that can be used to prevent the updates to the pull down lists (see <xref linkend="mtnb-upc-the-preferences-dialog-window"/>).</para>
+              <para>With a very large number of branches, performance can suffer when you are typing and the completion list is displayed. Simply dismiss the completion list to speed up the auto-completion.</para>
             </listitem>
           </orderedlist>
         </note>
@@ -366,13 +374,13 @@ GNOME or DocBook.
         <note>
           <orderedlist numeration="arabic">
             <listitem>
-	      <para>The keyboard shortcuts shown against the <menuchoice><guimenu>Help</guimenu></menuchoice> menu options work on nearly all <application>&APP;</application> windows.</para>
+              <para>The keyboard shortcuts shown against the <menuchoice><guimenu>Help</guimenu></menuchoice> menu options work on nearly all <application>&APP;</application> windows.</para>
             </listitem>
             <listitem>
-	      <para>The <menuchoice><guimenu>File</guimenu><guimenuitem>Connect To Server</guimenuitem></menuchoice> submenu is only available if your version of Monotone supports this feature.</para>
+              <para>The <menuchoice><guimenu>File</guimenu><guimenuitem>Connect To Server</guimenuitem></menuchoice> submenu is only available if your version of Monotone supports this feature.</para>
             </listitem>
             <listitem>
-	      <para>Connecting to a Monotone server over a network is not only slower but also has no support for running <application>Monotone Viz</application> or doing file annotations.</para>
+              <para>Connecting to a Monotone server over a network is not only slower but also has no support for doing file annotations.</para>
             </listitem>
           </orderedlist>
         </note>
@@ -445,8 +453,8 @@ GNOME or DocBook.
                   <entry><para>Displays the <guilabel>Advanced Find</guilabel> dialog window that allows one to enter more complex database queries (see <xref linkend="mtnb-mcqc"/>).</para></entry>
                 </row>
                 <row valign="top">
-                  <entry><para><inlinegraphic fileref="figures/montone-viz-button.png" format="png" valign="middle"/></para></entry>
-                  <entry><para>Runs <application>Monotone Viz</application>. Any selected branch and revision details will be passed to <application>Monotone Viz</application> so that it can graph the specific branch and select the revision on that branch.</para></entry>
+                  <entry><para><inlinegraphic fileref="figures/history-graph-button.png" format="png" valign="middle"/></para></entry>
+                  <entry><para>Displays a <guilabel>History Graph</guilabel> window for the selected branch and revision, showing a graphical representation of the history and inter-relationships of revisions on that branch (see <xref linkend="mtnb-uhg"/>).</para></entry>
                 </row>
                 <row valign="top">
                   <entry><para><inlinegraphic fileref="figures/revision-history-button.png" format="png" valign="middle"/></para></entry>
@@ -688,11 +696,11 @@ GNOME or DocBook.
       <para>This is the default query mode. Having read the previous section, one would be forgiven for thinking <quote>what is the point?</quote>. Well the main reason for using it is if you want to look at a revision's change log before selecting it. This can be particularly useful when the tagged revision that you attempted to select in the parent <guilabel>Monotone Browser</guilabel> window is not unique on the currently selected branch and something like the following dialog window pops up.</para>
 
       <figure>
-	<title>A `Multiple Revisions' Dialog Window</title>
-	<screenshot>
-	  <screeninfo>A multiple revisions dialog window.</screeninfo>
-	  <graphic fileref="figures/multiple-revisions-dialog.png" format="png"/>
-	</screenshot>
+        <title>A `Multiple Revisions' Dialog Window</title>
+        <screenshot>
+          <screeninfo>A multiple revisions dialog window.</screeninfo>
+          <graphic fileref="figures/multiple-revisions-dialog.png" format="png"/>
+        </screenshot>
       </figure>
 
       <para>Of course one could simply use the <guilabel>Revisions</guilabel> combobox in the above dialog window, but in most cases one would not know the id of the revision that you are after.</para>
@@ -1330,7 +1338,7 @@ GNOME or DocBook.
       </figure>
 
       <warning>
-	<para>Depending upon what revisions are selected, you may end up with a massive result. Think about what you are doing before using this feature.</para>
+        <para>Depending upon what revisions are selected, you may end up with a massive result. Think about what you are doing before using this feature.</para>
       </warning>
 
       <sect2 id="mtnb-lachc-compare-arbitrary-revisions-buttons">
@@ -1347,10 +1355,10 @@ GNOME or DocBook.
               </row>
             </thead>
             <tbody>
-	      <row valign="top">
-		<entry><para><inlinegraphic fileref="figures/find-button.png" format="png" valign="middle"/></para></entry>
-		<entry><para>Displays the <guilabel>Advanced Find</guilabel> dialog window that allows one to enter more complex database queries (see <xref linkend="mtnb-mcqc"/>). This window is used to select both revisions.</para></entry>
-	      </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/find-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Displays the <guilabel>Advanced Find</guilabel> dialog window that allows one to enter more complex database queries (see <xref linkend="mtnb-mcqc"/>). This window is used to select both revisions.</para></entry>
+              </row>
               <row valign="top">
                 <entry><para><inlinegraphic fileref="figures/compare-button.png" format="png" valign="middle"/></para></entry>
                 <entry><para>Displays a <guilabel>Differences</guilabel> window that shows all of the differences between the two selected revisions. The two revisions in question are selected by using the <inlinegraphic fileref="figures/find-button-small.png" format="png" valign="middle"/>&nbsp; buttons mentioned above (see <xref linkend="mtnb-lachc-the-differences-window"/>).</para></entry>
@@ -1415,12 +1423,20 @@ GNOME or DocBook.
               <entry><para>Displays the revision's history from that revision back to the first revision.</para></entry>
             </row>
             <row valign="top">
+              <entry><para><guilabel>Browse File</guilabel></para></entry>
+              <entry><para>Displays the contents of the file as it was in that revision in a <guilabel>Monotone Browser</guilabel> window.</para></entry>
+            </row>
+            <row valign="top">
               <entry><para><guilabel>Compare File With Previous Version</guilabel></para></entry>
               <entry><para>Compares the version of the file found in that revision with the previous version of that file.</para></entry>
             </row>
             <row valign="top">
               <entry><para><guilabel>Compare Revision With Parent</guilabel></para></entry>
               <entry><para>Compares the revision with its parent. The comparison is not restricted to just the annotated file.</para></entry>
+            </row>
+            <row valign="top">
+              <entry><para><guilabel>Find</guilabel></para></entry>
+              <entry><para>Calls up the standard <guilabel>Find Text</guilabel> dialog window that can be used to find text within the annotated listing.</para></entry>
             </row>
           </tbody>
         </tgroup>
@@ -1430,16 +1446,359 @@ GNOME or DocBook.
 
   </chapter>
 
-  <!-- Chapter Six: User Preferences -->
+  <!-- Chapter Six: Using History Graphs -->
 
-  <chapter label="6" id="mtnb-upc">
+  <chapter label="6" id="mtnb-uhg">
+    <title>Using History Graphs</title>
+
+    <para>This chapter covers the <guilabel>History Graph</guilabel> window and how it can be used to easily examine a revision's complex ancestry and perform the same sort of operations that one can do via a normal <guilabel>Revision History</guilabel> window.</para>
+
+    <sect1 id="mtnb-uhg-the-history-graph-window">
+      <title>The History Graph Window</title>
+
+      <para>When you left click on a <guilabel>Monotone Browser</guilabel> window's <guilabel>History Graph</guilabel> button you will be presented with a window like the one shown below.</para>
+
+      <figure>
+        <title>A History Graph Window</title>
+        <screenshot>
+          <screeninfo>A <guilabel>History Graph</guilabel> window.</screeninfo>
+          <graphic fileref="figures/history-graph-window-with-suspended-branch.png" format="png"/>
+        </screenshot>
+      </figure>
+
+      <para>The <guilabel>Revision History</guilabel> window shows the revision ancestry and descendants around the revision currently selected in the parent <guilabel>Monotone Browser</guilabel> window. As history graphs can get very big and complex the default graph is limited to revisions on the same branch and a time window of two months around the selected revision.</para>
+
+      <para>If no revision is selected in the parent <guilabel>Monotone Browser</guilabel> window when a history graph is displayed then the head revision of that branch is used. If no branch is even selected then the user is presented with the <guilabel>Change History graph</guilabel> dialog window and asked to refine their selection.</para>
+
+      <warning>
+        <para>Do think twice before loading up very large history graphs. If you do make a mistake and use the <guilabel>Stop</guilabel> button then please remember that unlike other stop buttons this will not only stop the operation but will also remove any existing graph.</para>
+      </warning>
+
+      <sect2 id="mtnb-uhg-colouring-used-in-graphs">
+        <title>Colouring Used In Graphs</title>
+
+        <para>The <guilabel>Revision History</guilabel> window uses colour to indicate certain specific things.</para>
+
+        <para>The revision nodes themselves are colour coded to indicate either what branch they are on or who created that revision, which depends upon what the user selected in the <guilabel>Change History graph</guilabel> dialog window. If a node is white then this means that it has no branch or author ownership (theoretically you should never see this but Monotone databases can contain such revisions depending upon how they have been maintained).</para>
+
+        <para>A revision node's border colour also indicates important information. The following colours are used:</para>
+
+        <informaltable>
+          <tgroup cols="2">
+            <thead>
+              <row>
+                <entry><para>Colour</para></entry>
+                <entry><para>Description</para></entry>
+              </row>
+            </thead>
+            <tbody>
+              <row valign="top">
+                <entry><para>Black</para></entry>
+                <entry><para>This means that the node is on a selected branch or that all branches were selected for the history graph.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para>Grey</para></entry>
+                <entry><para>This means that the node is not on a selected branch but has nevertheless been shown as it is an ancestor or descendant to a node that is on a selected branch.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para>Cyan</para></entry>
+                <entry><para>This means that the node is on a suspended branch.</para><note><para>This only works when <guilabel>Show suspended revisions</guilabel> under user preferences is ticked. To determine this fact by alternate means is too costly especially when drawing a history graph.</para></note></entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable>
+
+        <para>An additional reddish-orange border around a node shows that it has been selected either by the parent <guilabel>Monotone Browser</guilabel> window or by the user left clicking on it.</para>
+
+        <figure>
+          <title>A History Graph Window Showing A Branchless Revision</title>
+          <screenshot>
+            <screeninfo>A <guilabel>History Graph</guilabel> window showing a branchless revision.</screeninfo>
+            <graphic fileref="figures/history-graph-window-with-no-branch.png" format="png"/>
+          </screenshot>
+        </figure>
+
+      </sect2>
+
+      <sect2 id="mtnb-uhg-graph-buttons">
+        <title>Graph Buttons</title>
+
+        <para>These buttons are located to the right of the history graph. They do the following:</para>
+
+        <informaltable>
+          <tgroup cols="2">
+            <thead>
+              <row>
+                <entry><para>Button</para></entry>
+                <entry><para>Description</para></entry>
+              </row>
+            </thead>
+            <tbody>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/change-history-graph-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Displays the <guilabel>Change History Graph</guilabel> dialog window that allows one to change what is graphed and how.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/line-numbers-toggle-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Displays the <guilabel>Manage Tag Weightings</guilabel> dialog window that allows one to specify weightings for tag labels so that you can control what type of tag gets displayed for a revision node in the history graph.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/history-graph-refresh-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Redraws the current history graph. This is particularly useful when the database has been changed and you want to update the graph.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/history-graph-zoom-in-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Zooms into the history graph, making the graph larger on the screen.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/history-graph-zoom-out-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Zooms out of the history graph, making the graph smaller on the screen. When the revision nodes get too small no text is displayed so as to avoid cluttering up the graph.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/history-graph-zoom-default-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Resets the history graph back to its unzoomed state.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/history-graph-colour-key-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Toggles the displaying of the colour key for the colours used in the revision nodes on the history graph. The colour key lists all of the branch names or authors (depending upon what the user has decided to base the colouring on) along with the related colour.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/history-graph-goto-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Scrolls the history graph to the currently selected revision node.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/find-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Displays the <guilabel>Advanced Find</guilabel> dialog window that allows one to enter more complex database queries (see <xref linkend="mtnb-mcqc"/>). Please note that only those revisions found on the current history graph can be selected inside the <guilabel>Advanced Find</guilabel> dialog window.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/revision-history-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Displays a <guilabel>Revision History</guilabel> window for the selected revision node, showing its change history right back to the earliest revision on that path (see <xref linkend="mtnb-lachc-the-revision-and-file-history-windows"/>).</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/changelog-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Displays a <guilabel>Change Log</guilabel> window for the selected revision node, showing all the details about that revision (see <xref linkend="mtnb-lachc-the-change-log-window"/>).</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/history-graph-browse-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Displays a <guilabel>Monotone Browser</guilabel> window for the selected revision node, allowing one to browse that revision and its files.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para><inlinegraphic fileref="figures/stop-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para>Stops the currently running history graph drawing operation. Unlike other <guilabel>Stop</guilabel> buttons, when pressed, this will blank out any existing graph.</para></entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable>
+
+      </sect2>
+
+      <sect2 id="mtnb-uhg-graph-actions">
+        <title>Graph Actions</title>
+
+        <para>There are a few things that one can actually do on the history graph itself.</para>
+
+        <para>Firstly if one double left clicks on a revision node with a grey border (which indicates a propagation node) then a new <guilabel>History Graph</guilabel> window is displayed showing the other branch.</para>
+
+        <para>Secondly if you right click on a revision node then a menu pops up that allows you to perform certain actions. This menu is shown below.</para>
+
+        <figure>
+          <title>A History Graph Window Showing Its Context Menu</title>
+          <screenshot>
+            <screeninfo>A <guilabel>History Graph</guilabel> window showing its context menu.</screeninfo>
+            <graphic fileref="figures/history-graph-window-with-menu.png" format="png"/>
+          </screenshot>
+        </figure>
+
+        <para>Admittedly most of the menu is simply a convenient short cut to the buttons that are to the right of the history graph (see <xref linkend="mtnb-uhg-graph-buttons"/>), but there are a couple of exceptions:</para>
+
+        <informaltable>
+          <tgroup cols="2">
+            <thead>
+              <row>
+                <entry><para>Menu Option</para></entry>
+                <entry><para>Description</para></entry>
+              </row>
+            </thead>
+            <tbody>
+              <row valign="top">
+                <entry><para>Copy Revision Id To Clipboard</para></entry>
+                <entry><para>Copies the id of the revision node directly under the mouse cursor into the desktop's clipboard.</para></entry>
+              </row>
+              <row valign="top">
+                <entry><para>Compare Revision With Selected</para></entry>
+                <entry><para>Displays a <guilabel>Differences</guilabel> window showing the differences between the revision node directly under the mouse cursor and the currently selected node (see <xref linkend="mtnb-lachc-the-differences-window"/>).</para></entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable>
+
+      </sect2>
+
+    </sect1>
+
+    <sect1 id="mtnb-uhg-the-change-history-graph-window">
+      <title>The Change History Graph Window</title>
+
+      <para>When you left click on a <guilabel>History Graph</guilabel> window's <guilabel>Change History Graph</guilabel> button you will be presented with a dialog window like the one shown below.</para>
+
+      <figure>
+        <title>A Change History Graph Dialog Window</title>
+        <screenshot>
+          <screeninfo>A <guilabel>Change History Graph</guilabel> dialog window.</screeninfo>
+          <graphic fileref="figures/change-history-graph-window.png" format="png"/>
+        </screenshot>
+      </figure>
+
+      <para>This dialog window allows you to change what is shown in the current history graph and how that information is displayed. The history graph settings are grouped into three panels as follows:</para>
+
+
+      <itemizedlist>
+        <listitem>
+          <para><guilabel>Restrict To Branches</guilabel> Panel</para>
+          <informaltable>
+            <tgroup cols="2">
+              <thead>
+                <row>
+                  <entry><para>Field/Button</para></entry>
+                  <entry><para>Description</para></entry>
+                </row>
+              </thead>
+              <tbody>
+                <row valign="top">
+                  <entry><para><guilabel>Unselected branch filter</guilabel></para></entry>
+                  <entry><para>This entry field allows one to enter a branch name pattern that is used to filter out all unselected branches that do not match from the branch list directly below. If this entry field is blank then no such filtering takes place. Selected branches will always be shown, regardless of any filter used. Typically one would use this to restrict the branch list to those that belong to a certain project or release branch. Once you have selected the branches you want one can always use a completely different branch name filter to display another set of branches without loosing what you have already selected.</para></entry>
+                </row>
+                <row valign="top">
+                  <entry><para><inlinegraphic fileref="figures/execute-button.png" format="png" valign="middle"/></para></entry>
+                  <entry><para>Applies the current unselected branch name filter to all unselected branches in the the branch list below this button.</para></entry>
+                </row>
+                <row valign="top">
+                  <entry><para><inlinegraphic fileref="figures/tick-button.png" format="png" valign="middle"/></para></entry>
+                  <entry><para>Ticks all of the selected rows in the branch list below this button.</para></entry>
+                </row>
+                <row valign="top">
+                  <entry><para><inlinegraphic fileref="figures/cross-button.png" format="png" valign="middle"/></para></entry>
+                  <entry><para>Unticks all of the selected rows in the branch list below this button.</para></entry>
+                </row>
+                <row valign="top">
+                  <entry><para><guilabel>Case sensitive</guilabel></para></entry>
+                  <entry><para>When ticked, make any branch name filtering case sensitive, otherwise case is unimportant.</para></entry>
+                </row>
+                <row valign="top">
+                  <entry><para><guilabel>Regular expression</guilabel></para></entry>
+                  <entry><para>When ticked, treat any branch name filter text as an extended regular expression (RE), otherwise the text is treated as an ordinary sequence of characters. Please see <literal>regex(7)</literal> for further details on regular expressions.</para></entry>
+                </row>
+                <row valign="top">
+                  <entry><para><guilabel>Branch List</guilabel></para></entry>
+                  <entry><para>This list shows all selected branches and any unselected branches that have not been filtered out. Any subsequent history graph will restrict itself to those selected branches. However if no branches have been selected then no such restriction applies and consequently the history graph will show all of the branches in the database.</para></entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </informaltable>
+        </listitem>
+        <listitem>
+          <para><guilabel>Date Range</guilabel> Panel</para>
+          <informaltable>
+            <tgroup cols="2">
+              <thead>
+                <row>
+                  <entry><para>Field</para></entry>
+                  <entry><para>Description</para></entry>
+                </row>
+              </thead>
+              <tbody>
+                <row valign="top">
+                  <entry><para><guilabel>Graph revisions created</guilabel></para></entry>
+                  <entry><para>When ticked, enable the ability to search based on a revision's creation time, otherwise creation time is unimportant.</para></entry>
+                </row>
+                <row valign="top">
+                  <entry><para><guilabel>between</guilabel></para></entry>
+                  <entry><para>When selected, one can enter a time range in which a revision's creation time has to fall in order to be selected (i.e. <quote>select revisions created between x and y</quote>).</para></entry>
+                </row>
+                <row valign="top">
+                  <entry><para><guilabel>during the previous</guilabel></para></entry>
+                  <entry><para>When selected, one can enter how recent a revision's creation time has to be in order to be selected (i.e. <quote>select revisions created within the last x minutes/hours/days/months/years</quote>).</para></entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </informaltable>
+        </listitem>
+        <listitem>
+          <para><guilabel>Options</guilabel> Panel</para>
+          <informaltable>
+            <tgroup cols="2">
+              <thead>
+                <row>
+                  <entry><para>Field</para></entry>
+                  <entry><para>Description</para></entry>
+                </row>
+              </thead>
+              <tbody>
+                <row valign="top">
+                  <entry><para><guilabel>Draw graph left to right</guilabel></para></entry>
+                  <entry><para>When ticked, the history graph is drawn from left to right instead of from top to bottom.</para></entry>
+                </row>
+                <row valign="top">
+                  <entry><para><guilabel>Show all propagate revisions</guilabel></para></entry>
+                  <entry><para>When ticked, child propagate revision nodes are also included in the history graph along with parent propagate nodes. Propagate revisions are ones that are not on the same branch as their relation but are linked due to a merging or propagation operation. Propagate nodes are never shown if their creation time falls outside of any selection criteria used when drawing the history graph. By default child propagate nodes are not shown as one is normally only interested in what makes up a revision rather than what it in turn contributes to.</para></entry>
+                </row>
+                <row valign="top">
+                  <entry><para><guilabel>Colour by</guilabel></para></entry>
+                  <entry><para>Controls how revision nodes are coloured in history graphs. If <guilabel>Branch</guilabel> is selected then a node's colour is derived from what branch it is on. Whereas if <guilabel>Author</guilabel> is selected then a node's colour is derived from who created it. These different colours provide a visual aide help to differentiate between distinct groups of nodes.</para></entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </informaltable>
+          <note>
+            <orderedlist numeration="arabic">
+              <listitem>
+                <para>Whilst a revision may be included in a history graph that is not on a selected branch because it is a propagate revision, it will never be included if its creation time is outside of any selection criteria.</para>
+              </listitem>
+              <listitem>
+                <para>When colouring revision nodes in a history graph according to their branch membership, <application>&APP;</application> will look through a revision's list of branches searching for a branch that already has a colour assigned to it rather than just basing it on the first branch name. This normally helps to make a more coherent graph when dealing with lots of merges. Whilst the same applies if the colouring is based on a revision's author, it is largely academic as most revisions only have one.</para>
+              </listitem>
+            </orderedlist>
+          </note>
+        </listitem>
+      </itemizedlist>
+
+    </sect1>
+
+    <sect1 id="mtnb-uhg-the-manage-tag-weightings-dialog-window">
+      <title>The Manage Tag Weightings Dialog Window</title>
+
+      <para>When you left click on a <guilabel>History Graph</guilabel> window's <guilabel>Manage Tag Weightings</guilabel> button you will be presented with a dialog window like the one shown below.</para>
+
+      <figure>
+        <title>A Manage Tag Weightings Dialog Window</title>
+        <screenshot>
+          <screeninfo>A <guilabel>Manage Tag Weightings</guilabel> dialog window.</screeninfo>
+          <graphic fileref="figures/manage-tag-weightings-window.png" format="png"/>
+        </screenshot>
+      </figure>
+
+      <para>This dialog window allows you to manage a list of tag weightings that are used to decide what tags are displayed for revision nodes in a history graph. On the left hand side is the list of weightings along with their tag name patterns. To the right of this list are two entry fields where one can enter new a tag name pattern and its associated weighting and then left click on the <guilabel>+</guilabel> button just to the right of these entry fields to add them to the list. Likewise, when you left click on the <guilabel>-</guilabel> then the currently selected tag weighting is removed from the list.</para>
+
+      <para>Tag name patterns are in the form of extended regular expressions (please see <literal>regex(7)</literal> for further details on regular expressions), whilst weightings are simply a number ranging from <userinput>-5</userinput> to <userinput>5</userinput>. When a revision is about to be displayed that has one or more tags associated with it, <application>&APP;</application> will try and match each tag with an entry in the weightings list. If there is a match then that tag is assigned the associated weighting, otherwise it is assigned a default weighting of zero. The tag with the highest weighting is then displayed inside the revision's node on the history graph.</para>
+
+      <note>
+        <para>There is no mechanism for suppressing the displaying of tags completely as tags are deemed more meaningful than a revision id.</para>
+      </note>
+
+    </sect1>
+
+  </chapter>
+
+  <!-- Chapter Seven: User Preferences -->
+
+  <chapter label="7" id="mtnb-upc">
     <title>User Preferences</title>
 
     <para>This chapter covers the <guilabel>Preferences</guilabel> and <guilabel>Manage Server Bookmarks</guilabel> dialog windows.</para>
 
-      <note>
-        <para>Some preference settings only take effect when <application>&APP;</application> is restarted.</para>
-      </note>
+    <note>
+      <para>Some preference settings only take effect when <application>&APP;</application> is restarted.</para>
+    </note>
 
     <sect1 id="mtnb-upc-the-preferences-dialog-window">
       <title>The Preferences Dialog Window</title>
@@ -1454,7 +1813,7 @@ GNOME or DocBook.
         </screenshot>
       </figure>
 
-      <para>This window allows you to change the behaviour of <application>&APP;</application>. The preference settings are grouped into three tabbed panes as follows:</para>
+      <para>This dialog window allows you to change the behaviour of <application>&APP;</application>. The preference settings are grouped into three tabbed panes as follows:</para>
 
       <itemizedlist>
         <listitem>
@@ -1507,7 +1866,7 @@ GNOME or DocBook.
               </informaltable>
             </listitem>
             <listitem>
-              <para><guilabel>ComboBox Settings</guilabel> Panel</para>
+              <para><guilabel>ComboBox And Auto-Completion Settings</guilabel> Panel</para>
               <informaltable>
                 <tgroup cols="2">
                   <thead>
@@ -1519,36 +1878,25 @@ GNOME or DocBook.
                   <tbody>
                     <row valign="top">
                       <entry><para><guilabel>Tagged lists</guilabel></para></entry>
-                      <entry><para>Controls the displaying of tagged revisions within a <guilabel>Revision</guilabel> combobox entry's pull down list. The <guilabel>Limit to</guilabel> entry field stipulates how many items will be displayed in a pull down list (if this is set to <literal>0</literal> then the list is unlimited). <guilabel>Sort chronologically</guilabel> and <guilabel>Sort by name</guilabel> determine whether the items are sorted by date or by their name respectively.</para></entry>
+                      <entry><para>Controls the displaying of tagged revisions within a <guilabel>Revision</guilabel> auto-completion entry's completion list. The <guilabel>Limit to</guilabel> entry field stipulates how many items will be displayed in a completion list (if this is set to <literal>0</literal> then the list is unlimited). <guilabel>Sort chronologically</guilabel> and <guilabel>Sort by name</guilabel> determine whether the items are sorted by date or by their name respectively.</para></entry>
                     </row>
                     <row valign="top">
                       <entry><para><guilabel>Id lists</guilabel></para></entry>
-                      <entry><para>Controls the displaying of revision ids within a <guilabel>Revision</guilabel> combobox entry's pull down list. The remaining fields have the same purpose as those discussed under <guilabel>Tagged lists</guilabel>, the only difference being that the sort by name option is called <guilabel>Sort by id</guilabel> rather than <guilabel>Sort by name</guilabel>.</para></entry>
+                      <entry><para>Controls the displaying of revision ids within a <guilabel>Revision</guilabel> auto-completion entry's completion list. The remaining fields have the same purpose as those discussed under <guilabel>Tagged lists</guilabel>, the only difference being that the sort by name option is called <guilabel>Sort by id</guilabel> rather than <guilabel>Sort by name</guilabel>.</para></entry>
                     </row>
                     <row valign="top">
                       <entry><para><guilabel>History size</guilabel></para></entry>
-                      <entry><para>Determines how much history is retained for ordinary combobox entry's fields via their pull down lists. This history is saved to disk so that it is available the next time you run <application>&APP;</application>. This does not apply to <guilabel>Branch</guilabel> and <guilabel>Revision</guilabel> combobox entry fields as they are used to select items out of specific lists retrieved from the database.</para></entry>
-                    </row>
-                    <row valign="top">
-                      <entry><para><guilabel>Static lists</guilabel></para></entry>
-                      <entry><para>If this is ticked then the pull down lists on <guilabel>Branch</guilabel>, <guilabel>Revision</guilabel> and <guilabel>Directory</guilabel> combobox entry fields are not updated each time the user enters something into the corresponding entry field. Otherwise the pull down lists are updated on each key release.</para></entry>
+                      <entry><para>Determines how much history is retained for ordinary combobox entry's fields via their pull down lists. This history is saved to disk so that it is available the next time you run <application>&APP;</application>. This does not apply to <guilabel>Branch</guilabel>, <guilabel>Revision</guilabel> and <guilabel>Directory</guilabel> auto-completion entry fields as they are used to select items out of specific lists retrieved from the database.</para></entry>
                     </row>
                     <row valign="top">
                       <entry><para><guilabel>Show tooltips</guilabel></para></entry>
-                      <entry><para>If this is ticked then each time an invalid character is entered into a <guilabel>Branch</guilabel> or <guilabel>Revision</guilabel> combobox entry field a completion tooltip is displayed just below it that shows the same explanatory text that is displayed in the status bar at the bottom of the window. Otherwise no completion style tooltips are displayed.</para></entry>
+                      <entry><para>If this is ticked then each time an invalid character is entered into a <guilabel>Branch</guilabel> or <guilabel>Revision</guilabel> auto-completion entry field a completion tooltip is displayed just below it that shows the same explanatory text that is displayed in the status bar at the bottom of the window. Otherwise no completion style tooltips are displayed.</para></entry>
                     </row>
                   </tbody>
                 </tgroup>
               </informaltable>
               <note>
-                <orderedlist numeration="arabic">
-                  <listitem>
-                    <para><guilabel>Branch</guilabel> and <guilabel>Revision</guilabel> pull down lists display their items ordered from left to right and then top to bottom.</para>
-                  </listitem>
-                  <listitem>
-                    <para>Histories are displayed with the most recent items uppermost.</para>
-                  </listitem>
-                </orderedlist>
+                <para>Completion lists are displayed with the most recent items uppermost.</para>
               </note>
             </listitem>
             <listitem>
@@ -1799,7 +2147,7 @@ GNOME or DocBook.
         </screenshot>
       </figure>
 
-      <para>This dialog window allows you to manage a list of Monotone servers that you can connect to remotely over the network. On the left hand side is the list of server names that appears in your bookmarks menu. To the right of this list is an entry field where one can enter new server names and then left click on the <guilabel>+</guilabel> button just to the right of this entry field to add it to the list . Likewise, when you left click on the <guilabel>-</guilabel> then the currently selected server name is removed from the list.</para>
+      <para>This dialog window allows you to manage a list of Monotone servers that you can connect to remotely over the network. On the left hand side is the list of server names that appears in your bookmarks menu. To the right of this list is an entry field where one can enter a new server name and then left click on the <guilabel>+</guilabel> button just to the right of this entry field to add it to the list . Likewise, when you left click on the <guilabel>-</guilabel> then the currently selected server name is removed from the list.</para>
 
       <para>Server names can be either a valid host name or an Internet address, optionally followed by a colon and the number of the port to connect to if the Monotone server is not listening on the standard port. <userinput>192.168.1.1</userinput>, <userinput>192.168.1.1:5000</userinput>, <userinput>monotone.ca</userinput> and <userinput>venge.net:8000</userinput> are all examples of valid server name entries.</para>
 
@@ -1820,9 +2168,9 @@ GNOME or DocBook.
 
   </chapter>
 
-  <!-- Chapter Seven: Tips And Tricks -->
+  <!-- Chapter Eight: Tips And Tricks -->
 
-  <chapter label="7" id="mtnb-tatc">
+  <chapter label="8" id="mtnb-tatc">
     <title>Tips And Tricks</title>
 
     <para>This chapter covers some, hopefully helpful, tips and tricks that will enable you to get the most out of using <application>&APP;</application>.</para>
@@ -1852,7 +2200,7 @@ GNOME or DocBook.
           <para><emphasis>Handling Revision Comparisons Is Very Slow</emphasis> - If it takes a long time during the <literal>Formatting and displaying differences</literal> stage then try unticking <guilabel>Coloured comparison listings</guilabel> under user preferences. If it takes a long time during the <literal>Calculating differences</literal> stage then that is down to the performance of Monotone rather than <application>&APP;</application>.</para>
         </listitem>
         <listitem>
-          <para><emphasis>It Is Slow When Entering Branch, Revision And Directory Names</emphasis> - Try ticking <guilabel>Static lists</guilabel> under user preferences. Each time you enter a character into a <guilabel>Branch</guilabel>, <guilabel>Revision</guilabel> or <guilabel>Directory</guilabel> combobox entry field, <application>&APP;</application> revises the pull down list accordingly. For branch and directory lists this can take some time to do as their size is unrestricted. However, with this option ticked, pull down lists are left unaltered.</para>
+          <para><emphasis>It Is Slow When Entering Branch, Revision And Directory Names</emphasis> - Make sure that the associated completion list is not displayed as it is updated as you type.</para>
         </listitem>
       </itemizedlist>
 
@@ -1899,7 +2247,9 @@ GNOME or DocBook.
 
   </chapter>
 
-  <chapter label="10" id="mtnb-ac">
+  <!-- Chapter Nine: Authors -->
+
+  <chapter label="9" id="mtnb-ac">
     <title>Authors</title>
 
     <para><application>&APP;</application> was written by Anthony Cooper and is currently maintained by him as well. To find more information about <application>&APP;</application>, please visit the official web page, <ulink url="http://www.coosoft.plus.com/software.html" type="http"> www.coosoft.plus.com/software.html</ulink>.  Please send all comments, suggestions and problem reports to <email>support@coosoft.plus.com</email>.</para>

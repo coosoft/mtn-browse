@@ -724,7 +724,7 @@ sub canvas_item_event_cb($$$)
             $menu = Gtk2::Menu->new();
 
             $menu_item =
-                Gtk2::MenuItem->new(__("_Copy Revision Id To The Clipboard"));
+                Gtk2::MenuItem->new(__("_Copy Revision Id To Clipboard"));
             $menu->append($menu_item);
             if (defined($revision_id))
             {
