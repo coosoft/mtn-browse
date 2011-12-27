@@ -178,6 +178,7 @@ sub new_toolbutton_clicked_cb($$);
 sub open_toolbutton_clicked_cb($$);
 sub preferences_toolbutton_clicked_cb($$);
 sub quit_activate_cb($$);
+sub quit_from_gtk2();
 sub reload_toolbutton_clicked_cb($$);
 sub revision_change_history_button_clicked_cb($$);
 sub revision_change_log_button_clicked_cb($$);
@@ -647,17 +648,7 @@ sub quit_activate_cb($$)
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
 
-    # Hide all the windows, close all the database handles and then exit Gtk2.
-
-    WindowManager->instance()->cond_find
-	(undef,
-	 sub {
-	     my $instance = $_[0];
-	     $instance->{window}->hide() if ($instance->{window}->mapped());
-	     $instance->{mtn} = undef if (exists($instance->{mtn}));
-	     return;
-	 });
-    Gtk2->main_quit();
+    quit_from_gtk2();
 
 }
 #
@@ -1856,7 +1847,7 @@ sub main_window_delete_event_cb($$$)
     $browser->{file_being_viewed_preset_value} = "";
     &{$browser->{update_handler}}($browser, DATABASE_CHANGED);
 
-    Gtk2->main_quit() unless ($others_mapped);
+    quit_from_gtk2() unless ($others_mapped);
 
     return TRUE;
 
@@ -3598,6 +3589,44 @@ sub determine_mime_type($$$$)
 	    }
 	}
     }
+
+}
+#
+##############################################################################
+#
+#   Routine      - quit_from_gtk2
+#
+#   Description  - Routine called when this application wants to quit from
+#                  Gtk2. This routine hides all windows and then calls any
+#                  registered cleanup handlers (this is mainly used to deal
+#                  with Gnome2 canvases which are buggy when being destroyed.
+#
+#   Data         - None.
+#
+##############################################################################
+
+
+
+sub quit_from_gtk2()
+{
+
+    # Hide all the windows, close all the database handles, call all cleanup
+    # handlers and then quit out of Gtk2.
+
+    WindowManager->instance()->cond_find
+	(undef,
+	 sub {
+	     my $instance = $_[0];
+	     $instance->{window}->hide() if ($instance->{window}->mapped());
+	     $instance->{mtn} = undef if (exists($instance->{mtn}));
+	     if (exists($instance->{cleanup_handler})
+		 && defined($instance->{cleanup_handler}))
+	     {
+		 $instance->{cleanup_handler}($instance);
+	     }
+	     return;
+	 });
+    Gtk2->main_quit();
 
 }
 #

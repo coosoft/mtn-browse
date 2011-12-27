@@ -54,6 +54,7 @@ no warnings qw(recursion);
 use constant CANVAS_BORDER => 5;
 use constant DPI           => 72;
 use constant HEIGHT        => 28;
+use constant LINE_WIDTH    => 2;
 use constant WIDTH         => 72;
 
 # Constants representing the graph node flags that can be set.
@@ -61,6 +62,11 @@ use constant WIDTH         => 72;
 use constant MERGE_NODE    => 0x01;
 use constant NO_PARENTS    => 0x02;
 use constant SELECTED_NODE => 0x04;
+
+# Constants representing certain colours.
+
+use constant NOT_SELECTED_BORDER_COLOUR => "Gray";
+use constant SELECTED_BORDER_COLOUR     => "Black";
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
@@ -1108,9 +1114,29 @@ sub layout_graph($)
 	    $revision_id = $1;
 	}
 
+	# Lines with arrow heads.
+
+	if ($line =~ m/B \d+(( \d+ \d+)+) *\".* P 3(( \d+){6}) *\"/)
+	{
+	    my (@arrow_points,
+		@line_points);
+	    @line_points = split(/ /, $1);
+	    shift(@line_points);
+	    @arrow_points = split(/ /, $3);
+	    shift(@arrow_points);
+	    if ($line =~ m/-> "??([0-9a-f]{40})[ \t"]/)
+	    {
+		my $to_revision_id = $1;
+		push(@arrows, {from_revision_id => $revision_id,
+			       to_revision_id   => $to_revision_id,
+			       line             => \@line_points,
+			       arrow            => \@arrow_points});
+	    }
+	}
+
 	# Boxes.
 
-	if ($line =~ m/p 4(( \d+){8}) *\"/)
+	elsif ($line =~ m/p 4(( \d+){8}) *\"/)
 	{
 	    my ($br_x,
 		$br_y,
@@ -1138,21 +1164,6 @@ sub layout_graph($)
 			       tl_y        => $tl_y,
 			       br_x        => $br_x,
 			       br_y        => $br_y});
-	}
-
-	# Lines with arrow heads.
-
-	elsif ($line =~ m/B \d+(( \d+ \d+)+) *\".* P 3(( \d+){6}) *\"/)
-	{
-	    my (@arrow_points,
-		@line_points);
-	    @line_points = split(/ /, $1);
-	    shift(@line_points);
-	    @arrow_points = split(/ /, $3);
-	    shift(@arrow_points);
-	    push(@arrows, {revision_id => $revision_id,
-			   line        => \@line_points,
-			   arrow       => \@arrow_points});
 	}
 
 	# Circles.
@@ -1205,7 +1216,7 @@ sub draw_graph($)
 
     my $instance = $_[0];
 
-    my $group;
+    my $child_db = $instance->{graph_data}->{child_graph};
 
     $instance->{graph_canvas}->set_scroll_region
 	(0,
@@ -1213,30 +1224,34 @@ sub draw_graph($)
 	 $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
 	 $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
 
-    $group = Gnome2::Canvas::Item->new($instance->{graph_canvas}->root(),
-				       "Gnome2::Canvas::Group",
-				       x => CANVAS_BORDER,
-				       y => CANVAS_BORDER);
-    $instance->{graph_group} = $group;
+    $instance->{graph_group} =
+	Gnome2::Canvas::Item->new($instance->{graph_canvas}->root(),
+				  "Gnome2::Canvas::Group",
+				  x => CANVAS_BORDER,
+				  y => CANVAS_BORDER);
+    $instance->{text_group} =
+	Gnome2::Canvas::Item->new($instance->{graph_group},
+				  "Gnome2::Canvas::Group",
+				  x => 0,
+				  y => 0);
+
+    # Draw the rectangular nodes.
 
     foreach my $rectangle (@{$instance->{graph_data}->{rectangles}})
     {
-	my $colour = "yellow";
-	if ($instance->{graph_data}->{child_graph}->
-	        {$rectangle->{revision_id}}->{flags}
-	    & SELECTED_NODE)
-	{
-	    $colour = "orange";
-	}
-	my $widget = Gnome2::Canvas::Item->new($group,
-					       "Gnome2::Canvas::Rect",
-					       x1 => $rectangle->{tl_x},
-					       y1 => $rectangle->{tl_y},
-					       x2 => $rectangle->{br_x},
-					       y2 => $rectangle->{br_y},
-					       fill_color => $colour,
-					       outline_color => "black",
-					       width_pixels => 2);
+	my $widget = Gnome2::Canvas::Item->new
+	    ($instance->{graph_group},
+	     "Gnome2::Canvas::Rect",
+	     x1            => $rectangle->{tl_x},
+	     y1            => $rectangle->{tl_y},
+	     x2            => $rectangle->{br_x},
+	     y2            => $rectangle->{br_y},
+	     fill_color    => "yellow",
+	     outline_color => ($child_db->{$rectangle->{revision_id}}->{flags}
+			       & SELECTED_NODE) ?
+	                          SELECTED_BORDER_COLOUR :
+	                          NOT_SELECTED_BORDER_COLOUR,
+	     width_pixels  => LINE_WIDTH);
 	$widget->signal_connect
 	    ("event",
 	     sub {
@@ -1250,25 +1265,23 @@ sub draw_graph($)
 	     $rectangle->{revision_id});
     }
 
+    # Draw the circular nodes.
+
     foreach my $circle (@{$instance->{graph_data}->{circles}})
     {
-	my $colour = "pink";
-	if ($instance->{graph_data}->{child_graph}->
-	        {$circle->{revision_id}}->{flags}
-	    & SELECTED_NODE)
-	{
-	    $colour = "red";
-	}
 	my $widget = Gnome2::Canvas::Item->new
-	    ($group,
+	    ($instance->{graph_group},
 	     "Gnome2::Canvas::Ellipse",
-	     x1 => $circle->{x} - $circle->{width},
-	     y1 => $circle->{y} - $circle->{height},
-	     x2 => $circle->{x} + $circle->{width},
-	     y2 => $circle->{y} + $circle->{height},
-	     fill_color => $colour,
-	     outline_color => "black",
-	     width_pixels => 2);
+	     x1            => $circle->{x} - $circle->{width},
+	     y1            => $circle->{y} - $circle->{height},
+	     x2            => $circle->{x} + $circle->{width},
+	     y2            => $circle->{y} + $circle->{height},
+	     fill_color    => "yellow",
+	     outline_color => ($child_db->{$circle->{revision_id}}->{flags}
+			       & SELECTED_NODE) ?
+	                          SELECTED_BORDER_COLOUR :
+	                          NOT_SELECTED_BORDER_COLOUR,
+	     width_pixels  => LINE_WIDTH);
 	$widget->signal_connect
 	    ("event",
 	     sub {
@@ -1282,15 +1295,27 @@ sub draw_graph($)
 	     $circle->{revision_id});
     }
 
+    # Draw the lines.
+
     foreach my $arrow (@{$instance->{graph_data}->{arrows}})
     {
-	my ($head,
-	    $bpath,
+	my ($bpath,
+	    $colour,
 	    $i,
-	    $line,
 	    $pathdef);
-	$head = $arrow->{arrow};
-	$line = $arrow->{line};
+	my $head = $arrow->{arrow};
+	my $line = $arrow->{line};
+	if (! ($child_db->{$arrow->{from_revision_id}}->{flags}
+	       & SELECTED_NODE)
+	    || ! ($child_db->{$arrow->{to_revision_id}}->{flags}
+		  & SELECTED_NODE))
+	{
+	    $colour = NOT_SELECTED_BORDER_COLOUR;
+	}
+	else
+	{
+	    $colour = SELECTED_BORDER_COLOUR;
+	}
 	$pathdef = Gnome2::Canvas::PathDef->new();
 	$pathdef->moveto($$line[0], $$line[1]);
 	$i = 2;
@@ -1307,11 +1332,11 @@ sub draw_graph($)
 	$pathdef->lineto($$head[2], $$head[3]);
 	$pathdef->lineto($$head[4], $$head[5]);
 	$pathdef->closepath();
-	$bpath = Gnome2::Canvas::Item->new($group,
+	$bpath = Gnome2::Canvas::Item->new($instance->{graph_group},
 					   "Gnome2::Canvas::Bpath",
-					   fill_color => "black",
-					   outline_color => "black",
-					   width_pixels => 2);
+					   fill_color    => $colour,
+					   outline_color => $colour,
+					   width_pixels  => LINE_WIDTH);
 	$bpath->set_path_def($pathdef);
 	$bpath->lower_to_bottom();
     }
@@ -1383,7 +1408,7 @@ sub get_history_graph_window()
 	    $instance->{$widget} = $instance->{glade}->get_widget($widget);
 	}
 
-	# Create the graph canvas widget. We can't do this is Glade as
+	# Create the graph canvas widget. We can't do this in Glade as
 	# something does not honour the anti-aliased setting.
 
 	$instance->{graph_canvas} = Gnome2::Canvas->new_aa();
@@ -1400,8 +1425,13 @@ sub get_history_graph_window()
 		 local $instance->{in_cb} = 1;
 		 $widget->hide();
 		 # $instance->{history_buffer}->set_text("");
-		 $instance->{graph_group}->destroy()
-		     if (defined($instance->{graph_group}));
+		 if (defined($instance->{graph_group}))
+		 {
+		     my $group = $instance->{graph_group};
+		     $instance->{graph_group} = undef;
+		     $instance->{text_group} = undef;
+		     $group->destroy();
+		 }
 		 $instance->{graph_data} = undef;
 		 $instance->{mtn} = undef;
 		 return TRUE;
@@ -1409,6 +1439,19 @@ sub get_history_graph_window()
 	     $instance);
 	$instance->{stop_button}->signal_connect
 	    ("clicked", sub { $_[1]->{stop} = 1; }, $instance);
+
+	# Gnome2::Canvas is a bit buggy and can get upset if any of its widgets
+	# are referenced by Perl when it gets destroyed (or so it seems).
+	# Therefore register a cleanup handler that will make sure all canvas
+	# widgets are unreferenced before the application exits.
+
+	$instance->{cleanup_handler} =
+	    sub {
+		my $instance = $_[0];
+		$instance->{graph_group} = undef;
+		$instance->{text_group} = undef;
+		$instance->{graph_canvas} = undef;
+	    };
 
 	# Setup button sensitivity groups.
 
