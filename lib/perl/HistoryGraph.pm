@@ -1120,22 +1120,26 @@ sub generate_ancestry_graph($)
 	if (scalar(@{$parameters->{branches}}) > 0)
 	{
 
-	    my @revision_ids;
+	    my (@escaped_branches,
+		@revision_ids);
 	    my $date_range = ($date_range_selector ne "")
 		? ($date_range_selector . "/") : "";
+
+	    foreach my $branch (@{$parameters->{branches}})
+	    {
+		my $escaped_value = $branch;
+		$escaped_value =~ s/$select_escape_re/\\$1/g;
+		push(@escaped_branches, $escaped_value);
+	    }
 
 	    $branch_selector = 1;
 	    if ($instance->{mtn}->supports(MTN_SELECTOR_OR_OPERATOR))
 	    {
 		my $selector;
-		if ($date_range eq "")
+		$selector = "b:" . join("|b:", @escaped_branches);
+		if ($date_range ne "")
 		{
-		    $selector = "b:" . join("|b:", @{$parameters->{branches}});
-		}
-		else
-		{
-		    $selector = $date_range . "(b:"
-			. join("|b:", @{$parameters->{branches}}) . ")";
+		    $selector = $date_range . "(" . $selector . ")";
 		}
 		$instance->{mtn}->select(\@revision_ids, $selector);
 		foreach my $revision_id (@revision_ids)
@@ -1148,7 +1152,7 @@ sub generate_ancestry_graph($)
 	    else
 	    {
 		$counter = 1;
-		foreach my $branch (@{$parameters->{branches}})
+		foreach my $branch (@escaped_branches)
 		{
 		    $instance->{mtn}->select(\@revision_ids,
 					     $date_range . "b:" . $branch);

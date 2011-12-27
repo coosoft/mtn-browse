@@ -1125,7 +1125,7 @@ sub get_revision_ids($$;$)
 
     my ($instance, $revision_ids, $tag) = @_;
 
-    @$revision_ids=();
+    @$revision_ids = ();
     $$tag = undef if (defined($tag));
     return unless ($instance->{revision_combo_details}->{complete});
     if ($instance->{tagged_checkbutton}->get_active())
