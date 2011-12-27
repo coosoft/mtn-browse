@@ -1392,6 +1392,17 @@ sub draw_graph($)
 	last if ($instance->{stop});
     }
 
+    # Work around a bug where the scroll bar arrows don't work with canvases,
+    # basically we need to set the step increment to something so take an
+    # eighth of the page size.
+
+    foreach my $adjustment
+	($instance->{graph_scrolledwindow}->get_hadjustment(),
+	 $instance->{graph_scrolledwindow}->get_vadjustment())
+    {
+	$adjustment->step_increment($adjustment->page_increment() / 8);
+    }
+
     # Clean up the graph if the user stopped the drawing process (it will be a
     # mess).
 
@@ -1401,6 +1412,7 @@ sub draw_graph($)
 	$instance->{graph_group} = undef;
 	$instance->{text_group} = undef;
 	$group->destroy();
+	$instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
     }
 
     $instance->{appbar}->set_progress_percentage(0);
@@ -1800,7 +1812,7 @@ sub get_history_graph_window()
 	local $instance->{in_cb} = 1;
 	($width, $height) = $instance->{window}->get_default_size();
 	$instance->{window}->resize($width, $height);
-	$instance->{graph_canvas}->set_scroll_region(0, 0, 10, 10);
+	$instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
 	$instance->{graph_group}->destroy()
 	    if (defined($instance->{graph_group}));
 	foreach my $item (@{$instance->{revision_sensitive_group}})
