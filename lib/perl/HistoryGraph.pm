@@ -512,16 +512,18 @@ sub browse_revision_button_clicked_cb($$)
 #
 #   Routine      - canvas_item_event_cb
 #
-#   Description  - Callback routine called when an event it delivered to a
-#                  canvas item widget in the history graph window.
+#   Description  - Callback routine called when an event is delivered to a
+#                  canvas item widget or its parent scrolled window in the
+#                  history graph window.
 #
-#   Data         - $widget      : The canvas widget object that received the
-#                                 signal.
+#   Data         - $widget      : The widget object that received the signal.
 #                  $event       : A Gtk2::Gdk::Event object describing the
 #                                 event that has occurred.
 #                  $details     : A reference to an anonymous hash containing
-#                                 the window instance and revision id that is
-#                                 associated with this widget.
+#                                 the window instance and either the revision
+#                                 id that is associated with the canvas widget
+#                                 or undef if the event occurred in the parent
+#                                 scrolled window.
 #                  Return Value : TRUE if the event has been handled and needs
 #                                 no further handling, otherwise FALSE if the
 #                                 event should carry on through the remaining
@@ -544,7 +546,8 @@ sub canvas_item_event_cb($$$)
 
     my $type = $event->type();
 
-    $instance->{under_mouse_revision_id} = $revision_id;
+    $revision_id = defined($revision_id)
+	? $revision_id : $instance->{selected_revision_id};
 
     if ($type eq "button-press")
     {
@@ -553,8 +556,11 @@ sub canvas_item_event_cb($$$)
 
 	if ($button == 1)
 	{
-	    select_node($instance, $revision_id);
-	    return TRUE;
+	    if (defined($revision_id))
+	    {
+		select_node($instance, $revision_id);
+		return TRUE;
+	    }
 	}
 	elsif ($button == 3)
 	{
@@ -562,23 +568,29 @@ sub canvas_item_event_cb($$$)
 	    my ($menu,
 		$menu_item);
 
-	    # Create a popup menu with assorted the search option in it.
+	    # Create a popup menu with the options in it.
 
 	    $menu = Gtk2::Menu->new();
 
 	    $menu_item =
 		Gtk2::MenuItem->new(__("_Copy Revision Id To The Clipboard"));
 	    $menu->append($menu_item);
-	    $menu_item->signal_connect
-		("activate",
-		 sub {
-		     my ($widget, $instance) = @_;
-		     my $clipboard = Gtk2::Clipboard->
-			 get(Gtk2::Gdk->SELECTION_PRIMARY());
-		     $clipboard->
-			 set_text($instance->{under_mouse_revision_id});
-		 },
-		 $instance);
+	    if (defined($revision_id))
+	    {
+		$menu_item->signal_connect
+		    ("activate",
+		     sub {
+			 my ($widget, $instance) = @_;
+			 my $clipboard = Gtk2::Clipboard->
+			     get(Gtk2::Gdk->SELECTION_PRIMARY());
+			 $clipboard->set_text($revision_id);
+		     },
+		     $instance);
+	    }
+	    else
+	    {
+		$menu_item->set_sensitive(FALSE);
+	    }
 	    $menu_item->show();
 
 	    $menu_item =
@@ -607,33 +619,46 @@ sub canvas_item_event_cb($$$)
 
 	    $menu_item = Gtk2::MenuItem->new(__("Display Change _Log"));
 	    $menu->append($menu_item);
-	    $menu_item->signal_connect
-		("activate",
-		 sub {
-		     my ($widget, $instance) = @_;
-		     display_change_log
-			 ($instance->{mtn},
-			  $instance->{under_mouse_revision_id},
-			  "",
-			  get_node_tag($instance,
-				       $instance->{under_mouse_revision_id}));
-		 },
-		 $instance);
+	    if (defined($revision_id))
+	    {
+		$menu_item->signal_connect
+		    ("activate",
+		     sub {
+			 my ($widget, $instance) = @_;
+			 display_change_log($instance->{mtn},
+					    $revision_id,
+					    "",
+					    get_node_tag($instance,
+							 $revision_id));
+		     },
+		     $instance);
+	    }
+	    else
+	    {
+		$menu_item->set_sensitive(FALSE);
+	    }
 	    $menu_item->show();
 
 	    $menu_item = Gtk2::MenuItem->new(__("Display _Revision History"));
 	    $menu->append($menu_item);
-	    $menu_item->signal_connect
-		("activate",
-		 sub {
-		     my ($widget, $instance) = @_;
-		     display_revision_change_history
-			 ($instance->{mtn},
-			  get_node_tag($instance,
-				       $instance->{under_mouse_revision_id}),
-			  $instance->{under_mouse_revision_id});
-		 },
-		 $instance);
+	    if (defined($revision_id))
+	    {
+		$menu_item->signal_connect
+		    ("activate",
+		     sub {
+			 my ($widget, $instance) = @_;
+			 display_revision_change_history($instance->{mtn},
+							 get_node_tag
+							     ($instance,
+							      $revision_id),
+							 $revision_id);
+		     },
+		     $instance);
+	    }
+	    else
+	    {
+		$menu_item->set_sensitive(FALSE);
+	    }
 	    $menu_item->show();
 
 	    $menu_item = Gtk2::SeparatorMenuItem->new();
@@ -642,18 +667,25 @@ sub canvas_item_event_cb($$$)
 
 	    $menu_item = Gtk2::MenuItem->new(__("_Browse Revision"));
 	    $menu->append($menu_item);
-	    $menu_item->signal_connect
-		("activate",
-		 sub {
-		     my ($widget, $instance) = @_;
-		     my $branches = $instance->{graph_data}->{child_graph}->
-		         {$instance->{under_mouse_revision_id}}->{branches};
-		     get_browser_window($instance->{mtn},
-					(scalar(@$branches) > 0)
-					    ? $$branches[0] : "",
-					$instance->{under_mouse_revision_id});
-		 },
-		 $instance);
+	    if (defined($revision_id))
+	    {
+		$menu_item->signal_connect
+		    ("activate",
+		     sub {
+			 my ($widget, $instance) = @_;
+			 my $branches = $instance->{graph_data}->
+			     {child_graph}->{$revision_id}->{branches};
+			 get_browser_window
+			     ($instance->{mtn},
+			      (scalar(@$branches) > 0) ? $$branches[0] : "",
+			      $revision_id);
+		     },
+		     $instance);
+	    }
+	    else
+	    {
+		$menu_item->set_sensitive(FALSE);
+	    }
 	    $menu_item->show();
 
 	    $menu_item = Gtk2::SeparatorMenuItem->new();
@@ -664,9 +696,8 @@ sub canvas_item_event_cb($$$)
 		(__("Compare Revision _With Selected"));
 	    $menu->append($menu_item);
 	    if (defined($instance->{selected_revision_id})
-		&& defined($instance->{under_mouse_revision_id})
-		&& $instance->{selected_revision_id}
-		    ne $instance->{under_mouse_revision_id})
+		&& defined($revision_id)
+		&& $instance->{selected_revision_id} ne $revision_id)
 	    {
 		$menu_item->signal_connect
 		    ("activate",
@@ -676,7 +707,7 @@ sub canvas_item_event_cb($$$)
 			 $instance->{mtn}->toposort
 			     (\@revision_ids,
 			      $instance->{selected_revision_id},
-			      $instance->{under_mouse_revision_id});
+			      $revision_id);
 			 display_revision_comparison($instance->{mtn},
 						     $revision_ids[0],
 						     $revision_ids[1],
@@ -699,11 +730,11 @@ sub canvas_item_event_cb($$$)
 	}
 
     }
-    elsif ($type eq "2button-press" && $event->button() == 1)
+    elsif (defined($revision_id)
+	   && $type eq "2button-press" && $event->button() == 1)
     {
 
-	my $node = $instance->{graph_data}->{child_graph}->
-	    {$instance->{under_mouse_revision_id}};
+	my $node = $instance->{graph_data}->{child_graph}->{$revision_id};
 
 	# Display a new graph for the node under the mouse if it is in the
 	# history graph but not selected (i.e. its on an unselected branch).
@@ -716,7 +747,7 @@ sub canvas_item_event_cb($$$)
 		 [$node->{branches}->[0]],
 		 $instance->{graph_data}->{parameters}->{from_date},
 		 $instance->{graph_data}->{parameters}->{to_date},
-		 $instance->{under_mouse_revision_id});
+		 $revision_id);
 	}
 
 	return TRUE;
@@ -2716,7 +2747,7 @@ sub get_history_graph_window()
 	$instance->{graph_scrolledwindow}->add($instance->{graph_canvas});
 	$instance->{graph_canvas}->show_all();
 
-	# Setup the history callbacks.
+	# Setup the history graph callbacks.
 
 	$instance->{window}->signal_connect
 	    ("delete_event",
@@ -2732,6 +2763,11 @@ sub get_history_graph_window()
 	     $instance);
 	$instance->{stop_button}->signal_connect
 	    ("clicked", sub { $_[1]->{stop} = 1; }, $instance);
+	$instance->{graph_scrolledwindow}->signal_connect
+	    ("button_press_event",
+	     \&canvas_item_event_cb,
+	     {instance    => $instance,
+	      revision_id => undef});
 
 	# Gnome2::Canvas is a bit buggy and can get upset if any of its widgets
 	# are referenced by Perl when it gets destroyed (or so it seems).
@@ -2813,7 +2849,6 @@ sub get_history_graph_window()
     $instance->{scale} = 1;
     $instance->{stop} = 0;
     $instance->{selected_revision_id} = undef;
-    $instance->{under_mouse_revision_id} = undef;
     reset_history_graph_instance($instance);
 
     return $instance;
