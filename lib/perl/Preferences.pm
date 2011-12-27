@@ -84,7 +84,7 @@ use constant PREFERENCES_FILE_NAME => ".mtn-browserc";
 
 # Constant for the preferences file's format version.
 
-use constant PREFERENCES_FORMAT_VERSION => 12;
+use constant PREFERENCES_FORMAT_VERSION => 14;
 
 # Text viewable application MIME types.
 
@@ -450,7 +450,6 @@ sub defaults_button_clicked_cb($$)
                    "auto_select_head",
                    "query",
                    "history_size",
-                   "static_lists",
                    "completion_tooltips",
                    "show_suspended",
                    "show_file_details",
@@ -1032,7 +1031,6 @@ sub get_preferences_window($$)
                             "id_lists_sort_chronologically_radiobutton",
                             "id_lists_sort_by_id_radiobutton",
                             "history_size_spinbutton",
-                            "static_lists_checkbutton",
                             "show_tooltips_checkbutton",
                             "show_suspended_revisions_checkbutton",
                             "detailed_file_listing_checkbutton",
@@ -1332,8 +1330,6 @@ sub load_preferences_into_gui($)
     }
     $instance->{history_size_spinbutton}->
         set_value($instance->{preferences}->{history_size});
-    $instance->{static_lists_checkbutton}->
-        set_active($instance->{preferences}->{static_lists} ? TRUE : FALSE);
     $instance->{show_tooltips_checkbutton}->
         set_active($instance->{preferences}->{completion_tooltips} ?
                    TRUE : FALSE);
@@ -1518,8 +1514,6 @@ sub save_preferences_from_gui($)
     $instance->{history_size_spinbutton}->update();
     $instance->{preferences}->{history_size} =
         $instance->{history_size_spinbutton}->get_value_as_int();
-    $instance->{preferences}->{static_lists} =
-        $instance->{static_lists_checkbutton}->get_active() ? 1 : 0;
     $instance->{preferences}->{completion_tooltips} =
         $instance->{show_tooltips_checkbutton}->get_active() ? 1 : 0;
     $instance->{preferences}->{show_suspended} =
@@ -1795,6 +1789,11 @@ sub upgrade_preferences($)
     if ($preferences->{version} == 11)
     {
         $preferences->{tag_weightings} = [];
+        $preferences->{version} = 12;
+    }
+    if ($preferences->{version} == 12)
+    {
+        delete($preferences->{static_lists});
     }
 
     $preferences->{version} = PREFERENCES_FORMAT_VERSION;
@@ -1834,7 +1833,6 @@ sub initialise_preferences()
                                  id     => {limit                => 200,
                                             sort_chronologically => 1}},
          history_size        => 20,
-         static_lists        => 0,
          completion_tooltips => 1,
          show_suspended      => 0,
          show_file_details   => 1,

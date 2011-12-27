@@ -2,10 +2,14 @@
 #
 #   File Name    - ComboAutoCompletion.pm
 #
-#   Description  - The combo box auto-completion utilities module for the
-#                  mtn-browse application. This module contains assorted
-#                  routines that implement auto-completion for all branch and
-#                  revision comboboxentry boxes.
+#   Description  - The custom combo entry auto-completion utilities module for
+#                  the mtn-browse application. This module contains assorted
+#                  routines that implement auto-completion for all branch,
+#                  revision and directory combo entries. Standard comboboxentry
+#                  widgets were not used due to performance issues with large
+#                  completion lists. At least with these custom combo entries,
+#                  the only performance penalty is when the user is actually
+#                  displaying the completion list and not all of the time.
 #
 #   Author       - A.E.Cooper.
 #
@@ -49,9 +53,22 @@ use warnings;
 
 # ***** GLOBAL DATA DECLARATIONS *****
 
-# The type of window that is going to be managed by this module.
+# The types of windows that are going to be managed by this module.
 
-my $window_type = "tooltip_window";
+my $completions_window_type = "completions_window";
+my $tooltip_window_type = "tooltip_window";
+
+# A hash of event types that are to be examined when determining when to
+# dismiss a completions window. Please note that keyboard events are not in
+# this list as they get grabbed by any Gnome2::App widget, so we rely on focus
+# notification on the entry widget itself.
+
+my %user_activity_events = ("2button-press"  => undef,
+                            "3button-press"  => undef,
+                            "button-press"   => undef,
+                            "button-release" => undef,
+                            "delete"         => undef,
+                            "scroll"         => undef);
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
@@ -62,24 +79,31 @@ sub tagged_checkbutton_toggled_cb($$);
 
 # Private routines.
 
-sub auto_completion_comboboxentry_changed_cb($$);
-sub auto_completion_comboboxentry_key_release_event_cb($$$);
+sub auto_completion_entry_key_release_event_cb($$$);
+sub calculate_window_coordinates($$);
+sub completions_list_togglebutton_toggled_cb($$);
+sub completions_treeselection_changed_cb($$);
+sub completions_window_configure_event_cb($$$);
+sub completions_window_done_event_handler($$);
+sub get_completions_window($$$$$);
 sub get_tooltip_window($$$$);
+sub hide_completions_window();
 sub hide_tooltip_window();
+sub update_completions_list_window($$$);
 #
 ##############################################################################
 #
 #   Routine      - activate_auto_completion
 #
-#   Description  - Sets up the specified comboboxentry widget for
+#   Description  - Sets up the specified combo entry widget for
 #                  auto-completion.
 #
-#   Data         - $comboboxentry : The comboboxentry widget that is to be set
-#                                   up for auto-completion.
-#                  $instance      : The window instance that is associated
-#                                   with this widget. It is expected to have
-#                                   window, appbar, update_handler and
-#                                   combobox details fields.
+#   Data         - $entry    : The entry widget that is to be set up for
+#                              auto-completion.
+#                  $instance : The window instance that is associated with
+#                              this widget. It is expected to have a window,
+#                              appbar, update_handler and combobox details
+#                              fields.
 #
 ##############################################################################
 
@@ -88,36 +112,39 @@ sub hide_tooltip_window();
 sub activate_auto_completion($$)
 {
 
-    my ($comboboxentry, $instance) = @_;
+    my ($entry, $instance) = @_;
 
     my ($change_state,
         $combo_details,
-        $details,
         $move_to_end,
-        $name);
+        $name,
+        $togglebutton);
 
     # Sort out the precise details depending upon which comboboxentry widget
     # has been passed.
 
-    if ($comboboxentry == $instance->{branch_comboboxentry})
+    if ($entry == $instance->{branch_entry})
     {
         $change_state = BRANCH_CHANGED;
         $combo_details = $instance->{branch_combo_details};
         $move_to_end = 1;
         $name = __("branch");
+        $togglebutton = $instance->{branch_list_togglebutton};
     }
-    elsif ($comboboxentry == $instance->{revision_comboboxentry})
+    elsif ($entry == $instance->{revision_entry})
     {
         $change_state = REVISION_CHANGED;
         $combo_details = $instance->{revision_combo_details};
         $name = __("revision");
+        $togglebutton = $instance->{revision_list_togglebutton};
     }
-    elsif ($comboboxentry == $instance->{directory_comboboxentry})
+    elsif ($entry == $instance->{directory_entry})
     {
         $change_state = DIRECTORY_CHANGED;
         $combo_details = $instance->{directory_combo_details};
         $move_to_end = 1;
         $name = __("directory");
+        $togglebutton = $instance->{directory_list_togglebutton};
     }
     else
     {
@@ -126,23 +153,27 @@ sub activate_auto_completion($$)
 
     # Set up all the required callbacks.
 
-    $details = {instance      => $instance,
-                change_state  => $change_state,
-                combo_details => $combo_details,
-                move_to_end   => $move_to_end,
-                name          => $name};
-    $comboboxentry->signal_connect("changed",
-                                   \&auto_completion_comboboxentry_changed_cb,
-                                   $details);
-    $comboboxentry->signal_connect
-        ("key_release_event",
-         \&auto_completion_comboboxentry_key_release_event_cb,
-         $details);
-    $comboboxentry->child()->signal_connect("focus_out_event",
-                                            sub {
-                                                hide_tooltip_window();
-                                                return FALSE;
-                                            });
+    $entry->signal_connect("key_release_event",
+                           \&auto_completion_entry_key_release_event_cb,
+                           {instance      => $instance,
+                            change_state  => $change_state,
+                            combo_details => $combo_details,
+                            name          => $name,
+                            togglebutton  => $togglebutton});
+    $togglebutton->signal_connect("toggled",
+                                  \&completions_list_togglebutton_toggled_cb,
+                                  {instance      => $instance,
+                                   change_state  => $change_state,
+                                   combo_details => $combo_details,
+                                   entry         => $entry,
+                                   move_to_end   => $move_to_end,
+                                   name          => $name});
+    $entry->signal_connect("focus_out_event",
+                           sub {
+                               hide_completions_window();
+                               hide_tooltip_window();
+                               return FALSE;
+                           });
 
 }
 #
@@ -176,22 +207,22 @@ sub tagged_checkbutton_toggled_cb($$)
 #
 ##############################################################################
 #
-#   Routine      - auto_completion_comboboxentry_changed_cb
+#   Routine      - completions_list_togglebutton_toggled_cb
 #
-#   Description  - Callback routine called when the user changes the value of
-#                  a branch, revision or directory comboboxentry by selecting
-#                  an entry from its pulldown list.
+#   Description  - Callback routine called when the user toggles the show
+#                  completions list button.
 #
 #   Data         - $widget  : The widget object that received the signal.
 #                  $details : A reference to an anonymous hash containing the
-#                             window instance, change state, comboboxentry
-#                             details and the name for that comboboxentry.
+#                             window instance, change state, custom combo
+#                             entry details (including the widget), cursor
+#                             handling hints and the name for that entry.
 #
 ##############################################################################
 
 
 
-sub auto_completion_comboboxentry_changed_cb($$)
+sub completions_list_togglebutton_toggled_cb($$)
 {
 
     my ($widget, $details) = @_;
@@ -201,50 +232,89 @@ sub auto_completion_comboboxentry_changed_cb($$)
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my $value;
-    my $change_state = $details->{change_state};
-    my $combo_details = $details->{combo_details};
-    my $move_to_end = $details->{move_to_end};
-
-    # For some reason best known to itself, Gtk+ calls this callback when the
-    # user presses a key for the first time (but not subsequently) after a
-    # value is selected via the pulldown menu. So we have to guard against
-    # this. Under these circumstances the key release callback is also called.
-    # So, put simply, only do something inside this callback if the value is a
-    # direct match to one in our list.
-
-    $value = $widget->child()->get_text();
-    foreach my $item (@{$combo_details->{list}})
+    if ($widget->get_active())
     {
-        if ($value eq $item)
+
+        my ($completions,
+            @item_list,
+            $len,
+            $x,
+            $y);
+        my $combo_details = $details->{combo_details};
+        my $entry = $details->{entry};
+        my $wm = WindowManager->instance();
+
+        # Work out where to place the completions window.
+
+        ($x, $y) = calculate_window_coordinates($instance->{window}, $entry);
+
+        # Make sure the entry has the focus and then display the completions
+        # window.
+
+        if (! $entry->has_focus())
         {
-            $combo_details->{value} = $value;
-            $combo_details->{complete} = 1;
-            $instance->{appbar}->clear_stack();
-            hide_tooltip_window();
-            $widget->child()->set_position(-1) if ($move_to_end);
-            &{$instance->{update_handler}}($instance, $change_state);
-            last;
+            $entry->grab_focus();
+            if ($details->{move_to_end})
+            {
+                $entry->set_position(-1);
+            }
+            else
+            {
+                $entry->set_position(0);
+            }
         }
+        $completions =
+            get_completions_window($instance, $entry, $widget, $x, $y);
+
+        # We can't go busy until now as the completions window installs a
+        # custom main event handler.
+
+        $wm->make_busy($instance, 1);
+        $wm->update_gui();
+
+        # Stash any data needed by the treeview selection changed callback.
+
+        $completions->{details} = $details;
+
+        # Now update the completions window.
+
+        $len = length($combo_details->{filter});
+        foreach my $item (@{$combo_details->{list}})
+        {
+            my $item_len = length($item);
+            push(@item_list, $item)
+                if ($len <= $item_len
+                    && $combo_details->{filter} eq substr($item, 0, $len));
+        }
+        update_completions_list_window($instance,
+                                       $details->{name},
+                                       \@item_list);
+
+        $wm->make_busy($instance, 0);
+
+    }
+    else
+    {
+        hide_completions_window();
     }
 
 }
 #
 ##############################################################################
 #
-#   Routine      - auto_completion_comboboxentry_key_release_event_cb
+#   Routine      - auto_completion_entry_key_release_event_cb
 #
 #   Description  - Callback routine called when the user changes the value of
-#                  a branch or revision comboboxentry by entering a character
-#                  (key release event).
+#                  a branch, revision or directory entry by entering a
+#                  character (key release event).
 #
 #   Data         - $widget      : The widget object that received the signal.
 #                  $event       : A Gtk2::Gdk::Event object describing the
 #                                 event that has occurred.
 #                  $details     : A reference to an anonymous hash containing
-#                                 the window instance, change state,
-#                                 comboboxentry details and the name for that
-#                                 comboboxentry.
+#                                 the window instance, change state, custom
+#                                 combo entry details, the name for that entry
+#                                 and the associated togglebutton.
 #                  Return Value : TRUE if the event has been handled and needs
 #                                 no further handling, otherwise false if the
 #                                 event should carry on through the remaining
@@ -254,7 +324,7 @@ sub auto_completion_comboboxentry_changed_cb($$)
 
 
 
-sub auto_completion_comboboxentry_key_release_event_cb($$$)
+sub auto_completion_entry_key_release_event_cb($$$)
 {
 
     my ($widget, $event, $details) = @_;
@@ -265,9 +335,8 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
     local $instance->{in_cb} = 1;
 
     my $combo_details = $details->{combo_details};
-    my $entry = $widget->child();
     my $old_value = $combo_details->{value};
-    my $value = $entry->get_text();
+    my $value = $widget->get_text();
 
     # The user has typed something in then validate it and auto-complete it if
     # necessary.
@@ -279,14 +348,12 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
             $completion,
             $len,
             $success);
-        my $change_state = $details->{change_state};
         my $complete = 0;
-        my $name = $details->{name};
         my $old_complete = $combo_details->{complete};
         my $wm = WindowManager->instance();
 
         # Don't auto-complete if the user is simply deleting from the extreme
-        # right.
+        # right (otherwise we'll just put back what they have deleted!).
 
         $len = length($value);
         if ($len >= length($old_value)
@@ -325,29 +392,18 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
                 # Tell the user what is wrong via the status bar.
 
                 $message = __x("Invalid {name} name `{value}'",
-                               name  => $name,
+                               name  => $details->{name},
                                value => $value);
                 $instance->{appbar}->set_status($message);
 
                 # Also via a tooltip as well if so desired (need to position it
-                # to be just below the comboboxentry widget).
+                # to be just below the entry widget).
 
                 if ($user_preferences->{completion_tooltips})
                 {
-                    my ($height,
-                        $root_x,
-                        $root_y,
-                        $x,
-                        $y);
-                    ($x, $y) =
-                        $widget->translate_coordinates($instance->{window},
-                                                       0,
-                                                       0);
-                    $height = ($widget->child()->window()->get_geometry())[3];
-                    ($root_x, $root_y) =
-                        $instance->{window}->window()->get_origin();
-                    $x += $root_x - 10;
-                    $y += $height + $root_y + 5;
+                    my ($x, $y) = calculate_window_coordinates
+                        ($instance->{window}, $widget);
+                    $x -= 10;
                     get_tooltip_window($instance->{window}, $message, $x, $y);
                 }
 
@@ -355,8 +411,8 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
 
             $value = $completion;
             $len = length($value);
-            $entry->set_text($value);
-            $entry->set_position(-1);
+            $widget->set_text($value);
+            $widget->set_position(-1);
 
         }
         else
@@ -364,17 +420,26 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
             $instance->{appbar}->clear_stack();
             hide_tooltip_window();
         }
+        $combo_details->{filter} = $value;
         $combo_details->{value} = $value;
         $combo_details->{complete} = $complete;
 
-        # Update the pulldown choices if the value has actually changed (what
-        # the user has entered may have been discarded due to not being valid)
-        # and that is what the user wants.
+        # Has the value actually changed? Remember that what the user has
+        # entered may have been discarded due to not being valid.
 
         if ($value ne $old_value)
         {
 
             my @item_list;
+            my $completion_list_displayed =
+                $details->{togglebutton}->get_active();
+
+            # Yes is has so scan through the list of matches looking for a
+            # complete match. This is needed when the user is simply deleting
+            # characters from the right and we can't use the autocompletion
+            # object to determine completion (as it may do this by adding
+            # unique text onto the end of the user's input). Also update any
+            # visible completions window.
 
             $wm->make_busy($instance, 1);
             $busy = 1;
@@ -386,47 +451,18 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
                 if ($len <= $item_len && $value eq substr($item, 0, $len))
                 {
                     push(@item_list, $item)
-                        unless ($user_preferences->{static_lists});
-
-                    # The following check is needed in the case when the user
-                    # is simply deleting characters from the right.
-
-                    $combo_details->{complete} = 1 if ($len == $item_len);
-                }
-            }
-
-            if (! $user_preferences->{static_lists})
-            {
-
-                my ($counter,
-                    $update_interval);
-
-                $instance->{appbar}->set_progress_percentage(0);
-                $instance->{appbar}->push(__x("Populating {name} list",
-                                              name => $name));
-                $wm->update_gui();
-                $counter = 1;
-                $update_interval = calculate_update_interval(\@item_list);
-                $widget->get_model()->clear()
-                    unless ($user_preferences->{static_lists});
-                foreach my $item (@item_list)
-                {
-                    $widget->append_text($item);
-                    if (($counter % $update_interval) == 0)
+                        if ($completion_list_displayed);
+                    if ($len == $item_len)
                     {
-                        $instance->{appbar}->set_progress_percentage
-                            ($counter / scalar(@item_list));
-                        $wm->update_gui();
+                        $combo_details->{complete} = 1;
+                        last unless ($completion_list_displayed);
                     }
-                    ++ $counter;
                 }
-                $instance->{appbar}->set_progress_percentage(1);
-                $wm->update_gui();
-                $instance->{appbar}->set_progress_percentage(0);
-                $instance->{appbar}->pop();
-                $wm->update_gui();
-
             }
+            update_completions_list_window($instance,
+                                           $details->{name},
+                                           \@item_list)
+                if ($completion_list_displayed);
 
         }
 
@@ -442,7 +478,8 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
                 $busy = 1;
             }
             $wm->update_gui();
-            &{$instance->{update_handler}}($instance, $change_state);
+            &{$instance->{update_handler}}($instance,
+                                           $details->{change_state});
         }
 
         $wm->make_busy($instance, 0) if ($busy);
@@ -450,6 +487,429 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
     }
 
     return FALSE;
+
+}
+#
+##############################################################################
+#
+#   Routine      - completions_treeselection_changed_cb
+#
+#   Description  - Callback routine called when the user selects an entry in
+#                  the completions list treeview in the completions window.
+#
+#   Data         - $widget      : The widget object that received the signal.
+#                  $completions : The completions instance that is associated
+#                                 with this widget.
+#
+##############################################################################
+
+
+
+sub completions_treeselection_changed_cb($$)
+{
+
+    my ($widget, $completions) = @_;
+
+    return if ($completions->{in_cb});
+    local $completions->{in_cb} = 1;
+
+    # Only do something if an entry is selected.
+
+    if ($widget->count_selected_rows() > 0)
+    {
+
+        my ($iter,
+            $model);
+        my $change_state = $completions->{details}->{change_state};
+        my $combo_details = $completions->{details}->{combo_details};
+        my $entry = $completions->{details}->{entry};
+        my $instance = $completions->{details}->{instance};
+        my $move_to_end = $completions->{details}->{move_to_end};
+        my $old_value = $combo_details->{value};
+
+        # Get the selected entry.
+
+        ($model, $iter) = $widget->get_selected();
+        $combo_details->{value} = $model->get($iter, 0);
+
+        # Update the window.
+
+        $combo_details->{complete} = 1;
+        $instance->{appbar}->clear_stack();
+        hide_completions_window();
+        hide_tooltip_window();
+        $entry->set_text($combo_details->{value});
+        if ($move_to_end)
+        {
+            $entry->set_position(-1);
+        }
+        else
+        {
+            $entry->set_position(0);
+        }
+        &{$instance->{update_handler}}($instance, $change_state)
+            unless ($old_value eq $combo_details->{value});
+
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - completions_window_configure_event_cb
+#
+#   Description  - Callback routine called when ever the completions window
+#                  gets a configure event. This routine basically resizes the
+#                  completions window when it gets too large and turns on any
+#                  necessary scroll bars in order to cope with the resize
+#                  nicely.
+#
+#   Data         - $widget      : The widget object that received the signal.
+#                  $event       : A Gtk2::Gdk::Event object describing the
+#                                 event that has occurred.
+#                  $instance    : The window instance that is associated with
+#                                 this widget.
+#                  Return Value : TRUE if the event has been handled and needs
+#                                 no further handling, otherwise false if the
+#                                 event should carry on through the remaining
+#                                 event handling.
+#
+##############################################################################
+
+
+
+sub completions_window_configure_event_cb($$$)
+{
+
+    my ($widget, $event, $instance) = @_;
+
+    return FALSE if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    my ($height,
+        $width);
+    my $handled = FALSE;
+
+    # Get the new width and height. If either of them have got too large then
+    # turn on the relevant scroll bar and force the window to resize back down
+    # to the maximum allowed size. Remember to operate independently in each
+    # axis. If we to adjust something then say we have consumed the event.
+
+    $width = $event->width();
+    $height = $event->height();
+    if ($width > $instance->{max_width})
+    {
+        my ($v_policy,
+            $y_size);
+        $v_policy = ($instance->{completions_scrolledwindow}->get_policy())[1];
+        $y_size = ($instance->{window}->get_size_request())[1];
+        $instance->{completions_scrolledwindow}->set_policy("automatic",
+                                                            $v_policy);
+        $instance->{window}->set_size_request($instance->{max_width}, $y_size);
+        $handled = TRUE;
+    }
+    if ($height > $instance->{max_height})
+    {
+        my ($h_policy,
+            $x_size);
+        $h_policy = ($instance->{completions_scrolledwindow}->get_policy())[0];
+        $x_size = ($instance->{window}->get_size_request())[0];
+        $instance->{completions_scrolledwindow}->set_policy($h_policy,
+                                                            "automatic");
+        $instance->{window}->set_size_request($x_size,
+                                              $instance->{max_height});
+        $instance->{vertically_resized} = 1;
+        $handled = TRUE;
+    }
+
+    return $handled;
+
+}
+#
+##############################################################################
+#
+#   Routine      - completions_window_done_event_handler
+#
+#   Description  - Event handler for determining when the completions window
+#                  should be dismissed.
+#
+#   Data         - $event    : The Gtk2::Gdk::Event object representing the
+#                              current event.
+#                  $instance : The completions window instance that is
+#                              associated with this event handler.
+#
+##############################################################################
+
+
+
+sub completions_window_done_event_handler($$)
+{
+
+    my ($event, $instance) = @_;
+
+    # Actually process the event.
+
+    Gtk2->main_do_event($event);
+
+    # Is it an event that we are interested in?
+
+    if (exists($user_activity_events{$event->type()}))
+    {
+
+        my ($found,
+            $widget);
+
+        # Yes it is so see if the destination widget was anything to do with
+        # the associated custom combo entry widgets.
+
+        $widget = Gtk2->get_event_widget($event);
+        while (defined($widget))
+        {
+            if (exists($instance->{event_widgets}->{$widget}))
+            {
+                $found = 1;
+                last;
+            }
+            $widget = $widget->get_parent();
+        }
+
+        # If the event is for an unrelated part of the window then dismiss the
+        # assocaited completions window.
+
+        hide_completions_window() unless ($found);
+
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - update_completions_list_window
+#
+#   Description  - Update the visible completions window with the specified
+#                  list of values.
+#
+#   Data         - $instance : The window instance that is associated with
+#                              this widget. It is expected to have a window,
+#                              appbar, update_handler and combobox details
+#                              fields.
+#                  $name     : The name of the custom combo entry associated
+#                              with the completions window.
+#                  $list     : A reference to the list of values that are to
+#                              be loaded into the completions window.
+#
+##############################################################################
+
+
+
+sub update_completions_list_window($$$)
+{
+
+    my ($instance, $name, $list) = @_;
+
+    my $completions;
+    my $wm = WindowManager->instance();
+
+    # Only do something if there is a mapped completions window.
+
+    if (defined($completions = $wm->cond_find
+                ($completions_window_type,
+                 sub {
+                     my $instance = $_[0];
+                     return 1 if ($instance->{window}->mapped());
+                 })))
+    {
+
+        my ($counter,
+            $update_interval);
+
+        $instance->{appbar}->set_progress_percentage(0);
+        $instance->{appbar}->push(__x("Populating {name} list",
+                                      name => $name));
+        $wm->update_gui();
+        $counter = 1;
+        $update_interval = calculate_update_interval($list);
+        $completions->{completions_liststore}->clear();
+        foreach my $item (@$list)
+        {
+            $completions->{completions_liststore}->
+                set($completions->{completions_liststore}->append(), 0, $item);
+            if (! $completions->{vertically_resized}
+                || ($counter % $update_interval) == 0)
+            {
+                $instance->{appbar}->set_progress_percentage
+                    ($counter / scalar(@$list));
+                $wm->update_gui();
+            }
+            ++ $counter;
+        }
+        $instance->{appbar}->set_progress_percentage(1);
+        $wm->update_gui();
+        $completions->{completions_treeview}->scroll_to_point(0, 0)
+            if ($completions->{completions_treeview}->realized());
+        $instance->{appbar}->set_progress_percentage(0);
+        $instance->{appbar}->pop();
+        $wm->update_gui();
+
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - get_completions_window
+#
+#   Description  - Creates or prepares an existing entry completions window
+#                  for use.
+#
+#   Data         - $parent_instance : The window instance that is making use
+#                                     of the completions window.
+#                  $entry           : The entry widget associated with the
+#                                     completions window.
+#                  $togglebutton    : The togglebutton widget associated with
+#                                     the completions window.
+#                  $x               : The x coordinate for where the
+#                                     completions window is to be placed.
+#                  $y               : The y coordinate for where the
+#                                     completions window is to be placed.
+#                  Return Value     : A reference to the newly created or
+#                                     unused completions instance record.
+#
+##############################################################################
+
+
+
+sub get_completions_window($$$$$)
+{
+
+    my ($parent_instance, $entry, $togglebutton, $x, $y) = @_;
+
+    my ($glade,
+        $height,
+        $instance,
+        $root_x,
+        $root_y,
+        $width,
+        $appbar_y);
+    my $wm = WindowManager->instance();
+
+    # Create a new completions window if an existing one wasn't found,
+    # otherwise reuse an existing one (used or unused).
+
+    if (! defined($instance = $wm->cond_find($completions_window_type,
+                                             sub { return 1; })))
+    {
+
+        my ($default_background_colour,
+            $renderer,
+            $tv_column);
+
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $completions_window_type,
+                                     APPLICATION_NAME);
+
+        # Flag to stop recursive calling of callbacks.
+
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
+
+        # Connect Glade registered signal handlers.
+
+        glade_signal_autoconnect($glade, $instance);
+
+        # Get the widgets that we are interested in.
+
+        $instance->{window} = $glade->get_widget($completions_window_type);
+        foreach my $widget ("completions_scrolledwindow",
+                            "completions_treeview")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
+
+        # Setup the completions list.
+
+        $instance->{completions_liststore} =
+            Gtk2::ListStore->new("Glib::String");
+        $instance->{completions_treeview}->
+            set_model($instance->{completions_liststore});
+
+        $tv_column = Gtk2::TreeViewColumn->new();
+        $tv_column->set_sizing("autosize");
+        $renderer = Gtk2::CellRendererText->new();
+        $tv_column->pack_start($renderer, TRUE);
+        $tv_column->set_attributes($renderer, "text" => 0);
+        $instance->{completions_treeview}->append_column($tv_column);
+
+        $instance->{completions_treeview}->set_search_column(0);
+        $instance->{completions_treeview}->
+            set_search_equal_func(\&treeview_column_searcher);
+
+        $instance->{completions_treeview}->get_selection()->
+            signal_connect("changed",
+                           \&completions_treeselection_changed_cb,
+                           $instance);
+
+    }
+    else
+    {
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
+
+        $instance->{window}->hide();
+        $instance->{window}->set_size_request(-1, -1);
+        ($width, $height) = $instance->{window}->get_default_size();
+        $instance->{window}->resize($width, $height);
+        $instance->{completions_scrolledwindow}->set_policy("never", "never");
+        $instance->{completions_liststore}->clear();
+        $instance->{togglebutton}->set_active(FALSE)
+            if (defined($instance->{togglebutton})
+                && $togglebutton != $instance->{togglebutton});
+    }
+
+    local $instance->{in_cb} = 1;
+
+    # Calculate the maximum allowable size for this window (do not let it
+    # wander outside of the parent window nor obscure the progress bar).
+
+    $appbar_y = ($parent_instance->{appbar}->translate_coordinates
+                 ($parent_instance->{window}, 0, 0))[1];
+    ($root_x, $root_y) = $parent_instance->{window}->window()->get_origin();
+    $width = ($parent_instance->{window}->get_size())[0];
+    $instance->{max_width} = $root_x + $width - $x;
+    $instance->{max_height} = $root_y + $appbar_y - $y;
+    $instance->{vertically_resized} = undef;
+
+    # Position it, reparent window and display it.
+
+    $instance->{window}->move($x, $y);
+    $instance->{window}->set_transient_for($parent_instance->{window});
+    $instance->{window}->show_all();
+    $instance->{window}->present();
+
+    # Stash any widgets associated with this completions window that we will
+    # need later on and build up a set containing related widgets (used by the
+    # dismissal event handler).
+
+    $instance->{togglebutton} = $togglebutton;
+    $instance->{event_widgets} = {};
+    $instance->{event_widgets}->{$entry} = undef;
+    $instance->{event_widgets}->{$togglebutton} = undef;
+    $instance->{event_widgets}->{$instance->{window}} = undef;
+
+    # Register an event handler that will dismiss the completions window as
+    # soon as the user does something outside of it or the associated entry and
+    # togglebutton.
+
+    WindowManager->instance()->event_handler
+        (\&completions_window_done_event_handler, $instance);
+
+    # If necessary, register the window for management.
+
+    $wm->manage($instance, $completions_window_type, $instance->{window})
+        if (defined($glade));
+
+    return $instance;
 
 }
 #
@@ -467,7 +927,7 @@ sub auto_completion_comboboxentry_key_release_event_cb($$$)
 #                  $y            : The y coordinate for where the tooltip
 #                                  window is to be placed.
 #                  Return Value  : A reference to the newly created or unused
-#                                  multiple revisions instance record.
+#                                  tooltip instance record.
 #
 ##############################################################################
 
@@ -485,12 +945,13 @@ sub get_tooltip_window($$$$)
     # Create a new tooltip window if an existing one wasn't found, otherwise
     # reuse an existing one (used or unused).
 
-    if (! defined($instance = $wm->cond_find($window_type, sub { return 1; })))
+    if (! defined($instance = $wm->cond_find($tooltip_window_type,
+                                             sub { return 1; })))
     {
 
         $instance = {};
         $glade = Gtk2::GladeXML->new($glade_file,
-                                     $window_type,
+                                     $tooltip_window_type,
                                      APPLICATION_NAME);
 
         # Flag to stop recursive calling of callbacks.
@@ -504,7 +965,7 @@ sub get_tooltip_window($$$$)
 
         # Get the widgets that we are interested in.
 
-        $instance->{window} = $glade->get_widget($window_type);
+        $instance->{window} = $glade->get_widget($tooltip_window_type);
         foreach my $widget ("eventbox", "message_label")
         {
             $instance->{$widget} = $glade->get_widget($widget);
@@ -550,10 +1011,91 @@ sub get_tooltip_window($$$$)
 
     # If necessary, register the window for management.
 
-    $wm->manage($instance, $window_type, $instance->{window})
+    $wm->manage($instance, $tooltip_window_type, $instance->{window})
         if (defined($glade));
 
     return $instance;
+
+}
+#
+##############################################################################
+#
+#   Routine      - calculate_window_coordinates
+#
+#   Description  - Calculate the coordinates for a popup window relative to
+#                  the specified widget that is in the specified top level
+#                  window.
+#
+#   Data         - $window      : The top level window widget that contains
+#                                 the specified widget.
+#   Data         - $widget      : The widget relative to which the coordinates
+#                                 should be calculated.
+#                  Return Value : A list containing the calculated x and y
+#                                 coordinates.
+#
+##############################################################################
+
+
+
+sub calculate_window_coordinates($$)
+{
+
+    my ($window, $widget) = @_;
+
+    my ($height,
+        $root_x,
+        $root_y,
+        $x,
+        $y);
+    ($x, $y) = $widget->translate_coordinates($window, 0, 0);
+    $height = ($widget->window()->get_geometry())[3];
+    ($root_x, $root_y) = $window->window()->get_origin();
+    $x += $root_x;
+    $y += $height + $root_y + 5;
+
+    return ($x, $y);
+
+}
+#
+##############################################################################
+#
+#   Routine      - hide_completions_window
+#
+#   Description  - Hides the completions window if it is visible.
+#
+#   Data         - None.
+#
+##############################################################################
+
+
+
+sub hide_completions_window()
+{
+
+    my $instance;
+
+    # Look for a mapped completions window, if found then hide it and empty its
+    # contents.
+
+    if (defined($instance = WindowManager->instance()->cond_find
+                ($completions_window_type,
+                 sub {
+                     my $instance = $_[0];
+                     return $instance->{window}->mapped();
+                 })))
+    {
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
+        WindowManager->instance()->event_handler();
+        $instance->{window}->hide();
+        $instance->{completions_liststore}->clear();
+        $instance->{details} = undef;
+        if (defined($instance->{togglebutton}))
+        {
+            $instance->{togglebutton}->set_active(FALSE);
+            $instance->{togglebutton} = undef;
+        }
+    }
 
 }
 #
@@ -578,7 +1120,7 @@ sub hide_tooltip_window()
     # hide timeout handler.
 
     if (defined($instance = WindowManager->instance()->cond_find
-                ($window_type,
+                ($tooltip_window_type,
                  sub {
                      my $instance = $_[0];
                      return $instance->{window}->mapped();

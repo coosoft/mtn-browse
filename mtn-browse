@@ -230,13 +230,18 @@ sub view_button_clicked_cb($$);
     $tooltips = Gtk2::Tooltips->new();
     $line_image = Gtk2::Gdk::Pixbuf->
         new_from_file(File::Spec->catfile(UI_DIR, "line.png"));
+    $icon_factory = Gtk2::IconFactory->new();
     Gtk2::Stock->add({stock_id => "mtnb-weighting",
                       label    => __("Weighting")});
     $icon_set = Gtk2::IconSet->new_from_pixbuf
         (Gtk2::Gdk::Pixbuf->new_from_file(File::Spec->catfile
                                           (UI_DIR, "weightings.png")));
-    $icon_factory = Gtk2::IconFactory->new();
-    $icon_factory->add("mtnb-weighting", $icon_set);
+    Gtk2::Stock->add({stock_id => "mtnb-tick",
+                      label    => __("Tick")});
+    $icon_set = Gtk2::IconSet->new_from_pixbuf
+        (Gtk2::Gdk::Pixbuf->new_from_file(File::Spec->catfile
+                                          (UI_DIR, "tick.png")));
+    $icon_factory->add("mtnb-tick", $icon_set);
     $icon_factory->add_default();
     $icon_factory = $icon_set = undef;
 
@@ -1309,72 +1314,15 @@ sub directory_up_button_clicked_cb($$)
     $value = $browser->{directory_combo_details}->{value};
     if ($value ne "")
     {
-
-        my $wm = WindowManager->instance();
-
-        $wm->make_busy($browser, 1);
-        $browser->{appbar}->set_status("");
-        $wm->update_gui();
-
         $value = dirname($value);
         $value = "" if ($value eq ".");
+        $browser->{directory_combo_details}->{filter} = $value;
         $browser->{directory_combo_details}->{value} = $value;
         $browser->{directory_combo_details}->{complete} = 1;
-
-        # Only update the comboboxentry's pulldown list if that is what the
-        # user wants.
-
-        if (! $user_preferences->{static_lists})
-        {
-
-            my ($counter,
-                @directory_list,
-                $len,
-                $update_interval);
-
-            $len = length($value);
-            $browser->{appbar}->set_progress_percentage(0);
-            $browser->{appbar}->set_status(__("Populating directory list"));
-            $wm->update_gui();
-            foreach my $item (@{$browser->{directory_combo_details}->{list}})
-            {
-                push(@directory_list, $item)
-                    if ($value eq substr($item, 0, $len));
-            }
-            $counter = 1;
-            $update_interval = calculate_update_interval(\@directory_list);
-            $browser->{directory_comboboxentry}->get_model()->clear();
-            $browser->{directory_comboboxentry}->child()->set_text($value);
-            $browser->{directory_comboboxentry}->child()->set_position(-1);
-            foreach my $item (@directory_list)
-            {
-                $browser->{directory_comboboxentry}->append_text($item);
-                if (($counter % $update_interval) == 0)
-                {
-                    $browser->{appbar}->set_progress_percentage
-                        ($counter / scalar(@directory_list));
-                    $wm->update_gui();
-                }
-                ++ $counter;
-            }
-            $browser->{appbar}->set_progress_percentage(1);
-            $wm->update_gui();
-            $browser->{appbar}->set_progress_percentage(0);
-
-        }
-        else
-        {
-            $browser->{directory_comboboxentry}->child()->set_text($value);
-            $browser->{directory_comboboxentry}->child()->set_position(-1);
-        }
-
+        $browser->{directory_entry}->set_text($value);
+        $browser->{directory_entry}->set_position(-1);
         $browser->{appbar}->clear_stack();
-        $wm->update_gui();
-
         &{$browser->{update_handler}}($browser, DIRECTORY_CHANGED);
-
-        $wm->make_busy($browser, 0);
-
     }
 
 }
@@ -1840,9 +1788,8 @@ sub manifest_browser_treeview_row_activated_cb($$$$)
     {
         $browser->{directory_combo_details}->{value} = $manifest_entry->{name};
         $browser->{directory_combo_details}->{complete} = 1;
-        $browser->{directory_comboboxentry}->child()->
-            set_text($manifest_entry->{name});
-        $browser->{directory_comboboxentry}->child()->set_position(-1);
+        $browser->{directory_entry}->set_text($manifest_entry->{name});
+        $browser->{directory_entry}->set_position(-1);
         $browser->{appbar}->clear_stack();
         &{$browser->{update_handler}}($browser, DIRECTORY_CHANGED);
     }
@@ -1996,11 +1943,14 @@ sub get_browser_window(;$$$$$)
                             "browser_hpaned",
                             "close_toolbutton",
                             "reload_toolbutton",
-                            "branch_comboboxentry",
-                            "revision_comboboxentry",
+                            "branch_entry",
+                            "branch_list_togglebutton",
+                            "revision_entry",
+                            "revision_list_togglebutton",
                             "tagged_checkbutton",
                             "history_graph_button",
-                            "directory_comboboxentry",
+                            "directory_entry",
+                            "directory_list_togglebutton",
                             "directory_up_button",
                             "find_files_button",
                             "show_line_numbers_togglebutton",
@@ -2147,21 +2097,6 @@ sub get_browser_window(;$$$$$)
             push(@{$browser->{revision_sensitive_group}},
                  $glade->get_widget($item . "_button"));
         }
-
-        # Setup the comboboxes.
-
-        $browser->{branch_comboboxentry}->
-            set_model(Gtk2::ListStore->new("Glib::String"));
-        $browser->{branch_comboboxentry}->set_text_column(0);
-        $browser->{branch_comboboxentry}->set_wrap_width(2);
-        $browser->{revision_comboboxentry}->
-            set_model(Gtk2::ListStore->new("Glib::String"));
-        $browser->{revision_comboboxentry}->set_text_column(0);
-        $browser->{revision_comboboxentry}->set_wrap_width(2);
-        $browser->{directory_comboboxentry}->
-            set_model(Gtk2::ListStore->new("Glib::String"));
-        $browser->{directory_comboboxentry}->set_text_column(0);
-        $browser->{directory_comboboxentry}->set_wrap_width(2);
 
         # Setup the tree view manifest file browser.
 
@@ -2318,13 +2253,11 @@ sub get_browser_window(;$$$$$)
         &{$browser->{update_handler}}($browser, ALL_CHANGED);
 
         # Now the browser instance is completely initialised, set up the
-        # branch, revision and directory comboboxentry widgets for
-        # auto-completion.
+        # branch, revision and directory entry widgets for auto-completion.
 
-        activate_auto_completion($browser->{branch_comboboxentry}, $browser);
-        activate_auto_completion($browser->{revision_comboboxentry}, $browser);
-        activate_auto_completion($browser->{directory_comboboxentry},
-                                 $browser);
+        activate_auto_completion($browser->{branch_entry}, $browser);
+        activate_auto_completion($browser->{revision_entry}, $browser);
+        activate_auto_completion($browser->{directory_entry}, $browser);
 
     }
     else
@@ -2405,11 +2338,10 @@ sub get_browser_window(;$$$$$)
         &{$browser->{update_handler}}($browser, ALL_CHANGED);
     }
 
-    # Make sure that the branch comboboxentry has the focus and not the bonobo
-    # dock.
+    # Make sure that the branch entry has the focus and not the bonobo dock.
 
-    $browser->{branch_comboboxentry}->child()->grab_focus();
-    $browser->{branch_comboboxentry}->child()->set_position(-1);
+    $browser->{branch_entry}->grab_focus();
+    $browser->{branch_entry}->set_position(-1);
 
     return $browser;
 
@@ -2670,11 +2602,11 @@ sub update_browser_state($$)
                 $browser->{history_graph_button}->set_sensitive(TRUE);
             }
 
-            # Make sure that the branch comboboxentry has the focus and not the
-            # bonobo dock.
+            # Make sure that the branch entry has the focus and not the bonobo
+            # dock.
 
-            $browser->{branch_comboboxentry}->child()->grab_focus();
-            $browser->{branch_comboboxentry}->child()->set_position(-1);
+            $browser->{branch_entry}->grab_focus();
+            $browser->{branch_entry}->set_position(-1);
 
         }
 
@@ -2685,9 +2617,7 @@ sub update_browser_state($$)
     if ($changed & BRANCH)
     {
 
-        my (@branch_list,
-            $counter,
-            $update_interval);
+        my @branch_list;
 
         # Reset the branch selection.
 
@@ -2707,32 +2637,20 @@ sub update_browser_state($$)
 
         $browser->{appbar}->set_status(__("Fetching branch list"));
         $wm->update_gui();
-        $browser->{mtn}->branches(\@branch_list) if (defined($browser->{mtn}));
-        $browser->{branch_combo_details}->{list} = \@branch_list;
-
-        # Update the branch list combobox.
-
-        $browser->{appbar}->set_status(__("Populating branch list"));
-        $wm->update_gui();
-        $counter = 1;
-        $update_interval = calculate_update_interval(\@branch_list);
-        $browser->{branch_comboboxentry}->get_model()->clear();
-        foreach my $branch (@branch_list)
         {
-            $browser->{branch_comboboxentry}->append_text($branch);
-            if (($counter % $update_interval) == 0)
-            {
-                $browser->{appbar}->set_progress_percentage
-                    ($counter / scalar(@branch_list));
-                $wm->update_gui();
-            }
-            ++ $counter;
+            local $pulse_widget = $browser->{appbar}->get_progress();
+            $browser->{mtn}->branches(\@branch_list)
+                if (defined($browser->{mtn}));
+            $browser->{branch_combo_details}->{list} = \@branch_list;
         }
-        $browser->{appbar}->set_progress_percentage(1);
-        $wm->update_gui();
-        $browser->{branch_comboboxentry}->child()->
+
+        # Update the branch entry.
+
+        $browser->{branch_combo_details}->{filter} =
+            $browser->{branch_combo_details}->{value};
+        $browser->{branch_entry}->
             set_text($browser->{branch_combo_details}->{value});
-        $browser->{branch_comboboxentry}->child()->set_position(-1);
+        $browser->{branch_entry}->set_position(-1);
         $browser->{appbar}->set_progress_percentage(0);
         $browser->{appbar}->set_status("");
         $wm->update_gui();
@@ -2744,9 +2662,7 @@ sub update_browser_state($$)
     if ($changed & REVISION)
     {
 
-        my ($counter,
-            @revision_list,
-            $update_interval);
+        my @revision_list;
 
         # If auto-selection of the head revision is wanted by the user and it
         # is appropriate then preset the revision id.
@@ -2880,28 +2796,11 @@ sub update_browser_state($$)
         }
         $browser->{revision_combo_details}->{list} = \@revision_list;
 
-        # Update the revision list combobox.
+        # Update the revision entry.
 
-        $browser->{appbar}->set_progress_percentage(0);
-        $browser->{appbar}->set_status(__("Populating revision list"));
-        $wm->update_gui();
-        $counter = 1;
-        $update_interval = calculate_update_interval(\@revision_list);
-        $browser->{revision_comboboxentry}->get_model()->clear();
-        foreach my $revision (@revision_list)
-        {
-            $browser->{revision_comboboxentry}->append_text($revision);
-            if (($counter % $update_interval) == 0)
-            {
-                $browser->{appbar}->set_progress_percentage
-                    ($counter / scalar(@revision_list));
-                $wm->update_gui();
-            }
-            ++ $counter;
-        }
-        $browser->{appbar}->set_progress_percentage(1);
-        $wm->update_gui();
-        $browser->{revision_comboboxentry}->child()->
+        $browser->{revision_combo_details}->{filter} =
+            $browser->{revision_combo_details}->{value};
+        $browser->{revision_entry}->
             set_text($browser->{revision_combo_details}->{value});
         $browser->{appbar}->set_progress_percentage(0);
         $browser->{appbar}->set_status("");
@@ -2914,10 +2813,8 @@ sub update_browser_state($$)
     if ($changed & DIRECTORY)
     {
 
-        my ($counter,
-            @directory_list,
-            @manifest_list,
-            $update_interval);
+        my (@directory_list,
+            @manifest_list);
 
         # Reset the directory combo.
 
@@ -3015,8 +2912,9 @@ sub update_browser_state($$)
                     # browser).
 
                     $browser->{revision_combo_details}->{complete} = 0;
+                    $browser->{revision_combo_details}->{filter} = "";
                     $browser->{revision_combo_details}->{value} = "";
-                    $browser->{revision_comboboxentry}->child()->set_text("");
+                    $browser->{revision_entry}->set_text("");
 
                 }
 
@@ -3089,30 +2987,13 @@ sub update_browser_state($$)
         $browser->{appbar}->set_progress_percentage(1);
         $wm->update_gui();
 
-        # Update the directory list combobox.
+        # Update the directory entry.
 
-        $browser->{appbar}->set_progress_percentage(0);
-        $browser->{appbar}->set_status(__("Populating directory list"));
-        $wm->update_gui();
-        $counter = 1;
-        $update_interval = calculate_update_interval(\@directory_list);
-        $browser->{directory_comboboxentry}->get_model()->clear();
-        foreach my $item (@directory_list)
-        {
-            $browser->{directory_comboboxentry}->append_text($item);
-            if (($counter % $update_interval) == 0)
-            {
-                $browser->{appbar}->set_progress_percentage
-                    ($counter / scalar(@directory_list));
-                $wm->update_gui();
-            }
-            ++ $counter;
-        }
-        $browser->{appbar}->set_progress_percentage(1);
-        $wm->update_gui();
-        $browser->{directory_comboboxentry}->child()->
+        $browser->{directory_combo_details}->{filter} =
+            $browser->{directory_combo_details}->{value};
+        $browser->{directory_entry}->
             set_text($browser->{directory_combo_details}->{value});
-        $browser->{directory_comboboxentry}->child()->set_position(-1);
+        $browser->{directory_entry}->set_position(-1);
         $browser->{appbar}->set_progress_percentage(0);
         $browser->{appbar}->set_status("");
         foreach my $widget (@{$browser->{revision_sensitive_group}})

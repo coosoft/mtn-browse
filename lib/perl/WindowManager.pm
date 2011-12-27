@@ -65,15 +65,15 @@ use Gtk2::Gdk::Keysyms;
 
 # A hash of event types that are to be filtered out when updating a busy GUI.
 
-my %filtered_events = ("2button-press"  => 1,
-                       "3button-press"  => 1,
-                       "button-press"   => 1,
-                       "button-release" => 1,
-                       "delete"         => 1,
-                       "key-press"      => 1,
-                       "key-release"    => 1,
-                       "motion-notify"  => 1,
-                       "scroll"         => 1);
+my %filtered_events = ("2button-press"  => undef,
+                       "3button-press"  => undef,
+                       "button-press"   => undef,
+                       "button-release" => undef,
+                       "delete"         => undef,
+                       "key-press"      => undef,
+                       "key-release"    => undef,
+                       "motion-notify"  => undef,
+                       "scroll"         => undef);
 
 # The singleton object.
 
@@ -92,11 +92,12 @@ sub activate_context_sensitive_help($$);
 sub allow_input($&);
 sub cond_find($$&);
 sub display_window_help($$);
+sub event_handler($;&$);
 sub find_unused($$);
 sub help_connect($$$$);
 sub make_busy($$$;$);
 sub manage($$$$;$);
-sub reset_state($);
+sub reset_state($;$);
 sub update_gui();
 
 # Private routines.
@@ -119,7 +120,7 @@ use base qw(Exporter);
 
 our @EXPORT = qw();
 our @EXPORT_OK = qw();
-our $VERSION = 0.1;
+our $VERSION = "0.10";
 #
 ##############################################################################
 #
@@ -179,16 +180,19 @@ sub instance($)
                                 (! $this->{help_active});
                             return TRUE;
                         });
-        $singleton = {managed_windows  => [],
-                      busy_cursor      => Gtk2::Gdk::Cursor->new("watch"),
-                      busy_state_stack => [],
-                      allow_input      => 0,
-                      help_active      => 0,
-                      help_gdk_windows => [],
-                      help_accel       => $accel,
-                      help_cursor      => Gtk2::Gdk::Cursor->
-                                              new("question-arrow"),
-                      help_contents_cb => undef};
+        $singleton = {managed_windows          => [],
+                      busy_cursor              => Gtk2::Gdk::Cursor->
+                                                      new("watch"),
+                      busy_state_stack         => [],
+                      allow_input              => 0,
+                      help_active              => 0,
+                      help_gdk_windows         => [],
+                      help_accel               => $accel,
+                      help_cursor              => Gtk2::Gdk::Cursor->
+                                                      new("question-arrow"),
+                      help_contents_cb         => undef,
+                      custom_event_handler     => undef,
+                      custom_event_client_data => undef};
         return bless($singleton, $class);
 
     }
@@ -520,7 +524,7 @@ sub make_busy($$$;$)
             # We now must be unbusy so unconditionally reset everything to the
             # unbusy state.
 
-            $this->reset_state();
+            $this->reset_state(1);
 
         }
         else
@@ -714,7 +718,7 @@ sub activate_context_sensitive_help($$)
         $this->{help_active} = 0;
         if (! defined($head = $this->head_of_busy_state_stack()))
         {
-            $this->reset_state();
+            $this->reset_state(1);
         }
         else
         {
@@ -766,22 +770,69 @@ sub display_window_help($$)
 #
 ##############################################################################
 #
+#   Routine      - event_handler
+#
+#   Description  - Registers the specified custom event hander for all events
+#                  destined for the application. One can only call this routine
+#                  if the application is currently not in a busy state. It is
+#                  the event handler's responsibility to call
+#                  Gtk2->main_do_event() as this is not an ordinary widget
+#                  event handler.
+#
+#   Data         - $this        : The object.
+#                  $handler     : Either a reference to the event handler
+#                                 routine that is to be registered or undef if
+#                                 default event handling is to be reinstated.
+#                                 This is optional.
+#                  $client_data : Any client data that is to be passed to the
+#                                 event handler. This is optional.
+#
+##############################################################################
+
+
+
+sub event_handler($;&$)
+{
+
+    my ($this, $handler, $client_data) = @_;
+
+    $this->{custom_event_handler} = $handler;
+    $this->{custom_event_client_data} = $client_data;
+    if (defined($this->{custom_event_handler}))
+    {
+        Gtk2::Gdk::Event->handler_set($this->{custom_event_handler},
+                                      $this->{custom_event_client_data});
+    }
+    else
+    {
+        $this->reset_state() if (scalar(@{$this->{busy_state_stack}}) == 0);
+    }
+
+}
+#
+##############################################################################
+#
 #   Routine      - reset_state
 #
 #   Description  - Completely resets the state of all windows and input
 #                  handling. Useful when resetting the GUI after an exception
 #                  was raised.
 #
-#   Data         - $this : The object.
+#   Data         - $this       : The object.
+#                  $soft_reset : True if any previous custom event handler
+#                                that was in force is to be reinstated,
+#                                otherwise false if the event handler is to be
+#                                reset back to the default one for Gtk2. The
+#                                default is false and this is optional.
 #
 ##############################################################################
 
 
 
-sub reset_state($)
+sub reset_state($;$)
 {
 
-    my $this = $_[0];
+    my ($this, $soft_reset) = @_;
 
     $this->{busy_state_stack} = [];
     $this->{allow_input} = 0;
@@ -795,7 +846,17 @@ sub reset_state($)
             $gdk_window->set_cursor(undef);
         }
     }
-    Gtk2::Gdk::Event->handler_set(undef);
+    if ($soft_reset && defined($this->{custom_event_handler}))
+    {
+        Gtk2::Gdk::Event->handler_set($this->{custom_event_handler},
+                                      $this->{custom_event_client_data});
+    }
+    else
+    {
+        Gtk2::Gdk::Event->handler_set(undef);
+        $this->{custom_event_handler} = $this->{custom_event_client_data} =
+            undef;
+    }
 
 }
 #

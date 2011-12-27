@@ -3806,7 +3806,7 @@ sub get_change_history_graph_window($)
         $instance->{branches_treeview}->get_selection()->set_mode("multiple");
 
         $tv_column = Gtk2::TreeViewColumn->new();
-        $image = Gtk2::Image->new_from_stock("gtk-yes", "menu");
+        $image = Gtk2::Image->new_from_stock("mtnb-tick", "menu");
         $image->show_all();
         $tv_column->set_widget($image);
         $tv_column->set_resizable(FALSE);

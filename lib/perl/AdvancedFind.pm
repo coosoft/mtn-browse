@@ -673,8 +673,10 @@ sub get_advanced_find_window($)
                             "simple_query_radiobutton",
                             "simple_frame",
                             "advanced_frame",
-                            "branch_comboboxentry",
-                            "revision_comboboxentry",
+                            "branch_entry",
+                            "branch_list_togglebutton",
+                            "revision_entry",
+                            "revision_list_togglebutton",
                             "tagged_checkbutton",
                             "search_term_comboboxentry",
                             "stop_button",
@@ -708,16 +710,8 @@ sub get_advanced_find_window($)
         $instance->{stop_button}->signal_connect
             ("clicked", sub { $_[1]->{stop} = 1; }, $instance);
 
-        # Setup the comboboxes.
+        # Setup the combobox.
 
-        $instance->{branch_comboboxentry}->
-            set_model(Gtk2::ListStore->new("Glib::String"));
-        $instance->{branch_comboboxentry}->set_text_column(0);
-        $instance->{branch_comboboxentry}->set_wrap_width(2);
-        $instance->{revision_comboboxentry}->
-            set_model(Gtk2::ListStore->new("Glib::String"));
-        $instance->{revision_comboboxentry}->set_text_column(0);
-        $instance->{revision_comboboxentry}->set_wrap_width(2);
         $instance->{search_term_comboboxentry}->
             set_model(Gtk2::ListStore->new("Glib::String"));
         $instance->{search_term_comboboxentry}->set_text_column(0);
@@ -851,11 +845,10 @@ sub get_advanced_find_window($)
         &{$instance->{update_handler}}($instance, NEW_FIND);
 
         # Now the advanced find instance is completely initialised, set up the
-        # branch and revision comboboxentry widgets for auto-completion.
+        # branch and revision entry widgets for auto-completion.
 
-        activate_auto_completion($instance->{branch_comboboxentry}, $instance);
-        activate_auto_completion($instance->{revision_comboboxentry},
-                                 $instance);
+        activate_auto_completion($instance->{branch_entry}, $instance);
+        activate_auto_completion($instance->{revision_entry}, $instance);
 
     }
     else
@@ -898,11 +891,10 @@ sub get_advanced_find_window($)
     $instance->{selected} = 0;
     $instance->{stop} = 0;
 
-    # Make sure that the branch comboboxentry has the focus and not the cancel
-    # button.
+    # Make sure that the branch entry has the focus and not the cancel button.
 
-    $instance->{branch_comboboxentry}->child()->grab_focus();
-    $instance->{branch_comboboxentry}->child()->set_position(-1);
+    $instance->{branch_entry}->grab_focus();
+    $instance->{branch_entry}->set_position(-1);
 
     return $instance;
 
@@ -941,9 +933,7 @@ sub update_advanced_find_state($$)
     if ($changed & BRANCH)
     {
 
-        my (@branch_list,
-            $counter,
-            $update_interval);
+        my @branch_list;
 
         # Reset the query mode.
 
@@ -968,33 +958,20 @@ sub update_advanced_find_state($$)
 
         $advanced_find->{appbar}->set_status(__("Fetching branch list"));
         $wm->update_gui();
-        $advanced_find->{mtn}->branches(\@branch_list)
-            if (defined($advanced_find->{mtn}));
-        $advanced_find->{branch_combo_details}->{list} = \@branch_list;
-
-        # Update the branch list combobox.
-
-        $advanced_find->{appbar}->set_status(__("Populating branch list"));
-        $wm->update_gui();
-        $counter = 1;
-        $update_interval = calculate_update_interval(\@branch_list);
-        $advanced_find->{branch_comboboxentry}->get_model()->clear();
-        foreach my $branch (@branch_list)
         {
-            $advanced_find->{branch_comboboxentry}->append_text($branch);
-            if (($counter % $update_interval) == 0)
-            {
-                $advanced_find->{appbar}->set_progress_percentage
-                    ($counter / scalar(@branch_list));
-                $wm->update_gui();
-            }
-            ++ $counter;
+            local $pulse_widget = $advanced_find->{appbar}->get_progress();
+            $advanced_find->{mtn}->branches(\@branch_list)
+                if (defined($advanced_find->{mtn}));
+            $advanced_find->{branch_combo_details}->{list} = \@branch_list;
         }
-        $advanced_find->{appbar}->set_progress_percentage(1);
-        $wm->update_gui();
-        $advanced_find->{branch_comboboxentry}->child()->
+
+        # Update the branch entry.
+
+        $advanced_find->{branch_combo_details}->{filter} =
+            $advanced_find->{branch_combo_details}->{value};
+        $advanced_find->{branch_entry}->
             set_text($advanced_find->{branch_combo_details}->{value});
-        $advanced_find->{branch_comboboxentry}->child()->set_position(-1);
+        $advanced_find->{branch_entry}->set_position(-1);
         $advanced_find->{appbar}->set_progress_percentage(0);
         $advanced_find->{appbar}->set_status("");
         $wm->update_gui();
@@ -1006,9 +983,7 @@ sub update_advanced_find_state($$)
     if ($changed & REVISION)
     {
 
-        my ($counter,
-            @revision_list,
-            $update_interval);
+        my @revision_list;
 
         # Reset the revision selection.
 
@@ -1039,28 +1014,11 @@ sub update_advanced_find_state($$)
         }
         $advanced_find->{revision_combo_details}->{list} = \@revision_list;
 
-        # Update the revision list combobox.
+        # Update the revision entry.
 
-        $advanced_find->{appbar}->set_progress_percentage(0);
-        $advanced_find->{appbar}->set_status(__("Populating revision list"));
-        $wm->update_gui();
-        $counter = 1;
-        $update_interval = calculate_update_interval(\@revision_list);
-        $advanced_find->{revision_comboboxentry}->get_model()->clear();
-        foreach my $revision (@revision_list)
-        {
-            $advanced_find->{revision_comboboxentry}->append_text($revision);
-            if (($counter % $update_interval) == 0)
-            {
-                $advanced_find->{appbar}->set_progress_percentage
-                    ($counter / scalar(@revision_list));
-                $wm->update_gui();
-            }
-            ++ $counter;
-        }
-        $advanced_find->{appbar}->set_progress_percentage(1);
-        $wm->update_gui();
-        $advanced_find->{revision_comboboxentry}->child()->
+        $advanced_find->{revision_combo_details}->{filter} =
+            $advanced_find->{revision_combo_details}->{value};
+        $advanced_find->{revision_entry}->
             set_text($advanced_find->{revision_combo_details}->{value});
         $advanced_find->{appbar}->set_progress_percentage(0);
         $advanced_find->{appbar}->set_status("");
