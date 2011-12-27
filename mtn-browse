@@ -388,7 +388,13 @@ sub view_button_clicked_cb($$);
     else
     {
 	my $buffer;
-	if (run_command(\$buffer, undef, "mtn", "automate", "keys"))
+	if (run_command(\$buffer,
+			undef,
+			undef,
+			undef,
+			"mtn",
+			"automate",
+			"keys"))
 	{
 	    my $name;
 	    my @lines = split(/\n/, $buffer);

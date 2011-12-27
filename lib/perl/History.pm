@@ -1561,6 +1561,7 @@ sub generate_history_report($$)
 
     # Reset the window state before the update.
 
+    $instance->{appbar}->set_progress_percentage(0);
     if (defined($instance->{file_name}))
     {
 	$instance->{appbar}->set_status(__("Displaying file history"));
@@ -1569,13 +1570,12 @@ sub generate_history_report($$)
     {
 	$instance->{appbar}->set_status(__("Displaying revision history"));
     }
-    $instance->{stop} = 0;
     $instance->{history_buffer}->set_text("");
     set_label_value($instance->{numbers_value_label}, scalar(@$history));
-    $instance->{appbar}->set_progress_percentage(0);
     $wm->update_gui();
+    $instance->{stop} = 0;
 
-    # Work out whether we need to generate a branch history as scan the
+    # Work out whether we need to generate a branch history as we scan the
     # revisions.
 
     if (! defined($instance->{branch_history}))
@@ -2561,7 +2561,7 @@ sub mtn_diff($$$$$;$)
     eval
     {
 	die("chdir failed: " . $!) unless (chdir(File::Spec->rootdir()));
-	$ret_val = run_command(\$buffer, $abort, @cmd);
+	$ret_val = run_command(\$buffer, undef, undef, $abort, @cmd);
     };
     $exception = $@;
     chdir($cwd);

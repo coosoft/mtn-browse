@@ -89,7 +89,7 @@ sub hex_dump($);
 sub open_database($$$);
 sub program_valid($;$);
 sub register_help_callbacks($@);
-sub run_command($$@);
+sub run_command($$$$@);
 sub save_as_file($$$);
 sub set_label_value($$);
 sub treeview_column_searcher($$$$);
@@ -154,6 +154,13 @@ sub generate_tmp_path($)
 #
 #   Data         - $buffer      : A reference to the buffer that is to contain
 #                                 the output from the command.
+#                  $input_cb    : Either a reference to a callback routine
+#                                 that is to be called in order to provide
+#                                 data on STDIN or undef if no such callback
+#                                 routine is required (i.e. no data is to be
+#                                 sent via STDIN).
+#                  $details     : Any client data that is to be passed to the
+#                                 input callback routine.
 #                  $abort       : Either a reference to a boolean that is set
 #                                 to true if the command is to be aborted or
 #                                 undef if no abort checking is required.
@@ -166,10 +173,10 @@ sub generate_tmp_path($)
 
 
 
-sub run_command($$@)
+sub run_command($$$$@)
 {
 
-    my ($buffer, $abort, @args) = @_;
+    my ($buffer, $input_cb, $details, $abort, @args) = @_;
 
     my ($dummy_flag,
 	@err,
@@ -228,8 +235,7 @@ sub run_command($$@)
 	}
     }
 
-    # Setup a watch handler to read our data and handle GTK2 events whilst the
-    # command is running.
+    # Setup a watch handler to read our data when we hand control over to GTK2.
 
     $total_bytes = 0;
     $$buffer = "";
@@ -251,6 +257,15 @@ sub run_command($$@)
 	     }
 	     return TRUE;
 	 });
+
+    # Call the input callback routine if we have one. It is allowed to close
+    # STDIN if it wishes to.
+
+    &$input_cb($fd_in, $details) if (defined($input_cb));
+
+    # Hand control over to GTK2 whilst we read in the output from the
+    # subprocess.
+
     while (! $stop && ! $$abort)
     {
 	Gtk2->main_iteration();
@@ -269,7 +284,7 @@ sub run_command($$@)
 	@err = $fd_err->getlines() unless ($$abort);
     }
 
-    $fd_in->close();
+    $fd_in->close() if ($fd_in->opened());
     $fd_out->close();
     $fd_err->close();
 

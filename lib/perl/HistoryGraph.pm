@@ -56,7 +56,7 @@ use constant DPI           => 72;
 use constant FONT_SIZE     => 8;
 use constant HEIGHT        => 28;
 use constant LINE_WIDTH    => 2;
-use constant TEXT_BORDER   => 10;
+use constant TEXT_BORDER   => 7;
 use constant WIDTH         => 72;
 
 # Constant for the number of characters displayed for a hexadecimal id.
@@ -82,6 +82,7 @@ sub display_history_graph($;$$$);
 
 # Private routines.
 
+sub dot_input_handler_cb($$);
 sub draw_graph($);
 sub generate_ancestry_graph($$;$$$);
 sub get_history_graph_window();
@@ -122,7 +123,9 @@ sub display_history_graph($;$$$)
 
     my ($mtn, $branches, $from_date, $to_date) = @_;
 
-    my $instance;
+    my ($counter,
+	$instance,
+	@revision_ids);
     my $wm = WindowManager->instance();
 
     $instance = get_history_graph_window();
@@ -147,32 +150,61 @@ sub display_history_graph($;$$$)
 
     # Populate all of the graphed nodes with essential revision information.
 
-    $instance->{appbar}->set_status(__("Getting revision information"));
-    $wm->update_gui();
-    foreach my $revision_id (keys(%{$instance->{graph_data}->{child_graph}}))
+    if (! $instance->{stop})
     {
-	populate_revision_details($instance, $revision_id);
+	$instance->{appbar}->set_progress_percentage(0);
+	$instance->{appbar}->set_status(__("Getting revision information"));
+	$wm->update_gui();
+	$counter = 1;
+	@revision_ids = keys(%{$instance->{graph_data}->{child_graph}});
+	foreach my $revision_id (@revision_ids)
+	{
+	    populate_revision_details($instance, $revision_id);
+	    if (($counter % 100) == 0)
+	    {
+		$instance->{appbar}->set_progress_percentage
+		    ($counter / scalar(@revision_ids));
+		$wm->update_gui();
+	    }
+	    ++ $counter;
+
+	    # Stop if the user wants to.
+
+	    last if ($instance->{stop});
+	}
+	$instance->{appbar}->set_progress_percentage(1);
+	$wm->update_gui();
     }
 
-    # get_revision_history_helper($instance, $revision_id);
+    # Get dot to lay out the history graph.
 
-    $instance->{appbar}->set_progress_percentage(0.5);
-    $instance->{appbar}->set_status(__("Laying out graph with dot"));
-    $wm->update_gui();
-    layout_graph($instance);
-    $instance->{appbar}->set_progress_percentage(1);
-    $wm->update_gui();
+    if (! $instance->{stop})
+    {
+	$instance->{appbar}->set_progress_percentage(0);
+	$instance->{appbar}->set_status(__("Laying out graph with dot"));
+	$wm->update_gui();
+	layout_graph($instance);
+    }
 
-    draw_graph($instance);
+    # Now draw it in our canvas.
+
+    draw_graph($instance) unless ($instance->{stop});
+
+    # Cleanup any data if we were asked to stop.
+
+    if ($instance->{stop})
+    {
+	$instance->{colour_db} = {};
+	$instance->{graph_data} = undef;
+    }
 
     $instance->{stop_button}->set_sensitive(FALSE);
     $instance->{stop} = 0;
+    $instance->{appbar}->set_progress_percentage(0);
     $wm->update_gui();
 
     $instance->{appbar}->pop();
     $wm->make_busy($instance, 0);
-
-    $instance->{appbar}->set_status(__("DONE"));
 
 }
 #
@@ -770,8 +802,6 @@ sub graph_reconnect_helper($$)
 #                  the result.
 #
 #   Data         - $instance    : The history graph window instance.
-#                  Return Value : True if the generation worked, otherwise
-#                                 false if something went wrong.
 #
 ##############################################################################
 
@@ -784,24 +814,9 @@ sub layout_graph($)
 
     my (@arrows,
 	$buffer,
-	$child_db,
 	@circles,
-	@err,
-	$fh_err,
-	$fh_in,
-	$fh_out,
-	$hex_id_height,
-	$hex_id_width,
-	$layout,
-	$my_pid,
-	$pid,
 	$prev_lines,
-	@rectangles,
-	@revision_ids,
-	$stop,
-	$total_bytes,
-	$watcher);
-    my $wm = WindowManager->instance();
+	@rectangles);
 
     $instance->{graph_data}->{arrows} = [];
     $instance->{graph_data}->{circles} = [];
@@ -811,327 +826,11 @@ sub layout_graph($)
 
     # Run the dot subprocess.
 
-    $fh_err = gensym();
-    $my_pid = $$;
-    eval
-    {
-	$pid = open3($fh_in,
-		     $fh_out,
-		     $fh_err,
-		     "dot", "-q", "-y", "-s72", "-Txdot");
-    };
-
-    # Check for errors (remember that open3() errors can happen in both the
-    # parent and child processes).
-
-    if ($@)
-    {
-	if ($$ != $my_pid)
-	{
-
-	    # In the child process so all we can do is complain and exit.
-
-	    warn(__x("open3 failed: {error_message}", error_message => $@));
-	    exit(1);
-
-	}
-	else
-	{
-
-	    # In the parent process so deal with the error in the usual way.
-
-	    my $dialog = Gtk2::MessageDialog->new
-		(undef,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("The dot subprocess could not start,\n"
-		         . "the system gave:\n<b><i>{error_message}</b></i>",
-		     error_message => Glib::Markup::escape_text($@)));
-	    WindowManager->instance()->allow_input(sub { $dialog->run(); });
-	    $dialog->destroy();
-	    return;
-
-	}
-    }
-
-    # Setup a watch handler to read our data when we hand control over to GTK2.
-
-    $total_bytes = 0;
-    $buffer = "";
-    $watcher = Gtk2::Helper->add_watch
-	($fh_out->fileno(), "in",
-	 sub {
-	     my $bytes_read;
-	     if (($bytes_read = $fh_out->sysread($buffer, 32768, $total_bytes))
-		     == 0
-		 || ! defined($bytes_read))
-	     {
-		 $stop = 1;
-	     }
-	     else
-	     {
-		 $total_bytes += $bytes_read;
-	     }
-	     return TRUE;
-	 });
-
-    # Create a layout object based on the main graph window and then use it to
-    # get the pixel size of a hex id when displayed on the screen. This layout
-    # is also used later on for any tags that need to be displayed.
-
-    $layout = $instance->{window}->create_pango_layout("A" x HEX_ID_LENGTH);
-    $layout->set_font_description($instance->{fontdescription});
-    ($hex_id_width, $hex_id_height) = $layout->get_pixel_size();
-    $hex_id_height = max(HEIGHT, $hex_id_height + TEXT_BORDER);
-    $hex_id_width = max(WIDTH, $hex_id_width + TEXT_BORDER);
-
-    # Generate a list of topographically sorted revision ids for each revision
-    # in the graph database.
-
-    $child_db = $instance->{graph_data}->{child_graph};
-    @revision_ids = keys(%$child_db);
-
-    # Now write out the dot graph to the dot subprocess. We don't need to worry
-    # about reading and writing at the same time as dot needs the complete
-    # graph before it can do its magic.
-
-    # Pre-amble.
-
-    $fh_in->print("digraph \"mtn-browse\"\n"
-		  . "{\n"
-		  . "  graph [ranksep=\"0.25\"];\n"
-		  . "  node [label=\"\"];\n");
-
-    # Rectangular non-merge nodes, possibly changing the width for tagged nodes
-    # if we need more space.
-
-    $fh_in->printf("  node [shape=box, width = %f, height = %f];\n",
-		   $hex_id_width / DPI,
-		   $hex_id_height / DPI);
-    foreach my $revision_id (@revision_ids)
-    {
-	if (! ($child_db->{$revision_id}->{flags} & CIRCULAR_NODE))
-	{
-	    my $width = WIDTH;
-	    $fh_in->print("  \"" . $revision_id . "\"");
-	    if (scalar(@{$child_db->{$revision_id}->{tags}}) > 0)
-	    {
-		$layout->set_text($child_db->{$revision_id}->{tags}->[0]);
-		$width = max(WIDTH,
-			     ($layout->get_pixel_size())[0] + TEXT_BORDER);
-	    }
-	    if ($width != WIDTH)
-	    {
-		$fh_in->printf(" [width = %f];\n", $width / DPI);
-	    }
-	    else
-	    {
-		$fh_in->print(";\n");
-	    }
-	}
-    }
-
-    # Circular merge nodes.
-
-    $fh_in->printf("  node [shape=circle, width = %f, height = %f];\n",
-		   $hex_id_height / DPI,
-		   $hex_id_height / DPI);
-    foreach my $revision_id (@revision_ids)
-    {
-	if ($child_db->{$revision_id}->{flags} & CIRCULAR_NODE)
-	{
-	    $fh_in->print("  \"" . $revision_id . "\";\n");
-	}
-    }
-
-    # Head nodes. These need to be grouped together.
-
-    $fh_in->print("  subgraph heads\n"
-		  . "  {\n"
-		  . "    rank = sink;\n");
-    foreach my $revision_id (@{$instance->{graph_data}->{head_revisions}})
-    {
-	$fh_in->print("    \"" . $revision_id . "\";\n");
-    }
-    $fh_in->print("  }\n");
-
-    # Lines. Use the weight attribute on lines that go between a selected node
-    # and an unselected one, with the unselected one having no
-    # parents/children. The higher the weighting the shorter and straighter the
-    # lines are. This has the effect of making sure that edge propagation nodes
-    # are closely clustered around their selected relations.
-
-    foreach my $revision_id (@revision_ids)
-    {
-	my $selected = $child_db->{$revision_id}->{flags} & SELECTED_NODE;
-	my $no_parents = $child_db->{$revision_id}->{flags} & NO_PARENTS;
-	foreach my $child_id (@{$child_db->{$revision_id}->{children}})
-	{
-	    my $child_selected =
-		$child_db->{$child_id}->{flags} & SELECTED_NODE;
-	    $fh_in->print("  \"" . $revision_id . "\" -> \"" . $child_id
-			  . "\"");
-	    if ((! $selected && $child_selected && $no_parents)
-		|| ($selected && ! $child_selected
-		    && scalar(@{$child_db->{$child_id}->{children}}) == 0))
-	    {
-		$fh_in->print(" [weight = 4];\n");
-	    }
-	    else
-	    {
-		$fh_in->print(";\n");
-	    }
-	}
-    }
-
-    # Close off the graph and close dot's input so that it knows to start
-    # processing the data.
-
-    $fh_in->print("}\n");
-    $fh_in->close();
-
-    # Hand control over to GTK2 whilst we read in the output from dot.
-
-    while (! $stop && ! $instance->{stop})
-    {
-	Gtk2->main_iteration();
-    }
-    Gtk2::Helper->remove_watch($watcher);
-    $buffer = "" if ($instance->{stop});
-
-    # If we have been asked to abort then terminate the subprocess, otherwise
-    # get any error output as the subprocess has just exited of its own accord.
-
-    if ($instance->{stop})
-    {
-	kill("TERM", $pid);
-    }
-    else
-    {
-	@err = $fh_err->getlines() unless ($instance->{stop});
-    }
-
-    $fh_out->close();
-    $fh_err->close();
-
-    # Reap the process and deal with any errors.
-
-    for (my $i = 0; $i < 4; ++ $i)
-    {
-
-	my $wait_status = 0;
-
-	# Wait for the subprocess to exit (preserving the current state of $@
-	# so that any exception that has already occurred is not lost, also
-	# ignore any errors resulting from waitpid() interruption).
-
-	{
-	    local $@;
-	    eval
-	    {
-		local $SIG{ALRM} = sub { die(WAITPID_INTERRUPT); };
-		alarm(5);
-		$wait_status = waitpid($pid, 0);
-		alarm(0);
-	    };
-	    $wait_status = 0
-		if ($@ eq WAITPID_INTERRUPT && $wait_status < 0
-		    && $! == EINTR);
-	}
-
-	# The subprocess has terminated.
-
-	if ($wait_status == $pid)
-	{
-	    if (! $instance->{stop})
-	    {
-		my $exit_status = $?;
-		if (WIFEXITED($exit_status) && WEXITSTATUS($exit_status) != 0)
-		{
-		    my $dialog = Gtk2::MessageDialog->new_with_markup
-			(undef,
-			 ["modal"],
-			 "warning",
-			 "close",
-			 __x("The dot subprocess failed with an exit status\n"
-				 . "of {exit_code} and printed the following "
-			         . "on stderr:\n"
-				 . "<b><i>{error_message}</i></b>",
-			     exit_code => WEXITSTATUS($exit_status),
-			     error_message => Glib::Markup::escape_text
-					      (join("", @err))));
-		    WindowManager->instance()->allow_input
-			(sub { $dialog->run(); });
-		    $dialog->destroy();
-		    return;
-		}
-		elsif (WIFSIGNALED($exit_status))
-		{
-		    my $dialog = Gtk2::MessageDialog->new
-			(undef,
-			 ["modal"],
-			 "warning",
-			 "close",
-			 __x("The dot subprocess was terminated by signal "
-				 . "{number}.",
-			     number => WTERMSIG($exit_status)));
-		    WindowManager->instance()->allow_input
-			(sub { $dialog->run(); });
-		    $dialog->destroy();
-		    return;
-		}
-	    }
-	    last;
-	}
-
-	# The subprocess is still there so try and kill it unless it's time to
-	# just give up.
-
-	elsif ($i < 3 && $wait_status == 0)
-	{
-	    if ($i == 0)
-	    {
-		kill("INT", $pid);
-	    }
-	    elsif ($i == 1)
-	    {
-		kill("TERM", $pid);
-	    }
-	    else
-	    {
-		kill("KILL", $pid);
-	    }
-	}
-
-	# Stop if we don't have any relevant children to wait for anymore.
-
-	elsif ($wait_status < 0 && $! == ECHILD)
-	{
-	    last;
-	}
-
-	# Either there is some other error with waitpid() or a child process
-	# has been reaped that we aren't interested in (in which case just
-	# ignore it).
-
-	elsif ($wait_status < 0)
-	{
-	    my $err_msg = $!;
-	    kill("KILL", $pid);
-	    my $dialog = Gtk2::MessageDialog->new_with_markup
-		(undef,
-		 ["modal"],
-		 "warning",
-		 "close",
-		 __x("waitpid failed with:\n<b><i>{error_message}</i></b>",
-		     error_message => Glib::Markup::escape_text($!)));
-	    WindowManager->instance()->allow_input(sub { $dialog->run(); });
-	    $dialog->destroy();
-	    return;
-	}
-
-    }
+    return unless (run_command(\$buffer,
+			       \&dot_input_handler_cb,
+			       $instance,
+			       \$instance->{stop},
+			       "dot", "-q", "-y", "-s" . DPI, "-Txdot"));
 
     # Parse the dot output, line by line.
 
@@ -1243,7 +942,149 @@ sub layout_graph($)
     $instance->{graph_data}->{circles} = \@circles;
     $instance->{graph_data}->{rectangles} = \@rectangles;
 
-    return 1;
+}
+#
+##############################################################################
+#
+#   Routine      - dot_input_handler_cb
+#
+#   Description  - Given a child graph database, generate the dot instructions
+#                  writing them out to the specified file handle.
+#
+#   Data         - $fh_in       : The STDIN file handle for the dot
+#                                 subprocess.
+#                  $instance    : The history graph window instance.
+#
+##############################################################################
+
+
+
+sub dot_input_handler_cb($$)
+{
+
+    my ($fh_in, $instance) = @_;
+
+    my ($child_db,
+	$hex_id_height,
+	$hex_id_width,
+	$layout,
+	@revision_ids);
+
+    # Create a layout object based on the main graph window and then use it to
+    # get the pixel size of a hex id when displayed on the screen. This layout
+    # is also used later on for any tags that need to be displayed.
+
+    $layout = $instance->{window}->create_pango_layout("A" x HEX_ID_LENGTH);
+    $layout->set_font_description($instance->{fontdescription});
+    ($hex_id_width, $hex_id_height) = $layout->get_pixel_size();
+    $hex_id_height = max(HEIGHT, $hex_id_height + (TEXT_BORDER * 2));
+    $hex_id_width = max(WIDTH, $hex_id_width + (TEXT_BORDER * 2));
+
+    # Generate a list of topographically sorted revision ids for each revision
+    # in the graph database.
+
+    $child_db = $instance->{graph_data}->{child_graph};
+    @revision_ids = keys(%$child_db);
+
+    # Now write out the dot graph to the dot subprocess. We don't need to worry
+    # about reading and writing at the same time as dot needs the complete
+    # graph before it can do its magic.
+
+    # Pre-amble.
+
+    $fh_in->print("digraph \"mtn-browse\"\n"
+		  . "{\n"
+		  . "  graph [ranksep=\"0.25\"];\n"
+		  . "  node [label=\"\"];\n");
+
+    # Rectangular non-merge nodes, possibly changing the width for tagged nodes
+    # if we need more space.
+
+    $fh_in->printf("  node [shape=box, width = %f, height = %f];\n",
+		   $hex_id_width / DPI,
+		   $hex_id_height / DPI);
+    foreach my $revision_id (@revision_ids)
+    {
+	if (! ($child_db->{$revision_id}->{flags} & CIRCULAR_NODE))
+	{
+	    my $width = WIDTH;
+	    $fh_in->print("  \"" . $revision_id . "\"");
+	    if (scalar(@{$child_db->{$revision_id}->{tags}}) > 0)
+	    {
+		$layout->set_text($child_db->{$revision_id}->{tags}->[0]);
+		$width = max(WIDTH,
+			     ($layout->get_pixel_size())[0]
+			         + (TEXT_BORDER * 2));
+	    }
+	    if ($width != WIDTH)
+	    {
+		$fh_in->printf(" [width = %f];\n", $width / DPI);
+	    }
+	    else
+	    {
+		$fh_in->print(";\n");
+	    }
+	}
+    }
+
+    # Circular merge nodes.
+
+    $fh_in->printf("  node [shape=circle, width = %f, height = %f];\n",
+		   $hex_id_height / DPI,
+		   $hex_id_height / DPI);
+    foreach my $revision_id (@revision_ids)
+    {
+	if ($child_db->{$revision_id}->{flags} & CIRCULAR_NODE)
+	{
+	    $fh_in->print("  \"" . $revision_id . "\";\n");
+	}
+    }
+
+    # Head nodes. These need to be grouped together.
+
+    $fh_in->print("  subgraph heads\n"
+		  . "  {\n"
+		  . "    rank = sink;\n");
+    foreach my $revision_id (@{$instance->{graph_data}->{head_revisions}})
+    {
+	$fh_in->print("    \"" . $revision_id . "\";\n");
+    }
+    $fh_in->print("  }\n");
+
+    # Lines. Use the weight attribute on lines that go between a selected node
+    # and an unselected one, with the unselected one having no
+    # parents/children. The higher the weighting the shorter and straighter the
+    # lines are. This has the effect of making sure that edge propagation nodes
+    # are closely clustered around their selected relations.
+
+    foreach my $revision_id (@revision_ids)
+    {
+	my $selected = $child_db->{$revision_id}->{flags} & SELECTED_NODE;
+	my $no_parents = $child_db->{$revision_id}->{flags} & NO_PARENTS;
+	foreach my $child_id (@{$child_db->{$revision_id}->{children}})
+	{
+	    my $child_selected =
+		$child_db->{$child_id}->{flags} & SELECTED_NODE;
+	    $fh_in->print("  \"" . $revision_id . "\" -> \"" . $child_id
+			  . "\"");
+	    if ((! $selected && $child_selected && $no_parents)
+		|| ($selected && ! $child_selected
+		    && scalar(@{$child_db->{$child_id}->{children}}) == 0))
+	    {
+		$fh_in->print(" [weight = 4];\n");
+	    }
+	    else
+	    {
+		$fh_in->print(";\n");
+	    }
+	}
+    }
+
+    # Close off the graph and close dot's input so that it knows to start
+    # processing the data.
+
+    $fh_in->print("}\n");
+    $fh_in->close();
 
 }
 #
@@ -1457,10 +1298,6 @@ sub draw_graph($)
 					   width_pixels  => LINE_WIDTH);
 	$bpath->set_path_def($pathdef);
 	$bpath->lower_to_bottom();
-
-	# Stop if the user wants to.
-
-	last if ($instance->{stop});
     }
 
     # Work around a bug where the scroll bar arrows don't work with canvases,
@@ -1475,7 +1312,7 @@ sub draw_graph($)
     }
 
     # Clean up the graph if the user stopped the drawing process (it will be a
-    # mess).
+    # mess anyway).
 
     if ($instance->{stop})
     {
@@ -1488,11 +1325,6 @@ sub draw_graph($)
     $instance->{appbar}->set_progress_percentage(0);
     $instance->{appbar}->set_status("");
     $wm->update_gui();
-
-    printf("Boxes = %d\nCircles = %d\nLines = %d\n",
-	   scalar(@{$instance->{graph_data}->{rectangles}}),
-	   scalar(@{$instance->{graph_data}->{circles}}),
-	   scalar(@{$instance->{graph_data}->{arrows}}));
 
 }
 #
