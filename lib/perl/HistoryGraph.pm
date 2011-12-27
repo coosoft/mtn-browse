@@ -56,6 +56,11 @@ use constant DPI           => 72;
 use constant HEIGHT        => 28;
 use constant WIDTH         => 72;
 
+# Constants representing the graph node flags that can be set.
+
+use constant MERGE_NODE    => 0x01;
+use constant SELECTED_NODE => 0x02;
+
 # ***** FUNCTIONAL PROTOTYPES *****
 
 # Public routines.
@@ -187,7 +192,7 @@ sub build_ancestry_graph($$;$$$)
 	= @_;
 
     my(%branches_set,
-       $branches_selector,
+       $branch_selector,
        %date_set,
        $date_range_selector,
        $date_selector,
@@ -280,7 +285,7 @@ sub build_ancestry_graph($$;$$$)
     };
     CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
 						 \&mtn_error_handler);
-    $branches_selector = 1 if (scalar(keys(%branches_set)) > 0);
+    $branch_selector = 1 if (scalar(keys(%branches_set)) > 0);
     $date_selector = 1 if (scalar(keys(%date_set)) > 0);
 
     # Set the selected_set variable to point to which ever selector set should
@@ -292,7 +297,7 @@ sub build_ancestry_graph($$;$$$)
     # they are in the date range but not necessarily in the selected set of
     # branches).
 
-    if ($branches_selector)
+    if ($branch_selector)
     {
 	$selected_set = \%branches_set;
     }
@@ -332,14 +337,13 @@ sub build_ancestry_graph($$;$$$)
 	{
 	    $current_selected = $selected = 1;
 	}
-	elsif ($show_all_propagate_nodes && $branches_selector
+	elsif ($show_all_propagate_nodes && $branch_selector
 	       && (! $date_selector
 		   || exists($date_set{$entry->{revision_id}})))
 	{
-	    foreach my $revision_id ($entry->{revision_id},
-				     @{$entry->{parent_ids}})
+	    foreach my $parent_id (@{$entry->{parent_ids}})
 	    {
-		if (exists($selected_set->{$revision_id}))
+		if (exists($selected_set->{$parent_id}))
 		{
 		    $selected = 1;
 		    last;
@@ -359,8 +363,8 @@ sub build_ancestry_graph($$;$$$)
 
 	    if (! exists($graph_db{$entry->{revision_id}}))
 	    {
-		$graph_db{$entry->{revision_id}} = {children   => [],
-						    merge_node => undef};
+		$graph_db{$entry->{revision_id}} = {children => [],
+						    flags    => 0};
 	    }
 
 	    # If the current revision is selected itself then all parents
@@ -385,8 +389,8 @@ sub build_ancestry_graph($$;$$$)
 		    else
 		    {
 			$graph_db{$parent_id} =
-			    {children   => [$entry->{revision_id}],
-			     merge_node => undef};
+			    {children => [$entry->{revision_id}],
+			     flags    => 0};
 		    }
 		    ++ $nr_parents;
 		}
@@ -395,8 +399,13 @@ sub build_ancestry_graph($$;$$$)
 	    # If this node is going to have more than one parent in the graph
 	    # then mark it as a merge node.
 
-	    $graph_db{$entry->{revision_id}}->{merge_node} = 1
+	    $graph_db{$entry->{revision_id}}->{flags} |= MERGE_NODE
 		if ($nr_parents > 1);
+
+	    # If this node was actually selected then mark it as such.
+
+	    $graph_db{$entry->{revision_id}}->{flags} |= SELECTED_NODE
+		if ($current_selected);
 
 	}
 
@@ -419,9 +428,9 @@ sub build_ancestry_graph($$;$$$)
     # to a number of branches then we better make sure that as many head and
     # tail revisions are joined up (may happen due to intermediate revisions
     # being excluded because of branch selectors). For this we need a parent
-    # database but limited by date if necessary.
+    # database but limited by date if possible.
 
-    if ($branches_selector && scalar(@head_revisions) > 1)
+    if ($branch_selector && scalar(@head_revisions) > 1)
     {
 	my ($context,
 	    %parent_db);
@@ -453,7 +462,8 @@ sub build_ancestry_graph($$;$$$)
 		    outside_selection => undef,
 		    parent_db         => \%parent_db,
 		    parents           => [],
-		    processed_set      => {}};
+		    processed_set     => {},
+		    aggressive_scan   => undef};
 	foreach my $head_id (@head_revisions)
 	{
 	    $context->{outside_selection} = undef;
@@ -505,11 +515,6 @@ sub graph_reconnect_helper($$)
 
     my ($context, $revision_id) = @_;
 
-    my ($process_all_parents,
-	$processed_set,
-	$processing_this_node);
-    my $nr_parents = 0;
-
     # Please note that by definition the selected_set field must contain a
     # valid set as this recursive routine would never have been called
     # otherwise.
@@ -519,120 +524,176 @@ sub graph_reconnect_helper($$)
     if ($context->{outside_selection})
     {
 
-	# Yes we were so if we have just come back inside our selected set of
-	# revisions again then make a note of the current revision in our
-	# parents list and then terminate this branch of the search by
-	# returning.
+	# Yes we were so if we have just stumbled across a node that is to be
+	# graphed then make a note of the current revision in our parents list
+	# and then stop searching any further down this path. Otherwise carry
+	# on looking.
 
 	if (exists($context->{graph_db}->{$revision_id}))
 	{
 	    push(@{$context->{parents}}, $revision_id);
 	    return;
 	}
+	else
+	{
+	    foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
+	    {
+		if (! exists($context->{processed_set}->{$parent_id}))
+		{
+		    graph_reconnect_helper($context, $parent_id);
+		}
+	    }
+	}
 
     }
     else
     {
 
-	# No we aren't so stash the current hit list away and use a blank one
-	# just in case we go outside our selected set of revisions (we don't
-	# want to prevent subsequent walks outside our selected set on
-	# different nodes from finding a possible route to a selected parent).
+	my ($aggressive_scan,
+	    $found_new_ancestors);
+	my $nr_parents = 0;
 
-	$processed_set = $context->{processed_set};
-	$context->{processed_set} = {};
+	# No we weren't off selection.
 
-    }
+	# If the current node is selected then check to see if there are any
+	# selected parents. If not then we need to go into an aggressive scan
+	# mode where we do our best to find a graphed ancestor for it.
 
-    # Process the parents with a mind to joining up gaps in the history.
-    # A parent for a given node will not be processed if it:
-    #     1) Has already been processed in this specific joining scan (remember
-    #        that processed_set has been stashed and wiped at the start of each
-    #        potential joining scan).
-    #     2) Is outside of any date range. Actually we don't really need to
-    #        check this here as the parent database has already been restricted
-    #        to only cover revisions that are in date range. No I hadn't forgot
-    #        to put the test in below!
-    # Otherwise a parent will be processed if:
-    #     1) It is a propagate node (ones which are in the graph database but
-    #        aren't selected). These nodes wouldn't have had any parents
-    #        recorded in the first place if they were a parent of a selected
-    #        node.
-    #     2) We are currently off selection doing a joining scan.
-    #     3) It has not been included at all (i.e. not in the graph database).
-    #     Please note that the result of the first two conditions are stored in
-    #     $process_all_parents as that relates to the current node and not its
-    #     parents.
-
-    $process_all_parents = 1
-	if ((exists($context->{graph_db}->{$revision_id})
-	     && ! exists($context->{selected_set}->{$revision_id}))
-	    || $context->{outside_selection});
-    foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
-    {
-	if (($process_all_parents
-	     || ! exists($context->{graph_db}->{$parent_id}))
-	    && ! exists($context->{processed_set}->{$parent_id}))
+	if (exists($context->{selected_set}->{$revision_id}))
 	{
-	    $processing_this_node = $context->{outside_selection} = 1
-		unless ($context->{outside_selection});
-	    graph_reconnect_helper($context, $parent_id);
-	}
-    }
-
-    # Restore any stashed hit list.
-
-    $context->{processed_set} = $processed_set if (defined($processed_set));
-
-    # If we have found some parents then file this revision as a child of those
-    # parents in the graph database. We don't have to worry about the parent
-    # entries not existing in the graph database as they could only be unlinked
-    # parents by being selected in the first place. Avoid adding duplicated
-    # parent nodes (can happen especially on propagation nodes that originally
-    # had selected parents).
-
-    if ($processing_this_node)
-    {
-	foreach my $parent_id (@{$context->{parents}})
-	{
-	    my $found;
-	    foreach my $child_id
-		(@{$context->{graph_db}->{$parent_id}->{children}})
+	    $aggressive_scan = 1;
+	    foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
 	    {
-		if ($child_id eq $revision_id)
+		if (exists($context->{selected_set}->{$parent_id}))
 		{
-		    $found = 1;
+		    $aggressive_scan = undef;
 		    last;
 		}
 	    }
-	    if (! $found)
+	}
+
+	# Otherwise if the current node is a propagate node (i.e. in the graph
+	# database but not selected, e.g. an off-branch parent of an on-branch
+	# node) then we may need to either do an aggressive scan to join two
+	# separate graphs together or see if it has any selected parents that
+	# need joining up (as these wouldn't have even been looked at before).
+
+	elsif (exists($context->{graph_db}->{$revision_id}))
+	{
+
+	    # Aggressive scan?
+
+	    if ($context->{aggressive_scan})
 	    {
-		push(@{$context->{graph_db}->{$parent_id}->{children}},
-		     $revision_id);
+
+		# Ok do our best to find selected ancestors.
+
+		# Stash the current hit list away and use a blank one as we are
+		# going outside our selected set of revisions (we don't want to
+		# prevent subsequent walks outside our selected set on
+		# different nodes from finding a possible route to a graphed
+		# parent).
+
+		local $context->{processed_set} = {};
+
+		# Search up each ungraphed parent node.
+
+		local $context->{outside_selection};
+		foreach my $parent_id
+		    (@{$context->{parent_db}->{$revision_id}})
+		{
+		    if (! exists($context->{processed_set}->{$parent_id})
+			&& ! exists($context->{graph_db}->{$parent_id}))
+		    {
+			$found_new_ancestors = $context->{outside_selection} =
+			    1
+			    unless ($context->{outside_selection});
+			graph_reconnect_helper($context, $parent_id);
+		    }
+		}
+
+	    }
+	    else
+	    {
+
+		# Non-aggressive scan so just join up any graphed parents.
+
+		foreach my $parent_id
+		    (@{$context->{parent_db}->{$revision_id}})
+		{
+		    if (exists($context->{graph_db}->{$parent_id}))
+		    {
+			$found_new_ancestors = 1;
+			push(@{$context->{parents}}, $parent_id);
+		    }
+		}
+
+	    }
+
+	    # If we have found some parents then file this revision as a child
+	    # of those parents in the graph database. By definition all found
+	    # parent nodes already exist in the graph database so no need to
+	    # worry about creating new nodes. Also avoid adding duplicate child
+	    # revision entries.
+
+	    if ($found_new_ancestors)
+	    {
+		foreach my $parent_id (@{$context->{parents}})
+		{
+		    my $found;
+		    foreach my $child_id
+			(@{$context->{graph_db}->{$parent_id}->{children}})
+		    {
+			if ($child_id eq $revision_id)
+			{
+			    $found = 1;
+			    last;
+			}
+		    }
+		    if (! $found)
+		    {
+			push(@{$context->{graph_db}->{$parent_id}->{children}},
+			     $revision_id);
+			++ $nr_parents;
+		    }
+		}
+		$context->{parents} = [];
+	    }
+
+	}
+
+	# Temporarily switch on aggressive scan mode if necessary.
+
+	local $context->{aggressive_scan} = 1 if ($aggressive_scan);
+
+	# Ok so now process the graphed parents.
+
+	foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
+	{
+	    if (! exists($context->{processed_set}->{$parent_id})
+		&& exists($context->{graph_db}->{$parent_id}))
+	    {
+		graph_reconnect_helper($context, $parent_id);
 		++ $nr_parents;
 	    }
 	}
-	$context->{parents} = [];
-	$context->{outside_selection} = undef;
-    }
 
-    # Ok so now process the selected parents, we are done with this node.
+	# Update the merge node attribute if we have now have multiple
+	# `parents'.
 
-    foreach my $parent_id (@{$context->{parent_db}->{$revision_id}})
-    {
-	if (! exists($context->{processed_set}->{$parent_id})
-	    && exists($context->{graph_db}->{$parent_id}))
+	if ($found_new_ancestors)
 	{
-	    graph_reconnect_helper($context, $parent_id);
-	    ++ $nr_parents;
+	    if ($nr_parents > 1)
+	    {
+		$context->{graph_db}->{$revision_id}->{flags} |= MERGE_NODE;
+	    }
+	    else
+	    {
+		$context->{graph_db}->{$revision_id}->{flags} &= ~ MERGE_NODE;
+	    }
 	}
+
     }
-
-    # Update the merge node attribute if we are processing this node and we now
-    # have multiple parents.
-
-    $context->{graph_db}->{$revision_id}->{merge_node} = 1
-	if ($processing_this_node && $nr_parents > 1);
 
     # Mark this node as having been processed.
 
@@ -776,7 +837,7 @@ sub layout_graph($)
 		   HEIGHT / DPI);
     foreach my $revision_id (@revision_ids)
     {
-	if (! $child_db->{$revision_id}->{merge_node})
+	if (! ($child_db->{$revision_id}->{flags} & MERGE_NODE))
 	{
 	    $fh_in->print("  \"" . $revision_id . "\" ;\n");
 	}
@@ -789,7 +850,7 @@ sub layout_graph($)
 		   HEIGHT / DPI);
     foreach my $revision_id (@revision_ids)
     {
-	if ($child_db->{$revision_id}->{merge_node})
+	if ($child_db->{$revision_id}->{flags} & MERGE_NODE)
 	{
 	    $fh_in->print("  \"" . $revision_id . "\" ;\n");
 	}
@@ -1108,15 +1169,65 @@ sub draw_graph($)
 
     foreach my $rectangle (@{$instance->{graph_data}->{rectangles}})
     {
-	Gnome2::Canvas::Item->new($group,
-				  "Gnome2::Canvas::Rect",
-				  x1 => $rectangle->{tl_x},
-				  y1 => $rectangle->{tl_y},
-				  x2 => $rectangle->{br_x},
-				  y2 => $rectangle->{br_y},
-				  fill_color => "yellow",
-				  outline_color => "black",
-				  width_pixels => 2);
+	my $colour = "yellow";
+	if ($instance->{graph_data}->{child_graph}->
+	        {$rectangle->{revision_id}}->{flags}
+	    & SELECTED_NODE)
+	{
+	    $colour = "orange";
+	}
+	my $widget = Gnome2::Canvas::Item->new($group,
+					       "Gnome2::Canvas::Rect",
+					       x1 => $rectangle->{tl_x},
+					       y1 => $rectangle->{tl_y},
+					       x2 => $rectangle->{br_x},
+					       y2 => $rectangle->{br_y},
+					       fill_color => $colour,
+					       outline_color => "black",
+					       width_pixels => 2);
+	$widget->signal_connect
+	    ("event",
+	     sub {
+		 my ($widget, $event, $data) = @_;
+		 if ($event->type eq "button-press")
+		 {
+		     print($data . "\n");
+		 }
+		 return TRUE;
+	     },
+	     $rectangle->{revision_id});
+    }
+
+    foreach my $circle (@{$instance->{graph_data}->{circles}})
+    {
+	my $colour = "pink";
+	if ($instance->{graph_data}->{child_graph}->
+	        {$circle->{revision_id}}->{flags}
+	    & SELECTED_NODE)
+	{
+	    $colour = "red";
+	}
+	my $widget = Gnome2::Canvas::Item->new
+	    ($group,
+	     "Gnome2::Canvas::Ellipse",
+	     x1 => $circle->{x} - $circle->{width},
+	     y1 => $circle->{y} - $circle->{height},
+	     x2 => $circle->{x} + $circle->{width},
+	     y2 => $circle->{y} + $circle->{height},
+	     fill_color => $colour,
+	     outline_color => "black",
+	     width_pixels => 2);
+	$widget->signal_connect
+	    ("event",
+	     sub {
+		 my ($widget, $event, $data) = @_;
+		 if ($event->type eq "button-press")
+		 {
+		     print($data . "\n");
+		 }
+		 return TRUE;
+	     },
+	     $circle->{revision_id});
     }
 
     foreach my $arrow (@{$instance->{graph_data}->{arrows}})
@@ -1151,19 +1262,6 @@ sub draw_graph($)
 					   width_pixels => 2);
 	$bpath->set_path_def($pathdef);
 	$bpath->lower_to_bottom();
-    }
-
-    foreach my $circle (@{$instance->{graph_data}->{circles}})
-    {
-	Gnome2::Canvas::Item->new($group,
-				  "Gnome2::Canvas::Ellipse",
-				  x1 => $circle->{x} - $circle->{width},
-				  y1 => $circle->{y} - $circle->{height},
-				  x2 => $circle->{x} + $circle->{width},
-				  y2 => $circle->{y} + $circle->{height},
-				  fill_color => "pink",
-				  outline_color => "black",
-				  width_pixels => 2);
     }
 
 }
