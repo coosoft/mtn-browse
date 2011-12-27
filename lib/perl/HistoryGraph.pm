@@ -1716,7 +1716,7 @@ sub layout_graph($)
                                \&dot_input_handler_cb,
                                $instance,
                                \$instance->{stop},
-                               GRAPHVIZ_LAYOUT_PROGRAM, "-q", "-y", "-s" . DPI,
+                               GRAPHVIZ_LAYOUT_PROGRAM, "-q", "-s" . DPI,
                                    "-Txdot"));
 
     # Parse the dot output, line by line.
@@ -1884,8 +1884,14 @@ sub dot_input_handler_cb($$)
 
     $fh_in->print("digraph \"mtn-browse\"\n"
                   . "{\n");
-    $fh_in->print("  graph [rankdir=LR];\n")
-        if ($instance->{graph_data}->{parameters}->{draw_left_to_right});
+    if ($instance->{graph_data}->{parameters}->{draw_left_to_right})
+    {
+        $fh_in->print("  graph [rankdir=LR];\n");
+    }
+    else
+    {
+        $fh_in->print("  graph [rankdir=BT];\n");
+    }
     $fh_in->print("  graph [ranksep=\"0.25\"];\n"
                   . "  node [label=\"\"];\n");
 

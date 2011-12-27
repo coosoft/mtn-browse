@@ -3872,11 +3872,11 @@ sub mtn_error_handler($$)
              "close",
              __x("The Monotone subprocess unexpectedly exited with:\n"
                      . "<b><i>{error_message}</i></b>\n"
-                     . "This is fatal, I am going to exit.",
+                     . "This should not be happening!",
                  error_message => Glib::Markup::escape_text($message)));
         busy_dialog_run($dialog);
         $dialog->destroy();
-        Gtk2->main_quit() unless (Gtk2->main_level() == 0);
+        WindowManager->instance()->reset_state();
         die($message);
     }
 
