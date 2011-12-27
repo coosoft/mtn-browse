@@ -80,7 +80,7 @@ use constant SELECTION_COLOUR           => "Orange";
 
 # Public routines.
 
-sub display_history_graph($;$$$);
+sub display_history_graph($;$$$$$);
 
 # Private routines.
 
@@ -88,7 +88,7 @@ sub canvas_item_event_cb($$$);
 sub default_zoom_button_clicked_cb($$);
 sub dot_input_handler_cb($$);
 sub draw_graph($);
-sub generate_ancestry_graph($$;$$$);
+sub generate_ancestry_graph($);
 sub get_history_graph_window();
 sub get_node_colour($$);
 sub get_node_tag($$);
@@ -113,29 +113,52 @@ sub zoom_out_button_clicked_cb($$);
 #   Description  - Display a history graph for the specified branches within
 #                  the specified date range.
 #
-#   Data         - $mtn       : The Monotone::AutomateStdio object that is to
-#                               be used to generate the history graph.
-#                  $branches  : A reference to a list of branches to generate
-#                               a graph from. This parameter can be undef or
-#                               an empty list if all branches are to be
-#                               selected.
-#                  $from_date : The earliest date from which revisions will be
-#                               selected for the history graph. This parameter
-#                               can be undef or an empty string if no such age
-#                               restriction is required.
-#                  $to_date   : The latest date from which revisions will be
-#                               selected for the history graph. This parameter
-#                               can be undef or an empty string if no such age
-#                               restriction is required.
+#   Data         - $mtn                      : The Monotone::AutomateStdio
+#                                              object that is to be used to
+#                                              generate the history graph.
+#                  $branches                 : A reference to a list of
+#                                              branches to generate a graph
+#                                              from. This parameter can be
+#                                              undef or an empty list if all
+#                                              branches are to be selected.
+#                  $from_date                : The earliest date from which
+#                                              revisions will be selected for
+#                                              the history graph. This
+#                                              parameter can be undef or an
+#                                              empty string if no such age
+#                                              restriction is required.
+#                  $to_date                  : The latest date from which
+#                                              revisions will be selected for
+#                                              the history graph. This
+#                                              parameter can be undef or an
+#                                              empty string if no such age
+#                                              restriction is required.
+#                  $show_all_propagate_nodes : True if al propagation nodes
+#                                              are to be shown in the graph,
+#                                              otherwise false if only parent
+#                                              propagate nodes are to be
+#                                              shown.
+#                  $revision_id              : The id of the revision that is
+#                                              to be selected and shown when
+#                                              the history graph is drawn.
+#                                              This parameter can be undef if
+#                                              no specific revision is to be
+#                                              selected.
 #
 ##############################################################################
 
 
 
-sub display_history_graph($;$$$)
+sub display_history_graph($;$$$$$)
 {
 
-    my ($mtn, $branches, $from_date, $to_date) = @_;
+    my ($mtn,
+	$branches,
+	$from_date,
+	$to_date,
+	$show_all_propagate_nodes,
+	$revision_id)
+	= @_;
 
     my ($counter,
 	$instance,
@@ -146,6 +169,12 @@ sub display_history_graph($;$$$)
     local $instance->{in_cb} = 1;
 
     $instance->{mtn} = $mtn;
+    $instance->{graph_data}->{parameters}->{branches} = $branches;
+    $instance->{graph_data}->{parameters}->{from_date} = $from_date;
+    $instance->{graph_data}->{parameters}->{to_date} = $to_date;
+    $instance->{graph_data}->{parameters}->{show_all_propagate_nodes} =
+	$show_all_propagate_nodes;
+    $instance->{graph_data}->{parameters}->{revision_id} = $revision_id;
     $instance->{window}->show_all();
     $instance->{window}->present();
 
@@ -159,7 +188,7 @@ sub display_history_graph($;$$$)
     # Get the list of file change revisions. Remember to include the current
     # revision in the history.
 
-    generate_ancestry_graph($instance, 1, $branches, $from_date, $to_date);
+    generate_ancestry_graph($instance);
 
     # Populate all of the graphed nodes with essential revision information.
 
@@ -634,10 +663,30 @@ sub canvas_item_event_cb($$$)
 	}
 
     }
-    elsif ($type eq "2button-press")
+    elsif ($type eq "2button-press" && $event->button() == 1)
     {
-	print("Double click\n");
+
+	my $node = $instance->{graph_data}->{child_graph}->
+	    {$instance->{under_mouse_revision_id}};
+
+	# Display a new graph for the node under the mouse if it is in the
+	# history graph but not selected (i.e. its on an unselected branch).
+
+	if (! ($node->{flags} & SELECTED_NODE)
+	    && scalar(@{$node->{branches}}) > 0)
+	{
+	    display_history_graph
+		($instance->{mtn},
+		 [$node->{branches}->[0]],
+		 $instance->{graph_data}->{parameters}->{from_date},
+		 $instance->{graph_data}->{parameters}->{to_date},
+		 $instance->{graph_data}->{parameters}->
+		     {show_all_propagate_nodes},
+		 $instance->{under_mouse_revision_id});
+	}
+
 	return TRUE;
+
     }
 
     return FALSE;
@@ -651,40 +700,16 @@ sub canvas_item_event_cb($$$)
 #   Description  - Generate the ancestry graph database from the specified
 #                  selection criteria.
 #
-#   Data         - $instance                 : The history graph window
-#                                              instance.
-#                  $show_all_propagate_nodes : True if al propagation nodes
-#                                              are to be shown in the graph,
-#                                              otherwise false if only parent
-#                                              propagate nodes are to be
-#                                              shown.
-#                  $branches                 : A reference to a list of
-#                                              branches to generate a graph
-#                                              from. This parameter can be
-#                                              undef or an empty list if all
-#                                              branches are to be selected.
-#                  $from_date                : The earliest date from which
-#                                              revisions will be selected for
-#                                              the history graph. This
-#                                              parameter can be undef or an
-#                                              empty string if no such age
-#                                              restriction is required.
-#                  $to_date                  : The latest date from which
-#                                              revisions will be selected for
-#                                              the history graph. This
-#                                              parameter can be undef or an
-#                                              empty string if no such age
-#                                              restriction is required.
+#   Data         - $instance : The history graph window instance.
 #
 ##############################################################################
 
 
 
-sub generate_ancestry_graph($$;$$$)
+sub generate_ancestry_graph($)
 {
 
-    my ($instance, $show_all_propagate_nodes, $branches, $from_date, $to_date)
-	= @_;
+    my $instance = $_[0];
 
     my (%branches_set,
 	$branch_selector,
@@ -698,6 +723,7 @@ sub generate_ancestry_graph($$;$$$)
 	%nr_of_parents,
 	$selected_set,
 	$update_interval);
+    my $parameters = $instance->{graph_data}->{parameters};
     my $wm = WindowManager->instance();
 
     $instance->{appbar}->set_status(__("Building ancestry graph"));
@@ -709,23 +735,23 @@ sub generate_ancestry_graph($$;$$$)
     # First build up revision hit lists based upon the selection criteria. This
     # will be then used when scanning the graph to weed out unwanted revisions.
 
-    if (defined($from_date) && $from_date ne "")
+    if (defined($parameters->{from_date}) && $parameters->{from_date} ne "")
     {
-	$date_range_selector = "l:" . $from_date;
+	$date_range_selector = "l:" . $parameters->{from_date};
     }
     else
     {
 	$date_range_selector = "";
     }
-    if (defined($to_date) && $to_date ne "")
+    if (defined($parameters->{to_date}) && $parameters->{to_date} ne "")
     {
 	if ($date_range_selector eq "")
 	{
-	    $date_range_selector = "e:" . $to_date;
+	    $date_range_selector = "e:" . $parameters->{to_date};
 	}
 	else
 	{
-	    $date_range_selector .= "/e:" . $to_date;
+	    $date_range_selector .= "/e:" . $parameters->{to_date};
 	}
     }
 
@@ -755,11 +781,12 @@ sub generate_ancestry_graph($$;$$$)
 
 	# Do the branches hit list.
 
-	if (defined($branches) && scalar(@$branches) > 0)
+	if (defined($parameters->{branches})
+	    && scalar(@{$parameters->{branches}}) > 0)
 	{
 	    my $date_range = ($date_range_selector ne "")
 		? ("/" . $date_range_selector) : "";
-	    foreach my $branch (@$branches)
+	    foreach my $branch (@{$parameters->{branches}})
 	    {
 		my @revision_ids;
 		$instance->{mtn}->select(\@revision_ids,
@@ -844,7 +871,7 @@ sub generate_ancestry_graph($$;$$$)
 	{
 	    $current_selected = $selected = 1;
 	}
-	elsif ($show_all_propagate_nodes && $branch_selector
+	elsif ($parameters->{show_all_propagate_nodes} && $branch_selector
 	       && (! $date_selector
 		   || exists($date_set{$entry->{revision_id}})))
 	{
@@ -1292,7 +1319,7 @@ sub graph_reconnect_helper($$)
 #                  geometric shapes that we want to render and then read back
 #                  the result.
 #
-#   Data         - $instance    : The history graph window instance.
+#   Data         - $instance : The history graph window instance.
 #
 ##############################################################################
 
@@ -1442,9 +1469,8 @@ sub layout_graph($)
 #   Description  - Given a child graph database, generate the dot instructions
 #                  writing them out to the specified file handle.
 #
-#   Data         - $fh_in       : The STDIN file handle for the dot
-#                                 subprocess.
-#                  $instance    : The history graph window instance.
+#   Data         - $fh_in    : The STDIN file handle for the dot subprocess.
+#                  $instance : The history graph window instance.
 #
 ##############################################################################
 
@@ -1864,8 +1890,19 @@ sub draw_graph($)
     else
     {
 	$instance->{graph_advanced_find_button}->set_sensitive(TRUE);
-	scroll_to_node($instance,
-		       $instance->{graph_data}->{head_revisions}->[0]);
+	if (defined($instance->{graph_data}->{parameters}->{revision_id}))
+	{
+	    scroll_to_node($instance,
+			   $instance->{graph_data}->{parameters}->
+			       {revision_id});
+	    select_node($instance,
+			$instance->{graph_data}->{parameters}->{revision_id});
+	}
+	elsif (scalar(@{$instance->{graph_data}->{head_revisions}}) > 0)
+	{
+	    scroll_to_node($instance,
+			   $instance->{graph_data}->{head_revisions}->[0]);
+	}
     }
 
     $instance->{appbar}->set_progress_percentage(0);

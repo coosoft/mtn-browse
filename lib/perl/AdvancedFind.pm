@@ -102,10 +102,10 @@ sub update_advanced_find_state($$);
 #                                     boolean that is true if the revision id
 #                                     is ok, otherwise false if the user
 #                                     should choose another revision. This
-#                                     argument is optional.
+#                                     parameter is optional.
 #                  $client_data     : A value that is passed to the call back
 #                                     routine specified in $check_cb. This
-#                                     argument is optional.
+#                                     parameter is optional.
 #                  Return Value     : True if a revision has been selected,
 #                                     otherwise false.
 #
