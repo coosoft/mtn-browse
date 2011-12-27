@@ -1,5 +1,12 @@
 #!/usr/bin/perl
 
+# The size style arguments are in inches, the number of pixels/points per inch
+# is given by the -s argument and is currently set to 72.
+
+# This code works but really needs to tighten up on the parsing and getting the
+# revision ids etc. Also remember that revision ids aren't always quoted in dot
+# output files!
+
 use strict;
 use warnings;
 
