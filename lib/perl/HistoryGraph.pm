@@ -396,7 +396,8 @@ sub graph_advanced_find_button_clicked_cb($$)
 			      . "cannot be found within the current history "
 			      . "graph.\nPlease select another revision.",
 			  revision_id => $revision_id));
-		 $dialog->run();
+		 WindowManager->instance()->
+		     allow_input(sub { $dialog->run(); });
 		 $dialog->destroy();
 		 return;
 	     }
@@ -739,15 +740,32 @@ sub canvas_item_event_cb($$$)
 	# Display a new graph for the node under the mouse if it is in the
 	# history graph but not selected (i.e. its on an unselected branch).
 
-	if (! ($node->{flags} & SELECTED_NODE)
-	    && scalar(@{$node->{branches}}) > 0)
+	if (! ($node->{flags} & SELECTED_NODE))
 	{
-	    display_history_graph
-		($instance->{mtn},
-		 [$node->{branches}->[0]],
-		 $instance->{graph_data}->{parameters}->{from_date},
-		 $instance->{graph_data}->{parameters}->{to_date},
-		 $revision_id);
+	    if (scalar(@{$node->{branches}}) > 0)
+	    {
+		display_history_graph
+		    ($instance->{mtn},
+		     [$node->{branches}->[0]],
+		     $instance->{graph_data}->{parameters}->{from_date},
+		     $instance->{graph_data}->{parameters}->{to_date},
+		     $revision_id);
+	    }
+	    else
+	    {
+		my $dialog = Gtk2::MessageDialog->new
+		    ($instance->{window},
+		     ["modal"],
+		     "info",
+		     "close",
+		     __x("Revision `{revision_id}'\n"
+			 . "is not on a branch and so a separate history\n"
+			 . "graph showing that branch cannot be generated.",
+			 revision_id => $revision_id));
+		WindowManager->instance()->
+		    allow_input(sub { $dialog->run(); });
+		$dialog->destroy();
+	    }
 	}
 
 	return TRUE;
@@ -2448,35 +2466,48 @@ sub get_node_colour($$)
     if (! defined($colour))
     {
 
-	my ($blue,
-	    $green,
-	    $hue,
-	    $red,
-	    $saturation,
-	    $value);
-
 	# Yes we do.
 
-	# Generate a new colour by hashing the differentiating value and then
-	# using the first few bytes of that hash as HSV values (idea taken from
-	# monotone-viz).
+	# If the value used to generate the hash hash is "" then choose white
+	# otherwise generate a colour based on the MD5 hash of that value.
 
-	($hue, $saturation, $value) = unpack("CCC", md5($$hash_values[0]));
+	if ($$hash_values[0] eq "")
+	{
+	    $colour = Gtk2::Gdk::Color->new(65535, 65535, 65535);
+	}
+	else
+	{
 
-	# Now scale values. Hue 0 to 359, saturation and value 0 to 1. In
-	# addition scale saturation to only go from 35% to 50% and value to
-	# only go from 70% to 100%. Then convert from HSV to RGB.
+	    my ($blue,
+		$green,
+		$hue,
+		$red,
+		$saturation,
+		$value);
 
-	$hue = ($hue / 255) * 359;
-	$saturation = (($saturation / 255) * 0.15) + 0.35;
-	$value = (($value / 255) * 0.30) + 0.70;
-	hsv_to_rgb($hue, $saturation, $value, \$red, \$green, \$blue);
+	    # Generate a new colour by hashing the differentiating value and
+	    # then using the first few bytes of that hash as HSV values (idea
+	    # taken from monotone-viz).
 
-	# Scale RGB values and create a new colour object.
+	    ($hue, $saturation, $value) = unpack("CCC", md5($$hash_values[0]));
 
-	$colour = Gtk2::Gdk::Color->new(floor(($red * 65535) + 0.5) & 0xffff,
-					floor(($green * 65535) + 0.5) & 0xffff,
-					floor(($blue * 65535) + 0.5) & 0xffff);
+	    # Now scale values. Hue 0 to 359, saturation and value 0 to 1. In
+	    # addition scale saturation to only go from 35% to 50% and value to
+	    # only go from 70% to 100%. Then convert from HSV to RGB.
+
+	    $hue = ($hue / 255) * 359;
+	    $saturation = (($saturation / 255) * 0.15) + 0.35;
+	    $value = (($value / 255) * 0.30) + 0.70;
+	    hsv_to_rgb($hue, $saturation, $value, \$red, \$green, \$blue);
+
+	    # Scale RGB values and create a new colour object.
+
+	    $colour =
+		Gtk2::Gdk::Color->new(floor(($red * 65535) + 0.5) & 0xffff,
+				      floor(($green * 65535) + 0.5) & 0xffff,
+				      floor(($blue * 65535) + 0.5) & 0xffff);
+
+	}
 
 	# Store colour under its hash value for possible reuse.
 
