@@ -1086,7 +1086,9 @@ sub dot_input_handler_cb($$)
 		  . "  node [label=\"\"];\n");
 
     # Rectangular non-merge nodes, possibly changing the width for tagged nodes
-    # if we need more space.
+    # if we need more space. We give more padding for tagged nodes as these can
+    # be long strings and the text scaling is not as fine grained as the rest
+    # of the canvas widgets).
 
     $fh_in->printf("  node [shape=box, width = %f, height = %f];\n",
 		   $hex_id_width / DPI,
@@ -1102,7 +1104,7 @@ sub dot_input_handler_cb($$)
 		$layout->set_text($child_db->{$revision_id}->{tags}->[0]);
 		$width = max(WIDTH,
 			     ($layout->get_pixel_size())[0]
-			         + (TEXT_BORDER * 2));
+			         + (TEXT_BORDER * 6));
 	    }
 	    if ($width != WIDTH)
 	    {
@@ -1376,6 +1378,7 @@ sub draw_graph($)
 			      $$line[$i + 4],
 			      $$line[$i + 5]);
 	}
+	$pathdef->lineto($$head[2], $$head[3]);
 	$pathdef->moveto($$head[0], $$head[1]);
 	$pathdef->lineto($$head[2], $$head[3]);
 	$pathdef->lineto($$head[4], $$head[5]);
@@ -1693,9 +1696,15 @@ sub scale_canvas($)
 
     my $wm = WindowManager->instance();
 
+    # Hide the canvas during the zoom operation, it can be a bit messy.
+
     $wm->make_busy($instance, 1);
     $instance->{graph_canvas}->hide();
     $wm->update_gui();
+
+    # Adjust the canvas zoom factor, also resize the fonts on all the text
+    # labels (hiding them when the text gets too small to be of any use).
+
     $instance->{graph_canvas}->set_pixels_per_unit($instance->{scale});
     if ((FONT_SIZE * $instance->{scale}) < 3)
     {
@@ -1707,18 +1716,25 @@ sub scale_canvas($)
     else
     {
 	$instance->{fontdescription}->set_size
-	    (floor((FONT_SIZE * $instance->{scale} * PANGO_SCALE) + 0.5));
+	    (floor(FONT_SIZE * $instance->{scale}) * PANGO_SCALE);
 	for my $label (@{$instance->{node_labels}})
 	{
 	    $label->modify_font($instance->{fontdescription});
 	    $label->show();
 	}
     }
+
+    # Redraw the canvas, resized text looks blocky/pixelated but a redraw sorts
+    # this out.
+
     $instance->{graph_canvas}->request_redraw
 	(0,
 	 0,
 	 $instance->{graph_data}->{max_x} + (CANVAS_BORDER * 2),
 	 $instance->{graph_data}->{max_y} + (CANVAS_BORDER * 2));
+
+    # Make sure the canvas is up to date and then show it again.
+
     $instance->{graph_canvas}->update_now();
     $instance->{graph_canvas}->show();
     $wm->make_busy($instance, 0);
