@@ -1502,7 +1502,7 @@ GNOME or DocBook.
               </row>
               <row valign="top">
                 <entry><para>Cyan</para></entry>
-                <entry><para>This means that the node is on a suspended branch.</para><note><para>This only works when <guilabel>Show suspended revisions</guilabel> under user preferences is ticked. To determine this fact by alternate means is too costly especially when drawing a history graph.</para></note></entry>
+                <entry><para>This means that the node is on a suspended branch.</para><note><para>This only works when <guilabel>Show suspended revisions</guilabel> under user preferences is not ticked. To determine this fact by alternate means is too costly especially when drawing a history graph.</para></note></entry>
               </row>
             </tbody>
           </tgroup>

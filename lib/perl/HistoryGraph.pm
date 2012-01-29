@@ -218,7 +218,19 @@ sub display_history_graph($;$$$$)
         if (change_history_graph_parameters
             ($instance, $instance->{graph_data}->{parameters}))
         {
+
+            # Save the graph rendering settings so that we can recall them
+            # later.
+
+            $draw_left_to_right =
+                $instance->{graph_data}->{parameters}->{draw_left_to_right};
+            $show_all_propagate_nodes = $instance->{graph_data}->{parameters}->
+                {show_all_propagate_nodes};
+            $colour_by_author =
+                $instance->{graph_data}->{parameters}->{colour_by_author};
+
             generate_history_graph($instance);
+
         }
     }
     else
@@ -257,6 +269,15 @@ sub change_history_graph_button_clicked_cb($$)
     if (change_history_graph_parameters($instance,
                                         $instance->{graph_data}->{parameters}))
     {
+
+        # Save the graph rendering settings so that we can recall them later.
+
+        $draw_left_to_right =
+            $instance->{graph_data}->{parameters}->{draw_left_to_right};
+        $show_all_propagate_nodes =
+            $instance->{graph_data}->{parameters}->{show_all_propagate_nodes};
+        $colour_by_author =
+            $instance->{graph_data}->{parameters}->{colour_by_author};
 
         # Reset the colour database cache as we are changing what we colour
         # nodes by. This is primarily done so as to stop the key textview from
@@ -3407,6 +3428,21 @@ sub change_history_graph_parameters($$)
             $parameters->{new} = 0;
         }
 
+        # Load the remaining settings into the GUI.
+
+        $instance->{draw_graph_left_to_right_checkbutton}->
+            set_active($parameters->{draw_left_to_right} ? TRUE : FALSE);
+        $instance->{show_all_propagate_revisions_checkbutton}->
+            set_active($parameters->{show_all_propagate_nodes} ? TRUE : FALSE);
+        if ($parameters->{colour_by_author})
+        {
+            $instance->{colour_by_author_radiobutton}->set_active(TRUE);
+        }
+        else
+        {
+            $instance->{colour_by_branch_radiobutton}->set_active(TRUE);
+        }
+
     }
 
     # Handle all events until the dialog is dismissed with valid values.
@@ -3457,13 +3493,13 @@ sub change_history_graph_parameters($$)
 
         # Get the settings.
 
-        $parameters->{draw_left_to_right} = $draw_left_to_right =
+        $parameters->{draw_left_to_right} =
             $instance->{draw_graph_left_to_right_checkbutton}->get_active()
             ? 1 : 0;
-        $parameters->{show_all_propagate_nodes} = $show_all_propagate_nodes =
+        $parameters->{show_all_propagate_nodes} =
             $instance->{show_all_propagate_revisions_checkbutton}->get_active()
             ? 1 : 0;
-        $parameters->{colour_by_author} = $colour_by_author =
+        $parameters->{colour_by_author} =
             $instance->{colour_by_author_radiobutton}->get_active() ? 1 : 0;
 
         # Leave the revision id parameter alone.
@@ -3658,7 +3694,7 @@ sub load_branch_liststore($;$)
     {
         foreach my $branch (@$selected_branches)
         {
-            $selected_set{$branch} = undef;
+            $selected_set{$branch} = 1;
         }
     }
     else
@@ -3668,13 +3704,13 @@ sub load_branch_liststore($;$)
                  my ($widget, $path, $iter) = @_;
                  my ($selected, $branch) =
                      $instance->{branches_liststore}->get($iter);
-                 $selected_set{$branch} = undef if ($selected);
+                 $selected_set{$branch} = 1 if ($selected);
                  return FALSE;
              });
     }
 
-    # Load the liststore with selected branches and those that match the
-    # current branch filter pattern.
+    # Load the liststore with selected unsuspended branches and those that
+    # match the current branch filter pattern.
 
     $instance->{branches_liststore}->clear();
     foreach my $branch (@{$instance->{branch_list}})
@@ -3685,6 +3721,7 @@ sub load_branch_liststore($;$)
                 set($instance->{branches_liststore}->append(),
                     BLS_SELECTED_COLUMN, TRUE,
                     BLS_BRANCH_COLUMN, $branch);
+            $selected_set{$branch} = undef;
         }
         elsif ($branch =~ m/$instance->{branch_filter_re}/)
         {
@@ -3693,6 +3730,26 @@ sub load_branch_liststore($;$)
                     BLS_SELECTED_COLUMN, FALSE,
                     BLS_BRANCH_COLUMN, $branch);
         }
+    }
+
+    # Now deal with any suspended branches that were given in
+    # $selected_branches that have not been put into the liststore as selected
+    # branches. This can happen when the user double clicks on a propagate
+    # revision that is on a suspended branch, that suspended branch is graphed
+    # and then the user left clicks on the change history graph button within
+    # that new window. In this situation the most logical thing to do is to add
+    # that branch to the list of selected ones, otherwise there will be no
+    # branches selected and the user is stuck if he wants to change the
+    # graphing parameters. The code above has reset the entries to false in the
+    # %selected_set hash if the branch has been dealt with.
+
+    foreach my $suspended_branch (sort(grep($selected_set{$_},
+                                            keys(%selected_set))))
+    {
+        $instance->{branches_liststore}->
+            set($instance->{branches_liststore}->append(),
+                BLS_SELECTED_COLUMN, TRUE,
+                BLS_BRANCH_COLUMN, $suspended_branch);
     }
 
     $instance->{branches_treeview}->scroll_to_point(0, 0)
