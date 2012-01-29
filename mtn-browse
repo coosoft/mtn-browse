@@ -134,6 +134,10 @@ use constant MLS_DATE_COLUMN           => 2;
 use constant MLS_AUTHOR_COLUMN         => 3;
 use constant MLS_MANIFEST_ENTRY_COLUMN => 4;
 
+# Constant for the maximum size of the open recent menu.
+
+use constant OPEN_RECENT_MENU_MAX_SIZE => 10;
+
 # Constant for user interface directory.
 
 use constant UI_DIR => File::Spec->catfile(PREFIX_DIR,
@@ -178,8 +182,9 @@ sub manifest_browser_treeselection_changed_cb($$);
 sub manifest_browser_treeview_row_activated_cb($$$$);
 sub mtn_db_locked_handler($$);
 sub mtn_error_handler($$);
-sub new_blank_menu_item_clicked_cb($$);
+sub new_blank_activate_cb($$);
 sub new_toolbutton_clicked_cb($$);
+sub open_recent_activate_cb($$);
 sub open_toolbutton_clicked_cb($$);
 sub preferences_toolbutton_clicked_cb($$);
 sub quit_activate_cb($$);
@@ -194,6 +199,7 @@ sub setup_sigchld_handler($);
 sub show_line_numbers_togglebutton_toggled_cb($$);
 sub sigchld_handler();
 sub update_browser_state($$);
+sub update_open_recent_menu($);
 sub update_server_bookmarks_menu($);
 sub view_button_clicked_cb($$);
 #
@@ -305,65 +311,108 @@ sub view_button_clicked_cb($$);
         exit(1);
     }
 
-    # Open a Monotone database. First attempt to open the current workspace's
-    # database. If this doesn't work or the database listed in the user's
+    # Open a Monotone database. First attempt to open any database given on the
+    # command line. If no database was given then try the current workspace's
+    # database. If that doesn't work or the database listed in the user's
     # preferences file is to be used anyway then attempt to open that database
     # instead.
 
-    if ($user_preferences->{workspace}->{takes_precedence})
+    if (scalar(@ARGV) > 0)
     {
-
-        # Attempt to open the current workspace's database. If this works then
-        # get the workspace's details and then re-open the database but this
-        # time explicitly specifying the database itself. When given a database
-        # name, Monotone::AutomateStdio will make sure any current workspace
-        # will not `interfere' the  with the mtn subprocess. One could use the
-        # "--no-workspace" option but this is only supported on later versions.
-
-        eval
-        {
-            my $db;
-            $mtn = CachingAutomateStdio->new();
-            $mtn->get_option(\$db, "database");
-            if ($user_preferences->{workspace}->{auto_select})
-            {
-                $mtn->get_option(\$branch, "branch");
-                $mtn->get_base_revision_id(\$revision_id);
-
-                # Unset the branch name if there is no revision associated with
-                # it (this can happen if we are in a new workspace on a new
-                # branch that doesn't exist in the database yet).
-
-                $branch = undef if (! defined($revision_id));
-            }
-            $mtn = undef;
-            $mtn = CachingAutomateStdio->new($db);
-        };
-
-    }
-    if (! defined($mtn) && $user_preferences->{default_mtn_db} ne "")
-    {
-
-        # Attempt to open the database specified in the user's preferences.
-
-        eval
-        {
-            $mtn = CachingAutomateStdio->
-                new($user_preferences->{default_mtn_db});
-        };
-        if ($@)
+        if (scalar(@ARGV) > 1)
         {
             my $dialog = Gtk2::MessageDialog->new
                 (undef,
                  ["modal"],
-                 "warning",
+                 "error",
                  "close",
-                 __x("Cannot open database {database_name}.",
-                     database_name => $user_preferences->{default_mtn_db}));
+                 __("Unexpected additional arguments were\n"
+                    . "given on the command line.\n"
+                    . "Usage: mtn-browse [Gnome/Gtk Options...]\n"
+                    . "[Monotone Database]"));
             busy_dialog_run($dialog);
             $dialog->destroy();
+            exit(1);
         }
+        else
+        {
+            eval
+            {
+                $mtn = CachingAutomateStdio->new($ARGV[0]);
+            };
+            if ($@)
+            {
+                my $dialog = Gtk2::MessageDialog->new
+                    (undef,
+                     ["modal"],
+                     "warning",
+                     "close",
+                     __x("Cannot open database {database_name}.",
+                         database_name => $ARGV[0]));
+                busy_dialog_run($dialog);
+                $dialog->destroy();
+            }
+        }
+    }
+    else
+    {
+        if ($user_preferences->{workspace}->{takes_precedence})
+        {
 
+            # Attempt to open the current workspace's database. If this works
+            # then get the workspace's details and then re-open the database
+            # but this time explicitly specifying the database itself. When
+            # given a database name, Monotone::AutomateStdio will make sure any
+            # current workspace will not `interfere' the with the mtn
+            # subprocess. One could use the "--no-workspace" option but this is
+            # only supported on later versions.
+
+            eval
+            {
+                my $db;
+                $mtn = CachingAutomateStdio->new();
+                $mtn->get_option(\$db, "database");
+                if ($user_preferences->{workspace}->{auto_select})
+                {
+                    $mtn->get_option(\$branch, "branch");
+                    $mtn->get_base_revision_id(\$revision_id);
+
+                    # Unset the branch name if there is no revision associated
+                    # with it (this can happen if we are in a new workspace on
+                    # a new branch that doesn't exist in the database yet).
+
+                    $branch = undef if (! defined($revision_id));
+                }
+                $mtn = undef;
+                $mtn = CachingAutomateStdio->new($db);
+            };
+
+        }
+        if (! defined($mtn) && $user_preferences->{default_mtn_db} ne "")
+        {
+
+            # Attempt to open the database specified in the user's preferences.
+
+            eval
+            {
+                $mtn = CachingAutomateStdio->
+                    new($user_preferences->{default_mtn_db});
+            };
+            if ($@)
+            {
+                my $dialog = Gtk2::MessageDialog->new
+                    (undef,
+                     ["modal"],
+                     "warning",
+                     "close",
+                     __x("Cannot open database {database_name}.",
+                         database_name =>
+                             $user_preferences->{default_mtn_db}));
+                busy_dialog_run($dialog);
+                $dialog->destroy();
+            }
+
+        }
     }
 
     # Set up the error handlers for the Monotone class.
@@ -451,7 +500,7 @@ sub view_button_clicked_cb($$);
     {
         setup_mtn_object($mtn, $browser->{window});
         $browser->{mtn} = $mtn;
-        $browser->{connect_to_server_menutiem}->set_sensitive(FALSE)
+        $browser->{connect_to_server_menuitem}->set_sensitive(FALSE)
             if (! $user_preferences->{remote_connections});
         Glib::Idle->add
             (sub {
@@ -494,6 +543,74 @@ sub view_button_clicked_cb($$);
     $SIG{CHLD} = "IGNORE";
 
     exit(0);
+
+}
+#
+##############################################################################
+#
+#   Routine      - new_blank_activate_cb
+#
+#   Description  - Callback routine called when the user clicks on the new
+#                  blank menu item in a main browser window.
+#
+#   Data         - $widget  : The widget object that received the signal.
+#                  $browser : The browser instance that is associated with
+#                             this widget.
+#
+##############################################################################
+
+
+
+sub new_blank_activate_cb($$)
+{
+
+    my ($widget, $browser) = @_;
+
+    return if ($browser->{in_cb});
+    local $browser->{in_cb} = 1;
+
+    # Simply get a new/unused browser window and display it.
+
+    get_browser_window();
+
+}
+#
+##############################################################################
+#
+#   Routine      - open_recent_activate_cb
+#
+#   Description  - Callback routine called when the user selects a open recent
+#                  menu option.
+#
+#   Data         - $widget  : The widget object that received the signal.
+#                  $details : A record containing the browser instance that is
+#                             associated with this widget and the name of the
+#                             database that is to be opened.
+#
+##############################################################################
+
+
+
+sub open_recent_activate_cb($$)
+{
+
+    my ($widget, $details) = @_;
+
+    return if ($details->{browser}->{in_cb});
+    local $details->{browser}->{in_cb} = 1;
+
+    my $mtn;
+    my $browser = $details->{browser};
+
+    if (check_and_open_database($browser->{window},
+                                $details->{database},
+                                \$mtn))
+    {
+        setup_mtn_object($mtn, $browser->{window});
+        $browser->{mtn} = $mtn;
+        $browser->{appbar}->clear_stack();
+        &{$browser->{update_handler}}($browser, DATABASE_CHANGED);
+    }
 
 }
 #
@@ -900,35 +1017,6 @@ sub new_toolbutton_clicked_cb($$)
 #
 ##############################################################################
 #
-#   Routine      - new_blank_menu_item_clicked_cb
-#
-#   Description  - Callback routine called when the user clicks on the new
-#                  blank menu item in a main browser window.
-#
-#   Data         - $widget  : The widget object that received the signal.
-#                  $browser : The browser instance that is associated with
-#                             this widget.
-#
-##############################################################################
-
-
-
-sub new_blank_menu_item_clicked_cb($$)
-{
-
-    my ($widget, $browser) = @_;
-
-    return if ($browser->{in_cb});
-    local $browser->{in_cb} = 1;
-
-    # Simply get a new/unused browser window and display it.
-
-    get_browser_window();
-
-}
-#
-##############################################################################
-#
 #   Routine      - open_toolbutton_clicked_cb
 #
 #   Description  - Callback routine called when the user clicks on the open
@@ -950,14 +1038,19 @@ sub open_toolbutton_clicked_cb($$)
     return if ($browser->{in_cb});
     local $browser->{in_cb} = 1;
 
-    my $mtn;
+    my ($file_name,
+        $mtn);
 
-    if (open_database($browser->{window}, \$mtn, undef))
+    if (open_database($browser->{window}, \$mtn, \$file_name))
     {
         setup_mtn_object($mtn, $browser->{window});
         $browser->{mtn} = $mtn;
         $browser->{appbar}->clear_stack();
         &{$browser->{update_handler}}($browser, DATABASE_CHANGED);
+        update_open_recent_menu($browser)
+            if (handle_history("open_recent_menu",
+                               $file_name,
+                               OPEN_RECENT_MENU_MAX_SIZE));
     }
 
 }
@@ -1937,7 +2030,8 @@ sub get_browser_window(;$$$$$)
 
         $browser->{window} = $glade->get_widget($window_type);
         foreach my $widget ("appbar",
-                            "connect_to_server_menutiem",
+                            "open_recent_menuitem",
+                            "connect_to_server_menuitem",
                             "close_menuitem",
                             "file_encoding_menuitem",
                             "choose_authentication_key_menuitem",
@@ -1988,8 +2082,13 @@ sub get_browser_window(;$$$$$)
                  $glade->get_widget($item . "_button"));
         }
 
-        # Setup the connect to server submenu.
+        # Make sure that all menu history lists are properly initialised.
 
+        handle_history("open_recent_menu", undef, OPEN_RECENT_MENU_MAX_SIZE);
+
+        # Setup the open recent and connect to server submenus.
+
+        update_open_recent_menu($browser);
         update_server_bookmarks_menu($browser);
 
         # Setup the file encodings submenu.
@@ -2455,6 +2554,63 @@ sub create_browser_widgets()
 #
 ##############################################################################
 #
+#   Routine      - update_open_recent_menu
+#
+#   Description  - Creates or updates an open recent menu for the specified
+#                  browser window.
+#
+#   Data         - $browser : The browser instance that is to have its open
+#                             recent menu created or updated.
+#
+##############################################################################
+
+
+
+sub update_open_recent_menu($)
+{
+
+    my $browser = $_[0];
+
+    my ($old_menu,
+        $submenu);
+
+    # Create a new open recent submenu.
+
+    if (scalar(@{$user_preferences->{histories}->{open_recent_menu}}) > 0)
+    {
+        $submenu = Gtk2::Menu->new();
+        foreach my $db (@{$user_preferences->{histories}->{open_recent_menu}})
+        {
+            my $menu_item = Gtk2::MenuItem->new_with_label($db);
+            $menu_item->signal_connect("activate",
+                                       \&open_recent_activate_cb,
+                                       {browser  => $browser,
+                                        database => $db});
+            $menu_item->show();
+            $submenu->append($menu_item);
+        }
+        $submenu->show();
+        $browser->{open_recent_menuitem}->set_sensitive(TRUE);
+    }
+    else
+    {
+        $browser->{open_recent_menuitem}->set_sensitive(FALSE);
+    }
+
+    # Replace the existing menu with the new one.
+
+    $old_menu = $browser->{open_recent_menuitem}->get_submenu();
+    $browser->{open_recent_menuitem}->set_submenu($submenu)
+        if (defined($submenu));
+    if (defined($old_menu))
+    {
+        $old_menu->destroy()
+    }
+
+}
+#
+##############################################################################
+#
 #   Routine      - update_server_bookmarks_menu
 #
 #   Description  - Creates or updates a server bookmarks menu for the
@@ -2512,8 +2668,8 @@ sub update_server_bookmarks_menu($)
 
     # Replace the existing menu with the new one.
 
-    $old_menu = $browser->{connect_to_server_menutiem}->get_submenu();
-    $browser->{connect_to_server_menutiem}->set_submenu($submenu);
+    $old_menu = $browser->{connect_to_server_menuitem}->get_submenu();
+    $browser->{connect_to_server_menuitem}->set_submenu($submenu);
     if (defined($old_menu))
     {
         $old_menu->destroy()

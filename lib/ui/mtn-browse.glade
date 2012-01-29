@@ -61,10 +61,10 @@
 			  <property name="visible">True</property>
 			  <property name="label" translatable="yes">New _Blank</property>
 			  <property name="use_underline">True</property>
-			  <signal name="activate" handler="new_blank_menu_item_clicked_cb" last_modification_time="Thu, 05 Jun 2008 10:14:27 GMT"/>
+			  <signal name="activate" handler="new_blank_activate_cb" last_modification_time="Sat, 14 Jan 2012 15:48:05 GMT"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image214">
+			    <widget class="GtkImage" id="image234">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-new</property>
 			      <property name="icon_size">1</property>
@@ -92,19 +92,39 @@
 		      </child>
 
 		      <child>
+			<widget class="GtkImageMenuItem" id="open_recent_menuitem">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Open _Recent</property>
+			  <property name="use_underline">True</property>
+
+			  <child internal-child="image">
+			    <widget class="GtkImage" id="image235">
+			      <property name="visible">True</property>
+			      <property name="stock">gtk-open</property>
+			      <property name="icon_size">1</property>
+			      <property name="xalign">0.5</property>
+			      <property name="yalign">0.5</property>
+			      <property name="xpad">0</property>
+			      <property name="ypad">0</property>
+			    </widget>
+			  </child>
+			</widget>
+		      </child>
+
+		      <child>
 			<widget class="GtkSeparatorMenuItem" id="separator2">
 			  <property name="visible">True</property>
 			</widget>
 		      </child>
 
 		      <child>
-			<widget class="GtkImageMenuItem" id="connect_to_server_menutiem">
+			<widget class="GtkImageMenuItem" id="connect_to_server_menuitem">
 			  <property name="visible">True</property>
 			  <property name="label" translatable="yes">Connect To _Server</property>
 			  <property name="use_underline">True</property>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image215">
+			    <widget class="GtkImage" id="image236">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-network</property>
 			      <property name="icon_size">1</property>
@@ -139,7 +159,7 @@
 			  <signal name="activate" handler="quit_activate_cb" last_modification_time="Fri, 20 Jun 2008 12:07:24 GMT"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image216">
+			    <widget class="GtkImage" id="image237">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-quit</property>
 			      <property name="icon_size">1</property>
@@ -243,7 +263,7 @@
 			  <accelerator key="F1" modifiers="0" signal="activate"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image217">
+			    <widget class="GtkImage" id="image238">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-help</property>
 			      <property name="icon_size">1</property>
@@ -265,7 +285,7 @@
 			  <accelerator key="F1" modifiers="GDK_SHIFT_MASK" signal="activate"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image218">
+			    <widget class="GtkImage" id="image239">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-help</property>
 			      <property name="icon_size">1</property>
@@ -287,7 +307,7 @@
 			  <accelerator key="F1" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image219">
+			    <widget class="GtkImage" id="image240">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-help</property>
 			      <property name="icon_size">1</property>
@@ -314,7 +334,7 @@
 			  <signal name="activate" handler="home_page_activate_cb" last_modification_time="Sun, 15 Feb 2009 17:15:45 GMT"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image220">
+			    <widget class="GtkImage" id="image241">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-home</property>
 			      <property name="icon_size">1</property>

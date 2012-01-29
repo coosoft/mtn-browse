@@ -75,6 +75,7 @@ sub adjust_time($$$);
 sub busy_dialog_run($);
 sub cache_extra_file_info($$$);
 sub calculate_update_interval($;$);
+sub check_and_open_database($$$);
 sub colour_to_string($);
 sub create_format_tags($);
 sub data_is_binary($);
@@ -87,6 +88,7 @@ sub get_dir_contents($$$);
 sub get_revision_ids($$;$);
 sub glade_signal_autoconnect($$);
 sub handle_comboxentry_history($$;$);
+sub handle_history($$$);
 sub hex_dump($);
 sub mtn_time_string_to_locale_time_string($);
 sub mtn_time_string_to_time($);
@@ -560,79 +562,18 @@ sub open_database($$$)
         if (busy_dialog_run($chooser_dialog) eq "ok")
         {
 
-            my ($exception,
-                $fh,
-                $fname,
+            my ($fname,
                 $mtn_obj);
 
             $fname = $chooser_dialog->get_filename();
-
-            # The user has selected a file. First make sure we can open it for
-            # reading (I know I could use the -r test but this takes care of
-            # any other unforeseen access problems as well).
-
-            if (! defined($fh = IO::File->new($fname, "r")))
-            {
-                my $dialog = Gtk2::MessageDialog->new
-                    ($parent,
-                     ["modal"],
-                     "warning",
-                     "close",
-                     $! . ".");
-                busy_dialog_run($dialog);
-                $dialog->destroy();
-            }
-            else
+            if (check_and_open_database($parent, $fname, \$mtn_obj))
             {
 
-                $fh->close();
-                $fh = undef;
+                # Seems to be ok so tell the caller.
 
-                # Ok it is a readable file, try and open it but deal with any
-                # errors in a nicer way than normal.
-
-                CachingAutomateStdio->register_error_handler
-                    (MTN_SEVERITY_ALL,
-                     sub {
-                         my ($severity, $message) = @_;
-                         my $dialog;
-                         $message =~ s/mtn: misuse: //g;
-                         $message =~ s/^Corrupt\/missing mtn [^\n]+\n//g;
-                         $message =~ s/ at .+ line \d+$//g;
-                         $message =~ s/\s+$//g;
-                         $message =~ s/\n/ /g;
-                         $message .= "." unless ($message =~ m/.+\.$/);
-                         $dialog = Gtk2::MessageDialog->new_with_markup
-                             ($parent,
-                              ["modal"],
-                              "warning",
-                              "close",
-                              __x("There is a problem opening the database, "
-                                  . "the details are:\n"
-                                  . "<b><i>{error_message}</i></b>",
-                                  error_message =>
-                                      Glib::Markup::escape_text($message)));
-                         busy_dialog_run($dialog);
-                         $dialog->destroy();
-                         die("Bad open");
-                     });
-                eval
-                {
-                    $mtn_obj = CachingAutomateStdio->new($fname);
-                };
-                $exception = $@;
-                CachingAutomateStdio->register_error_handler
-                    (MTN_SEVERITY_ALL, \&mtn_error_handler);
-                if (! $exception)
-                {
-
-                    # Seems to be ok so tell the caller.
-
-                    $$mtn = $mtn_obj if (defined($mtn));
-                    $$file_name = $fname if (defined($file_name));
-                    $done = $ret_val = 1;
-
-                }
+                $$mtn = $mtn_obj if (defined($mtn));
+                $$file_name = $fname if (defined($file_name));
+                $done = $ret_val = 1;
 
             }
 
@@ -647,6 +588,107 @@ sub open_database($$$)
     $file_chooser_dir_locations{open_db_dir} =
         $chooser_dialog->get_current_folder();
     $chooser_dialog->destroy();
+
+    return $ret_val;
+
+}
+#
+##############################################################################
+#
+#   Routine      - check_and_open_database
+#
+#   Description  - Opens the specified database making sure that it is a valid
+#                  database or telling the user if it isn't.
+#
+#   Data         - $parent      : The parent window for any dialogs that are
+#                                 to be displayed.
+#                  $database    : The name of the Monotone database that is to
+#                                 be opened.
+#                  $mtn         : A reference to a variable that is to contain
+#                                 the newly created Monotone::AutomateStdio
+#                                 object.
+#                  Return Value : True on success, otherwise false on failure.
+#
+##############################################################################
+
+
+
+sub check_and_open_database($$$)
+{
+
+    my ($parent, $database, $mtn) = @_;
+
+    my ($exception,
+        $fh,
+        $mtn_obj,
+        $ret_val);
+
+    # First make sure we can open it for reading (I know I could use the -r
+    # test but this takes care of any other unforeseen access problems as
+    # well).
+
+    if (! defined($fh = IO::File->new($database, "r")))
+    {
+        my $dialog = Gtk2::MessageDialog->new($parent,
+                                              ["modal"],
+                                              "warning",
+                                              "close",
+                                              $! . ".");
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+    }
+    else
+    {
+
+        $fh->close();
+        $fh = undef;
+
+        # Ok it is a readable file, try and open it but deal with any errors in
+        # a nicer way than normal.
+
+        CachingAutomateStdio->register_error_handler
+            (MTN_SEVERITY_ALL,
+             sub {
+                 my ($severity, $message) = @_;
+                 my $dialog;
+                 $message =~ s/mtn: misuse: //g;
+                 $message =~ s/^Corrupt\/missing mtn [^\n]+\n//g;
+                 $message =~ s/ at .+ line \d+$//g;
+                 $message =~ s/\s+$//g;
+                 $message =~ s/\n/ /g;
+                 $message .= "." unless ($message =~ m/.+\.$/);
+                 $dialog = Gtk2::MessageDialog->new_with_markup
+                     ($parent,
+                      ["modal"],
+                      "warning",
+                      "close",
+                      __x("There is a problem opening the database, the "
+                              ."details are:\n"
+                              . "<b><i>{error_message}</i></b>",
+                          error_message =>
+                              Glib::Markup::escape_text($message)));
+                 busy_dialog_run($dialog);
+                 $dialog->destroy();
+                 die("Bad open");
+             });
+        eval
+        {
+            $mtn_obj = CachingAutomateStdio->new($database);
+        };
+        $exception = $@;
+        CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
+                                                     \&mtn_error_handler);
+        if (! $exception)
+        {
+
+            # Seems to be ok so tell the caller.
+
+            $$mtn = $mtn_obj;
+            $ret_val = 1;
+
+        }
+
+    }
 
     return $ret_val;
 
@@ -1403,71 +1445,109 @@ sub handle_comboxentry_history($$;$)
 
     my ($widget, $history_name, $value) = @_;
 
-    my $history_ref;
-    my $update_history = 1;
+    # Update the comboxentry history list, saving it to disk, and then update
+    # the comboboxentry itself if the history has changed or no value was
+    # supplied (done when initialising the comboboxentry widget for the first
+    # time).
+
+    if (handle_history($history_name,
+                       $value,
+                       $user_preferences->{history_size})
+        || ! defined($value))
+    {
+
+        my $text_entry_value = $widget->child()->get_text();
+
+        $widget->get_model()->clear();
+        foreach my $entry (@{$user_preferences->{histories}->{$history_name}})
+        {
+            $widget->append_text($entry);
+        }
+
+        # Restore original text entry value.
+
+        $widget->child()->set_text($text_entry_value);
+
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - handle_history
+#
+#   Description  - Handle widget histories. Histories are limited to the
+#                  specified size and are stored to disk in the user's
+#                  preferences file.
+#
+#   Data         - $history_name : The name of the history list that is to be
+#                                  updated or loaded.
+#                  $value        : The new value that is to be added to the
+#                                  specified history list.
+#                  $max_size     : The maximum number of items that can be
+#                                  stored in the history list.
+#                  Return Value  : True if the history list was in fact
+#                                  updated, otherwise false if no update was
+#                                  necessary because the value is already in
+#                                  the list.
+#
+##############################################################################
+
+
+
+sub handle_history($$$)
+{
+
+    my ($history_name, $value, $max_size) = @_;
 
     # Automatically create the history entry if there isn't one already.
 
     $user_preferences->{histories}->{$history_name} = []
         unless (defined($user_preferences->{histories}->{$history_name}));
 
-    $history_ref = $user_preferences->{histories}->{$history_name};
+    # Update the history list only if there is something worth saving.
 
-    # Update the comboxentry history list and save it to disk.
-
-    if (defined($value))
+    if (defined($value) && $value ne "")
     {
-        if ($value ne "")
-        {
-            foreach my $entry (@$history_ref)
-            {
-                if ($entry eq $value)
-                {
-                    $update_history = 0;
-                    last;
-                }
-            }
-        }
-        else
-        {
-            $update_history = 0;
-        }
-        if ($update_history)
-        {
-            splice(@$history_ref, $user_preferences->{history_size})
-                if (unshift(@$history_ref, $value) >
-                    $user_preferences->{history_size});
-            eval
-            {
-                save_preferences($user_preferences);
-            };
-            if ($@)
-            {
-                chomp($@);
-                my $dialog = Gtk2::MessageDialog->new
-                    (undef,
-                     ["modal"],
-                     "warning",
-                     "close",
-                     __("Your preferences could not be saved:\n") . $@);
-                busy_dialog_run($dialog);
-                $dialog->destroy();
-            }
-        }
-    }
 
-    # Update the comboboxentry itself if necessary.
+        my $history_ref = $user_preferences->{histories}->{$history_name};
 
-    if ($update_history)
-    {
-        my $text_entry_value = $widget->child()->get_text();
-        $widget->get_model()->clear();
+        # Check to see if the value is already in the list, if it is then there
+        # is no need to update the history list.
+
         foreach my $entry (@$history_ref)
         {
-            $widget->append_text($entry);
+            return if ($entry eq $value);
         }
-        $widget->child()->set_text($text_entry_value);
+
+        # Ok we need to update the history list by sticking the new entry at
+        # the front.
+
+        splice(@$history_ref, $max_size)
+            if (unshift(@$history_ref, $value) > $max_size);
+        eval
+        {
+            save_preferences($user_preferences);
+        };
+        if ($@)
+        {
+            chomp($@);
+            my $dialog = Gtk2::MessageDialog->new
+                (undef,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __("Your preferences could not be saved:\n") . $@);
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
+
+        return 1;
+
     }
+
+    return;
 
 }
 #
