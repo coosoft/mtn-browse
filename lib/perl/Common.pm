@@ -629,11 +629,14 @@ sub check_and_open_database($$$)
 
     if (! defined($fh = IO::File->new($database, "r")))
     {
-        my $dialog = Gtk2::MessageDialog->new($parent,
-                                              ["modal"],
-                                              "warning",
-                                              "close",
-                                              $! . ".");
+        my $dialog = Gtk2::MessageDialog->new
+            ($parent,
+             ["modal"],
+             "warning",
+             "close",
+             __x("Cannot open {database}.\n{error_message}.",
+                 database => $database,
+                 error_message => $!));
         busy_dialog_run($dialog);
         $dialog->destroy();
     }
@@ -662,9 +665,9 @@ sub check_and_open_database($$$)
                       ["modal"],
                       "warning",
                       "close",
-                      __x("There is a problem opening the database, the "
-                              ."details are:\n"
-                              . "<b><i>{error_message}</i></b>",
+                      __x("There is a problem opening {database}. The details "
+                              . "are:\n<b><i>{error_message}</i></b>",
+                          database => $database,
                           error_message =>
                               Glib::Markup::escape_text($message)));
                  busy_dialog_run($dialog);

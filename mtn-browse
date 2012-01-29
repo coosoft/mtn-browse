@@ -336,22 +336,7 @@ sub view_button_clicked_cb($$);
         }
         else
         {
-            eval
-            {
-                $mtn = CachingAutomateStdio->new($ARGV[0]);
-            };
-            if ($@)
-            {
-                my $dialog = Gtk2::MessageDialog->new
-                    (undef,
-                     ["modal"],
-                     "warning",
-                     "close",
-                     __x("Cannot open database {database_name}.",
-                         database_name => $ARGV[0]));
-                busy_dialog_run($dialog);
-                $dialog->destroy();
-            }
+            check_and_open_database(undef, $ARGV[0], \$mtn);
         }
     }
     else
@@ -393,24 +378,9 @@ sub view_button_clicked_cb($$);
 
             # Attempt to open the database specified in the user's preferences.
 
-            eval
-            {
-                $mtn = CachingAutomateStdio->
-                    new($user_preferences->{default_mtn_db});
-            };
-            if ($@)
-            {
-                my $dialog = Gtk2::MessageDialog->new
-                    (undef,
-                     ["modal"],
-                     "warning",
-                     "close",
-                     __x("Cannot open database {database_name}.",
-                         database_name =>
-                             $user_preferences->{default_mtn_db}));
-                busy_dialog_run($dialog);
-                $dialog->destroy();
-            }
+            check_and_open_database(undef,
+                                    $user_preferences->{default_mtn_db},
+                                    \$mtn);
 
         }
     }
@@ -670,10 +640,9 @@ sub connect_to_server_activate_cb($$)
                   ["modal"],
                   "warning",
                   "close",
-                  __x("There is a problem connecting to the server, the "
+                  __x("There is a problem connecting to the server. The "
                           . "details are:\n<b><i>{error_message}</i></b>",
-                      error_message =>
-                      Glib::Markup::escape_text($message)));
+                      error_message => Glib::Markup::escape_text($message)));
              busy_dialog_run($dialog);
              $dialog->destroy();
              die("Bad open");
@@ -694,8 +663,8 @@ sub connect_to_server_activate_cb($$)
 
     };
     $exception = $@;
-    CachingAutomateStdio->register_error_handler
-        (MTN_SEVERITY_ALL, \&mtn_error_handler);
+    CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
+                                                 \&mtn_error_handler);
     if (! $exception)
     {
 
