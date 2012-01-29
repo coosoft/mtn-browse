@@ -1,13 +1,13 @@
 #
-# old_revision [26591f968f966b814a4518604019bead88bb1536]
+# old_revision [d4ad1a50c37a48bdff8f77cfde7fabd3f3531f6e]
 #
 # patch "lib/perl/HistoryGraph.pm"
-#  from [3ea926faea9d9a0c400de1d22afb40ea7e66c4c4]
-#    to [c249b1c0bae7ea0b50e56297d5bff002c6a0883d]
+#  from [62b1acfe19006d17cbab508216eed66c0ee24f9d]
+#    to [1a17c4c18787b6898d51e29b5eff1a245d710b95]
 #
 ============================================================
---- lib/perl/HistoryGraph.pm	3ea926faea9d9a0c400de1d22afb40ea7e66c4c4
-+++ lib/perl/HistoryGraph.pm	c249b1c0bae7ea0b50e56297d5bff002c6a0883d
+--- lib/perl/HistoryGraph.pm	62b1acfe19006d17cbab508216eed66c0ee24f9d
++++ lib/perl/HistoryGraph.pm	1a17c4c18787b6898d51e29b5eff1a245d710b95
 @@ -53,7 +53,7 @@ use constant DPI              => 72;
  
  use constant CANVAS_BORDER    => 5;
@@ -25,7 +25,7 @@
  use constant NOT_SELECTED_BORDER_COLOUR => "Gray";
  use constant SELECTED_BORDER_COLOUR     => "Black";
  use constant SELECTION_COLOUR           => "Tomato";
-@@ -1853,25 +1852,21 @@ sub dot_input_handler_cb($$)
+@@ -1909,25 +1908,21 @@ sub dot_input_handler_cb($$)
      my ($child_db,
          $hex_id_height,
          $hex_id_width,
@@ -59,7 +59,7 @@
      $hex_id_height = max(HEIGHT, $hex_id_height + (TEXT_BORDER * 2));
      $hex_id_width = max(WIDTH, $hex_id_width + (TEXT_BORDER * 2));
  
-@@ -1917,9 +1912,9 @@ sub dot_input_handler_cb($$)
+@@ -1973,9 +1968,9 @@ sub dot_input_handler_cb($$)
              $fh_in->print("  \"" . $revision_id . "\"");
              if (defined($tag = get_node_tag($instance, $revision_id)))
              {
@@ -71,7 +71,7 @@
                                   + (TEXT_BORDER * 6));
              }
              if ($width != WIDTH)
-@@ -1992,10 +1987,6 @@ sub dot_input_handler_cb($$)
+@@ -2048,10 +2043,6 @@ sub dot_input_handler_cb($$)
      $fh_in->print("}\n");
      $fh_in->close();
  
@@ -82,7 +82,7 @@
      # Reset our locale back to the local one again.
  
      setlocale(LC_ALL, "");
-@@ -2037,7 +2028,7 @@ sub draw_graph($)
+@@ -2093,7 +2084,7 @@ sub draw_graph($)
                                    x => CANVAS_BORDER,
                                    y => CANVAS_BORDER);
  
@@ -91,7 +91,7 @@
      $instance->{graph}->{selection_box} = Gnome2::Canvas::Item->new
          ($instance->{graph}->{group},
           "Gnome2::Canvas::Rect",
-@@ -2073,7 +2064,8 @@ sub draw_graph($)
+@@ -2129,7 +2120,8 @@ sub draw_graph($)
      foreach my $rectangle (@{$instance->{graph_data}->{rectangles}})
      {
  
@@ -101,7 +101,7 @@
              $text,
              $widget);
          my $node = $child_db->{$rectangle->{revision_id}};
-@@ -2114,7 +2106,8 @@ sub draw_graph($)
+@@ -2170,7 +2162,8 @@ sub draw_graph($)
               width_pixels   => LINE_WIDTH);
  
          # Now the text, use a revision's tag and failing that use the first
@@ -111,7 +111,7 @@
  
          if (defined($tag = get_node_tag($instance, $rectangle->{revision_id})))
          {
-@@ -2124,21 +2117,20 @@ sub draw_graph($)
+@@ -2180,21 +2173,20 @@ sub draw_graph($)
          {
              $text = substr($rectangle->{revision_id}, 0, HEX_ID_LENGTH);
          }
@@ -143,7 +143,7 @@
  
          $node_group->signal_connect
              ("event",
-@@ -2464,7 +2456,8 @@ sub scroll_to_node($$)
+@@ -2519,7 +2511,8 @@ sub scroll_to_node($$)
  #
  #   Routine      - scale_canvas
  #
@@ -153,7 +153,7 @@
  #
  #   Data         - $instance : The history graph window instance.
  #
-@@ -2486,24 +2479,24 @@ sub scale_canvas($)
+@@ -2541,24 +2534,24 @@ sub scale_canvas($)
      $wm->update_gui();
  
      # Adjust the canvas zoom factor, also resize the fonts on all the text
@@ -184,7 +184,7 @@
          }
      }
  
-@@ -3122,9 +3115,9 @@ sub reset_history_graph_window($)
+@@ -3324,9 +3317,9 @@ sub reset_history_graph_window($)
  
      my $group = $instance->{graph}->{group};
  
@@ -196,4 +196,4 @@
 +                          selection_box => undef};
      $group->destroy() if defined($group);
      $instance->{graph_canvas}->set_scroll_region(0, 0, 0, 0);
-     foreach my $item ($instance->{graph_advanced_find_button},
+     $instance->{key_buffer}->set_text("");
