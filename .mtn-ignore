@@ -4,8 +4,8 @@
 ^lib/ui/completions.png$
 ^lib/ui/cross.png$
 ^lib/ui/diffs.png$
-^lib/ui/eye.png$
 ^lib/ui/external-diffs.png$
+^lib/ui/eye.png$
 ^lib/ui/history-graph.png$
 ^lib/ui/key-colours.png$
 ^lib/ui/line.png$

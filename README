@@ -1,5 +1,5 @@
-mtn-browse Version 0.72
-=======================
+mtn-browse Version 1.00-RC1
+===========================
 
 mtn-browse is an application for browsing Monotone VCS databases without the
 need of a workspace. The interface allows one to:
@@ -9,6 +9,7 @@ need of a workspace. The interface allows one to:
     * Navigate the contents of a revision using a built in file manager.
     * Display file contents, either using the internal viewer or an external
       helper application.
+    * Graph revision histories.
     * Compare the changes between different revisions or versions of a file
       either using the internal difference viewer or an external application.
     * Find files within a revision based on detailed search criteria.
@@ -31,7 +32,6 @@ This module requires these other modules and libraries:
           - Glib (1.144) *
           - Gnome2 (1.040) *
           - Gnome2-Canvas (1.002) *
-          - Gnome2-Print (0.950) *
           - Gnome2-VFS (1.080) *
           - Gtk2 (1.146) *
           - Gtk2-GladeXML (1.006) *

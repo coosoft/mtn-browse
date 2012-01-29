@@ -1,3 +1,68 @@
+Overview Of Changes In mtn-browse 1.00-RC1 (2011-12-28 16:40:00)
+================================================================
+
+New:
+- Implemented a fully functional, fast, integrated history graph facility that
+  replaces the need for monotone-viz.
+- Implemented a custom auto-completion entry setup that is much more efficient
+  than using a simple ComboBoxEntry widget. This is now used on all branch,
+  revision and directory entry fields.
+- Added a `browse file' option to the annotate menu like we have in the history
+  graph window.
+
+Changes:
+- Made meld the default external comparison tool.
+- Got rid of the static lists option under preferences as this is no longer
+  needed with the new entry auto-completion setup.
+- Updated the help to take into account the new history change graph window and
+  the new auto-completion entry fields.
+- Implemented the pulsing of progress bars when waiting for Monotone or running
+  some external command. Applied this to advanced find queries, revision and
+  file comparisons, annotations and running dot.
+- Removed redundant frames in the more simple windows so as to save on screen
+  real-estate.
+- All date/time strings with the exception of those entered via the helper
+  widgets in the advanced find window are now displayed in a locale specific
+  way and in the local time.
+- All modal dialogs now put the application into a busy state to make it
+  clearer to the user what is going on.
+- The application no longer exits when mtn crashes. On balance this is probably
+  more helpful to the user.
+- Added a patch file that can be applied to switch mtn-browse over to using
+  Gtk2::SourceView2 instead of the now deprecated Gtk2::SourceView. This will
+  be applied by the installer.
+- Now detects which version of Gtk2::SourceView is in use and uses the
+  appropriate source files.
+- Also changed the installer so that it will patch files if needed when run.
+- Made the advanced find update granularity coarser. It now updates at
+  approximately double the speed.
+- Made the update interval when loading a list much coarser, speeds things up a
+  lot.
+- Now no longer have a dependency on Gnome2::Print (there should never have
+  been one).
+
+Bugs Fixed:
+- Now correctly enable and disable the text entry and date edit widgets
+  depending upon the type of selector chosen in the advanced find window.
+- Made the file name column in the main browser window unresizable when not
+  displaying a detailed listing.
+- To dates are now rounded up when loading date-time widgets as they truncate
+  to the nearest minute.
+- Corrected uninitialised bug found by Thomas K.
+- Now use the blessed() routine and the isa() method to determine whether a
+  parameter is just a hash reference or a Gtk2::Dialog window. Using isa as a
+  routine is deprecated in later versions of Perl.
+- Now escape special characters such as /| and \ in selection strings passed to
+  Monotone via Monotone::AutomateStdio.
+- Operators are no longer escaped when they are inserted into advanced find
+  queries.
+- Switched the tooltips around for the revision selection buttons in a revision
+  history window.
+- Switched off bracket highlighting (this was responsible for that little grey
+  blob in the SourceView text window).
+- Corrected some existing tooltips.
+
+
 Overview Of Changes In mtn-browse 0.72 (2011-02-20 10:40:00)
 ============================================================
 

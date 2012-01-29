@@ -1,5 +1,141 @@
 Revision history for mtn-browse.
 
+1.00-RC1  Wed Dec 28 16:40:00 2011 Anthony Cooper <support@coosoft.plus.com>
+	- Implemented a fully functional, fast, integrated history graph
+	  facility that replaces the need for monotone-viz.
+	- Implemented a custom auto-completion entry setup that is much more
+	  efficient than using a simple ComboBoxEntry widget. This is now used
+	  on all branch, revision and directory entry fields.
+	- Got rid of the static lists option under preferences as this is no
+	  longer needed with the new entry auto-completion setup.
+	- Updated the help to take into account the new history change graph
+	  window and the new auto-completion entry fields. Also corrected a few
+	  minor inconsistencies in the code and the GUI.
+	- Implemented the pulsing of progress bars when waiting for Monotone or
+	  running some external command. Applied this to advanced find queries,
+	  revision and file comparisons, annotations and running dot.
+	- Removed redundant frames in the more simple windows so as to save on
+	  screen real-estate. I also tried this with the main browser window
+	  but it looked a bit odd as the top of the treeview didn't line up
+	  with the top of the textview and one group of widgets just seemed to
+	  run into the other so on balance the browser stays as it is.
+	- Added a `browse file ' option to the annotate menu like we have in
+	  the history graph window.
+	- All date/time strings with the exception of those entered via the
+	  helper widgets in the advanced find window are now displayed in a
+	  locale specific way and in the local time.
+	- Operators are no longer escaped when they are inserted into advanced
+	  find queries.
+	- Now correctly enable and disable the text entry and date edit widgets
+	  depending upon the type of selector chosen in the advanced find
+	  window.
+	- All modal dialogs now put the application into a busy state to make
+	  it clearer to the user what is going on.
+	- Made the file name column in the main browser window unresizable when
+	  not displaying a detailed listing.
+	- The application no longer exits when mtn crashes. On balance this is
+	  probably more helpful to the user.
+	- To dates are now rounded up when loading date-time widgets as they
+	  truncate to the nearest minute.
+	- Made meld the default external comparison tool.
+	- Added a patch file that can be applied to switch mtn-browse over to
+	  using Gtk2::SourceView2 instead of the now deprecated
+	  Gtk2::SourceView. This will be applied by the installer.
+	- Now detects which version of Gtk2::SourceView is in use and uses the
+	  appropriate source files.
+	- The run_command() routine now takes an optional input callback to
+	  feed data to the subprocess.
+	- Now make use of the new run_command() routine to run dot (no more
+	  code duplication).
+	- Adapted the advanced find dialog so that one can optionally specify a
+	  call-back routine and client data for checking the suitability of
+	  selected revisions.
+	- Got rid of all Glade objects after use, it uses memory and according
+	  to the project's documentation this is safe and expected.
+	- Renamed references to monotone-viz to history graph.
+	- Cleaned up the code in ManageServerBookmarks.pm a bit.
+	- Corrected some comments.
+	- Put the date range widget and general support routines into a
+	  separate module for use by both the find files and history graph
+	  windows. Also wrote an adjust_time() routine based on existing code
+	  and put that into Common.pm
+	- Changed the event handling code to be more consistent for the
+	  advanced find and preferences dialog windows.
+	- Rationalised the code for the find files window to make use of the
+	  above common routines and the DateRange module.
+	- The calculate_update_interval() routine now works with references to
+	  arrays, hashes and simple values.
+	- Had to implement the concept of an application cleanup handler so
+	  that Gnome2::Canvas widgets can be completely unreferenced before
+	  they are destroyed on program exit.
+	- Now use the OO style calling convention for IO handle style objects
+	  rather than the functional style that was used in some places.
+	- Removed image files no longer needed in the updated help
+	  documentation.
+	- Updated the help links in the code to point to the new history graph
+	  help sections.
+	- Updated help images.
+	- Fixed minor issues with installer.
+	- Setup the installer to take options to deal with labels in history
+	  graphs and where to find graphviz's dot program.
+	- Also changed the installer so that it will patch files if needed when
+	  run.
+	- Updated installer help and installation documentation to reflect the
+	  above changes.
+	- Made the advanced find update granularity coarser. It now updates at
+	  approximately double the speed.
+	- Made the update interval when loading a list much coarser, speeds
+	  things up a lot.
+	- Now use the autosize mode of column resizing for all columns on the
+	  extreme rhs of treeviews.
+	- Now pulse the progress bar when getting lists of revisions either as
+	  tags or as ids.
+	- Changed the WindowManager class to cope with the concept of custom
+	  event handlers.
+	- All internal times are now expressed in GMT as this is what Monotone
+	  uses internally and in its stdio interface.
+	- Put the Monotone time format string into a constant that is now used
+	  instead.
+	- Changed the window management library to better cope with unrealised
+	  windows.
+	- Changed the handle_comboxentry_history() routine so that it
+	  automatically creates new history entries in the user preferences
+	  file as and when needed.
+	- Removed the pre-setting of the combobox entry histories in the user
+	  preferences logic.
+	- Corrected uninitialised bug found by Thomas K.
+	- Now use the blessed() routine and the isa() method to determine
+	  whether a parameter is just a hash reference or a Gtk2::Dialog
+	  window. Using isa as a routine is deprecated in later versions of
+	  Perl.
+	- The run_command() routine now takes an extra argument that determines
+	  whether the command is run under the current locale or the standard C
+	  one. This is used when running dot.
+	- Change the adjust_time routine to allow for adjusting time forwards
+	  as well as backwards.
+	- Removed tabs in indentation. It's a big change and so it is checked
+	  in on its own.
+	- Now escape special characters such as /| and \ in selection strings
+	  passed to Monotone via Monotone::AutomateStdio.
+	- Cleaned up some revision selection logic a bit.
+	- Now no longer have a dependency on Gnome2::Print (there should never
+	  have been one).
+	- Switched the tooltips around for the revision selection buttons in a
+	  revision history window.
+	- Switched off bracket highlighting (this was responsible for that
+	  little grey blob in the SourceView text window).
+	- Now use floor() instead of int().
+	- Now use foreach for all iterator style loops.
+	- Made variables more local in create window routines.
+	- Put a local $instance->{in_cb} = 1; after all if - else window
+	  creation blocks if it fiddles around with widgets.
+	- Re-ordered some routines to be in a more logical order and
+	  standardised some code.
+	- Corrected some existing tooltips.
+	- Minor code/comment cleanups.
+	- Updated ignore file.
+	- Updated the patch files.
+
 0.72  Sun Feb 20 10:40:00 2011 Anthony Cooper <support@coosoft.plus.com>
 	- Implemented the `Restrict to' combobox feature in the history window
 	  so that a user can restrict a revision/file history to a selected
