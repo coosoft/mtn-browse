@@ -1,13 +1,13 @@
 #
-# old_revision [f72a9682370efd023ef22aa4447b4dc182840216]
+# old_revision [898558733543a0077e73a01e1d44c89b46d2615a]
 #
 # patch "mtn-browse"
-#  from [54b0d5d06be650637bb5b14a9d357ea8451a141c]
-#    to [911314dd989170042eec6970a4a1139575e45ec4]
+#  from [498f67e49fb5ec88c97a258279e865419cdcf097]
+#    to [d379590739418805745b20890b4f506407288b68]
 #
 ============================================================
---- mtn-browse	54b0d5d06be650637bb5b14a9d357ea8451a141c
-+++ mtn-browse	911314dd989170042eec6970a4a1139575e45ec4
+--- mtn-browse	498f67e49fb5ec88c97a258279e865419cdcf097
++++ mtn-browse	d379590739418805745b20890b4f506407288b68
 @@ -77,7 +77,7 @@ use Gtk2::Pango;
  use Gtk2::GladeXML;
  use Gtk2::Helper;
@@ -35,7 +35,7 @@
              new_with_buffer($browser->{file_view_svbuffer});
          $browser->{file_view_sv}->modify_font($mono_font);
          $browser->{file_view_sv}->set_cursor_visible(FALSE);
-@@ -3344,7 +3344,7 @@ sub update_browser_state($$)
+@@ -3342,7 +3342,7 @@ sub update_browser_state($$)
              $browser->{file_view_svbuffer}->
                  place_cursor($browser->{file_view_svbuffer}->get_start_iter());
              $browser->{file_view_svbuffer}->set_text("");
@@ -44,7 +44,7 @@
              set_label_value($browser->{file_name_value_label}, "");
              set_label_value($browser->{file_author_value_label}, "");
              set_label_value($browser->{last_update_value_label}, "");
-@@ -3469,7 +3469,7 @@ sub display_file($$)
+@@ -3467,7 +3467,7 @@ sub display_file($$)
      $browser->{file_view_svbuffer}->
          place_cursor($browser->{file_view_svbuffer}->get_start_iter());
      $browser->{file_view_svbuffer}->set_text("");
@@ -53,7 +53,7 @@
  
      # Get contents.
  
-@@ -3573,9 +3573,12 @@ sub display_file($$)
+@@ -3571,9 +3571,12 @@ sub display_file($$)
                           && $mime_details->{syntax_highlight}))
                      && defined($lang =
                                 $browser->{file_view_svlangmgr}->

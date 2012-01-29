@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mtn-browse 0.1\n"
 "Report-Msgid-Bugs-To: support@coosoft.plus.com\n"
-"POT-Creation-Date: 2012-01-15 00:16+0000\n"
+"POT-Creation-Date: 2012-01-28 19:03+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -59,7 +59,7 @@ msgstr ""
 msgid "Connecting to server `{server}'"
 msgstr ""
 
-#: mtn-browse:728 mtn-browse:3796 lib/perl/Common.pm:1543
+#: mtn-browse:728 mtn-browse:3794 lib/perl/Common.pm:1543
 #: lib/perl/HistoryGraph.pm:339 lib/perl/Preferences.pm:262
 msgid "Your preferences could not be saved:\n"
 msgstr ""
@@ -73,7 +73,7 @@ msgid ""
 msgstr ""
 
 #: mtn-browse:928
-msgid "Copyright © 2007-2010 Anthony Cooper"
+msgid "Copyright © 2007-2012 Anthony Cooper"
 msgstr ""
 
 #: mtn-browse:929
@@ -202,20 +202,20 @@ msgstr ""
 msgid "<Service> ({service_name})"
 msgstr ""
 
-#: mtn-browse:2727
+#: mtn-browse:2726
 #, perl-brace-format
 msgid "<WorkSpace> ({database_name})"
 msgstr ""
 
-#: mtn-browse:2766 lib/perl/AdvancedFind.pm:959
+#: mtn-browse:2764 lib/perl/AdvancedFind.pm:959
 msgid "Fetching branch list"
 msgstr ""
 
-#: mtn-browse:2809
+#: mtn-browse:2807
 msgid "Auto selecting head revision"
 msgstr ""
 
-#: mtn-browse:2836
+#: mtn-browse:2834
 #, perl-brace-format
 msgid ""
 "The `{branch}' branch\n"
@@ -224,16 +224,16 @@ msgid ""
 "below or use the <i>Advanced Find</i> feature."
 msgstr ""
 
-#: mtn-browse:2918 lib/perl/AdvancedFind.pm:1006 lib/perl/History.pm:159
+#: mtn-browse:2916 lib/perl/AdvancedFind.pm:1006 lib/perl/History.pm:159
 #: lib/perl/History.pm:239
 msgid "Fetching revision list"
 msgstr ""
 
-#: mtn-browse:2972
+#: mtn-browse:2970
 msgid "Fetching manifest"
 msgstr ""
 
-#: mtn-browse:2998
+#: mtn-browse:2996
 #, perl-brace-format
 msgid ""
 "The `{tag_name}' tag is not unique on this\n"
@@ -241,32 +241,32 @@ msgid ""
 "combobox below or use the <i>Advanced Find</i> feature."
 msgstr ""
 
-#: mtn-browse:3182
+#: mtn-browse:3180
 msgid "Populating file details"
 msgstr ""
 
-#: mtn-browse:3498
+#: mtn-browse:3496
 msgid "Unknown Contents"
 msgstr ""
 
-#: mtn-browse:3555
+#: mtn-browse:3553
 msgid "Hex dump:\n"
 msgstr ""
 
-#: mtn-browse:3758
+#: mtn-browse:3756
 msgid ""
 "Your version of Monotone does not support\n"
 "suspend certificates. I will adjusted your\n"
 "preferences accordingly."
 msgstr ""
 
-#: mtn-browse:3835
+#: mtn-browse:3833
 msgid ""
 "The Monotone database is currently locked, please\n"
 "dismiss this dialog when this is no longer the case."
 msgstr ""
 
-#: mtn-browse:3874
+#: mtn-browse:3872
 #, perl-brace-format
 msgid ""
 "Problem with Monotone request, got:\n"
@@ -274,7 +274,7 @@ msgid ""
 "This should not be happening!"
 msgstr ""
 
-#: mtn-browse:3891
+#: mtn-browse:3889
 #, perl-brace-format
 msgid ""
 "The Monotone subprocess unexpectedly exited with:\n"
@@ -282,17 +282,17 @@ msgid ""
 "This should not be happening!"
 msgstr ""
 
-#: mtn-browse:3942
+#: mtn-browse:3940
 #, perl-brace-format
 msgid "terminated by signal {number}"
 msgstr ""
 
-#: mtn-browse:3948
+#: mtn-browse:3946
 #, perl-brace-format
 msgid "exited with status {number}"
 msgstr ""
 
-#: mtn-browse:3956
+#: mtn-browse:3954
 #, perl-brace-format
 msgid ""
 "The Monotone subprocess just unexpectedly\n"
@@ -301,12 +301,12 @@ msgid ""
 "It will be restarted when needed."
 msgstr ""
 
-#: mtn-browse:3971
+#: mtn-browse:3969
 #, perl-brace-format
 msgid "waitpid failed: {error_message}"
 msgstr ""
 
-#: mtn-browse:4001
+#: mtn-browse:3999
 #, perl-brace-format
 msgid "pipe failed: {error_message}"
 msgstr ""
@@ -1120,21 +1120,22 @@ msgstr ""
 msgid "mtnb-uhg-the-change-history-graph-window"
 msgstr ""
 
-#: lib/perl/ManageServerBookmarks.pm:214
+#: lib/perl/ManageServerBookmarks.pm:215
 #, perl-brace-format
 msgid ""
-"`{server}' is an invalid server\n"
-"name (<server>[:port] is expected)."
+"`{server}' is invalid. Expected either\n"
+"<Server>[:<Port>] or a Monotone URL such as\n"
+"`mtn://code.monotone.ca/mtn-browse'."
 msgstr ""
 
-#: lib/perl/ManageServerBookmarks.pm:231
+#: lib/perl/ManageServerBookmarks.pm:233
 #, perl-brace-format
 msgid ""
 "`{server}' is already entered\n"
 "into your bookmarks list."
 msgstr ""
 
-#: lib/perl/ManageServerBookmarks.pm:419
+#: lib/perl/ManageServerBookmarks.pm:421
 msgid "mtnb-upc-the-manage-server-bookmarks-dialog-window"
 msgstr ""
 
