@@ -1,13 +1,13 @@
 #
-# old_revision [c10ade981eaf8e4261d0448cb605b2b15c80b414]
+# old_revision [ff96fdbae7272d2e8409a39a68bfd0daf481f0a2]
 #
 # patch "lib/perl/HistoryGraph.pm"
-#  from [57fde8b08dd925d5211e58c18a1f2b6249170a0b]
-#    to [2246fd25428e6c55abc7ac5660c92f084453a9f8]
+#  from [23964bca56655afbe3126c4484eafb333404f135]
+#    to [e940b8aab97e4a30444df44e8521672eef5770aa]
 #
 ============================================================
---- lib/perl/HistoryGraph.pm	57fde8b08dd925d5211e58c18a1f2b6249170a0b
-+++ lib/perl/HistoryGraph.pm	2246fd25428e6c55abc7ac5660c92f084453a9f8
+--- lib/perl/HistoryGraph.pm	23964bca56655afbe3126c4484eafb333404f135
++++ lib/perl/HistoryGraph.pm	e940b8aab97e4a30444df44e8521672eef5770aa
 @@ -53,7 +53,7 @@ use constant DPI              => 72;
  
  use constant CANVAS_BORDER    => 5;
@@ -184,7 +184,7 @@
          }
      }
  
-@@ -3345,9 +3338,9 @@ sub reset_history_graph_window($)
+@@ -3346,9 +3339,9 @@ sub reset_history_graph_window($)
  
      my $group = $instance->{graph}->{group};
  
