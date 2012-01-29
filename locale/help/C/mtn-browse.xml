@@ -6,7 +6,7 @@
 
     <!ENTITY APP "Monotone Browser">
     <!ENTITY APP-CMD "mtn-browse">
-    <!ENTITY VERSION "0.05">
+    <!ENTITY VERSION "1.00">
 
   ]
 >
@@ -134,8 +134,16 @@ GNOME or DocBook.
         </revdescription>
       </revision>
       <revision>
-        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <revnumber>&APP; Manual V0.05</revnumber>
         <date>15 January 2012</date>
+        <revdescription>
+          <para role="author">Anthony Cooper</para>
+          <para role="publisher">CooSoft</para>
+        </revdescription>
+      </revision>
+      <revision>
+        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <date>28 January 2012</date>
         <revdescription>
           <para role="author">Anthony Cooper</para>
           <para role="publisher">CooSoft</para>
@@ -1452,6 +1460,10 @@ GNOME or DocBook.
         </tgroup>
       </informaltable>
 
+      <note>
+        <para>Displaying annotated listings when connected to a remote Monotone server is currently not supported by Monotone.</para>
+      </note>
+
     </sect1>
 
   </chapter>
@@ -1596,11 +1608,11 @@ GNOME or DocBook.
             <tbody>
               <row valign="top">
                 <entry><para><inlinegraphic fileref="figures/change-history-graph-button.png" format="png" valign="middle"/></para></entry>
-                <entry><para>Displays the <guilabel>Change History Graph</guilabel> dialog window that allows one to change what is graphed and how.</para></entry>
+                <entry><para>Displays the <guilabel>Change History Graph</guilabel> dialog window that allows one to change what is graphed and how (see <xref linkend="mtnb-uhg-the-change-history-graph-dialog-window"/>).</para></entry>
               </row>
               <row valign="top">
                 <entry><para><inlinegraphic fileref="figures/line-numbers-toggle-button.png" format="png" valign="middle"/></para></entry>
-                <entry><para>Displays the <guilabel>Manage Tag Weightings</guilabel> dialog window that allows one to specify weightings for tag labels so that you can control what type of tag gets displayed for a revision node in the history graph.</para></entry>
+                <entry><para>Displays the <guilabel>Manage Tag Weightings</guilabel> dialog window that allows one to specify weightings for tag labels so that you can control what type of tag gets displayed for a revision node in the history graph (see <xref linkend="mtnb-uhg-the-manage-tag-weightings-dialog-window"/>).</para></entry>
               </row>
               <row valign="top">
                 <entry><para><inlinegraphic fileref="figures/history-graph-refresh-button.png" format="png" valign="middle"/></para></entry>
@@ -1654,8 +1666,8 @@ GNOME or DocBook.
 
     </sect1>
 
-    <sect1 id="mtnb-uhg-the-change-history-graph-window">
-      <title>The Change History Graph Window</title>
+    <sect1 id="mtnb-uhg-the-change-history-graph-dialog-window">
+      <title>The Change History Graph Dialog Window</title>
 
       <para>When you left click on a <guilabel>History Graph</guilabel> window's <guilabel>Change History Graph</guilabel> button you will be presented with a dialog window like the one shown below.</para>
 
@@ -2165,9 +2177,9 @@ GNOME or DocBook.
         </screenshot>
       </figure>
 
-      <para>This dialog window allows you to manage a list of Monotone servers that you can connect to remotely over the network. On the left hand side is the list of server names that appears in your bookmarks menu. To the right of this list is an entry field where one can enter a new server name and then left click on the <guilabel>+</guilabel> button just to the right of this entry field to add it to the list . Likewise, when you left click on the <guilabel>-</guilabel> then the currently selected server name is removed from the list.</para>
+      <para>This dialog window allows you to manage a list of Monotone servers that you can connect to remotely over the network. On the left hand side is the list of servers that appears in your bookmarks menu. To the right of this list is an entry field where one can enter the details of a new server and then left click on the <guilabel>+</guilabel> button just to the right of this entry field to add it to the list . Likewise, when you left click on the <guilabel>-</guilabel> then the currently selected server is removed from the list.</para>
 
-      <para>Server names can be either a valid host name or an Internet address, optionally followed by a colon and the number of the port to connect to if the Monotone server is not listening on the standard port. <userinput>192.168.1.1</userinput>, <userinput>192.168.1.1:5000</userinput>, <userinput>monotone.ca</userinput> and <userinput>venge.net:8000</userinput> are all examples of valid server name entries.</para>
+      <para>Servers are specified either as a valid host name or Internet address, optionally followed by a colon and the service's port number, or a Monotone style URL. <userinput>192.168.1.1</userinput>, <userinput>192.168.1.1:5000</userinput>, <userinput>monotone.ca</userinput>, <userinput>venge.net:8000</userinput>, <userinput>mtn://code.monotone.ca/monotone</userinput> and <userinput>code.monotone.ca/monotone</userinput> are all examples of valid server entries.</para>
 
     </sect1>
 
@@ -2206,7 +2218,7 @@ GNOME or DocBook.
           <para><emphasis>Takes A Long Time To Get A List Of Branches</emphasis> - Try ticking <guilabel>Show suspended revisions</guilabel> under user preferences. Monotone does have to work quite hard to determine whether a branch is suspended or not and with this option ticked it can simply list every branch with the minimum of fuss.</para>
         </listitem>
         <listitem>
-          <para><emphasis>Takes A Long Time To Display The Contents Of A Folder</emphasis> - Try unticking <guilabel>Detailed file listings</guilabel> under user preferences. For each file displayed, <application>&APP;</application> has to fetch modification times and author details. Depending upon the version of Monotone being used, this can be a costly process (Monotone versions 0.40 and 0.41 are particularly badly affected by this).</para>
+          <para><emphasis>Takes A Long Time To Display The Contents Of A Folder</emphasis> - Try unticking <guilabel>Detailed file listings</guilabel> under user preferences. For each file displayed, <application>&APP;</application> has to fetch modification times and author details. Depending upon the version of Monotone being used, this can be a costly process (Monotone versions 0.40 and 0.41 in particular are badly affected by this).</para>
         </listitem>
         <listitem>
           <para><emphasis>Takes A Long Time Searching For Files</emphasis> - The first time this is done on a revision, <application>&APP;</application> caches certain items of information about each scanned file. The next time a search is done it will be a lot faster.</para>

@@ -204,15 +204,17 @@ sub add_server_button_clicked_cb($$)
     # Check entry to see if it is valid.
 
     $server = $instance->{server_entry}->get_text();
-    if ($server !~ m/^[A-Za-z0-9._-]+(:\d+)?$/)
+    if ($server !~ m/^[A-Za-z0-9._-]+(:\d+)?$/
+        && $server !~ m/\//)
     {
         my $dialog = Gtk2::MessageDialog->new
             ($instance->{window},
              ["modal"],
              "warning",
              "close",
-             __x("`{server}' is an invalid server\n"
-                 . "name (<server>[:port] is expected).",
+             __x("`{server}' is invalid. Expected either\n"
+                     . "<Server>[:<Port>] or a Monotone URL such as\n"
+                     . "`mtn://code.monotone.ca/mtn-browse'.",
                  server => $server));
         busy_dialog_run($dialog);
         $dialog->destroy();

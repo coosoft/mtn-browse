@@ -45,7 +45,7 @@ require 5.008005;
 BEGIN
 {
     use constant APPLICATION_NAME        => "mtn-browse";
-    use constant APPLICATION_VERSION     => "1.00-RC1";
+    use constant APPLICATION_VERSION     => "1.00";
     use constant FILE_COMPARE_CMD        => "@INST:FILE_COMPARE_CMD@";
     use constant HTML_VIEWER_CMD         => "@INST:HTML_VIEWER_CMD@";
     use constant GRAPHVIZ_LAYOUT_PROGRAM => "@INST:GRAPHVIZ_LAYOUT_PROGRAM@";
@@ -925,7 +925,7 @@ sub about_activate_cb($$)
     Gnome2::About->new
         (APPLICATION_NAME,
          APPLICATION_VERSION,
-         __("Copyright \xa9 2007-2010 Anthony Cooper"),
+         __("Copyright \xa9 2007-2012 Anthony Cooper"),
          __("A graphical front-end browser for Monotone VCS databases"),
          ["Anthony Cooper <support\@coosoft.plus.com>"],
          __("Anthony Cooper <support\@coosoft.plus.com>"),
@@ -2711,7 +2711,6 @@ sub update_browser_state($$)
                     ($browser->{database_name_value_label},
                      __x("<Service> ({service_name})",
                          service_name => $browser->{mtn}->get_service_name()));
-                $browser->{history_graph_button}->set_sensitive(FALSE);
             }
             else
             {
@@ -2727,7 +2726,6 @@ sub update_browser_state($$)
                                     __x("<WorkSpace> ({database_name})",
                                         database_name => $db_name));
                 }
-                $browser->{history_graph_button}->set_sensitive(TRUE);
             }
 
             # Make sure that the branch entry has the focus and not the bonobo

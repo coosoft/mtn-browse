@@ -1,5 +1,5 @@
-mtn-browse Version 1.00-RC1
-===========================
+mtn-browse Version 1.00
+=======================
 
 mtn-browse is an application for browsing Monotone VCS databases without the
 need of a workspace. The interface allows one to:
@@ -37,7 +37,7 @@ This module requires these other modules and libraries:
           - Gtk2-GladeXML (1.006) *
           - Gtk2-SourceView (1.000) *
           - libintl-perl (1.16)
-          - Monotone::AutomateStdio (1.00 or later)
+          - Monotone::AutomateStdio (1.02 or later)
 
 Please note that the Gtk2 CPAN bundle will probably satisfy all of the
 dependencies marked with * at the end of the line.
@@ -133,6 +133,67 @@ In particular, package maintainers may find the following useful:
 This tells the installer to configure the installation as if it were going
 under /opt/mtn-browse but actually installs it under /tmp/install-dir (i.e. the
 application can be found at /tmp/install-dir/opt/mtn-browse/bin/mtn-browse).
+
+The Use Gtk2::Labels Installer Option
+-------------------------------------
+
+So what is this option all about then? Well when drawing graph histories,
+mtn-browse has two options when it comes to writing text on the graph. It can
+either use the method that comes with the main drawing widget, known as a Gnome
+Canvas, or the method that is used to display text everywhere else in the
+application, Gtk2::Labels.
+
+Gnome Canvas text, to my knowledge, always works perfectly and gives pleasing
+results, but because you can do fancy things with it (which I do not make use
+of) it can be slow.
+
+Gtk2::Labels on the other hand are more basic and hence much faster, but they
+are not really supposed to be used inside canvases and so can behave oddly or
+not at all depending on what version of Gtk2 you have and the associated Perl
+bindings. This odd behaviour sometimes manifests itself as spidery text or
+simply not displaying the text at all at the bottom of very tall history
+graphs.
+
+Because I cannot predetermine what will work best for your setup, I give you
+the choice of which mechanism to use during installation. Defaulting to the
+most reliable but the slowest. Life is never simple!
+
+In order to determine whether you can successfully use Gtk2::Labels in history
+graphs, I have set up a little test branch in my public database that can be
+used to generate very tall graphs that will test the Gtk2::Label approach.
+
+To test whether Gt2k::Labels will work for your system do the following:
+- Install mtn-browse into a test location using ./linux-installer -i. When you
+  get to the use Gtk2::Labels question answer yes.
+- Optionally create a local copy of the test branch in a database by doing
+  something like:
+    $ mtn --db=test.mtn db init
+    $ mtn --db=test.mtn pull mtn://code.monotone.ca/mtn-browse?net.venge
+    .monotone.contrib.mtn-browse.test.long-graph
+  (Please note that here is no white space in the above URL, it was just broken
+   up to fit nicely into this text file.)
+- Run up your test mtn-browse application and then either open your local test
+  database or connect to mtn://code.monotone.ca/mtn-browse.
+- Select the net.venge.monotone.contrib.mtn-browse.test.long-graph branch.
+- Generate a history graph for it.
+- Since all revisions were added in a matter of minutes the entire branch's
+  history should be graphed but if you want to absolutely make sure, call up
+  the change history graph dialog window and remove the time range restriction.
+- Scroll to the very bottom of the history graph. Do you see any text inside
+  the little coloured boxes? If you do and things seems to be drawn correctly
+  then you can probably use Gtk2::Labels without any real issues. If no text
+  appears or there are fundamental drawing issues try another test installation
+  but this time answer no to the above use Gtk2::Labels question.
+
+For example, with my older RHEL 4.2 system with Perl bindings that I compiled
+myself, all works fine using Gtk2::Labels. On my Debian 5 machine it does not
+work, but it does on Debian 6.
+
+If you determine that using Gtk2::Labels works markedly better than not using
+them on a particular system then I would be interested to know the details.
+Please include details of the operating system, where you got the Perl bindings
+from and any other relevant libraries, along with their versions. If like
+Debian or Ubuntu the packages came from a standard repository then just say so.
 
 
 COPYRIGHT AND LICENCE

@@ -165,7 +165,7 @@ sub program_is_valid($);
                  "Gtk2::GladeXML"     => 1.006,
                  "Gtk2::SourceView2"  => 0.10,
                  "Locale::TextDomain" => 1.16);
-        $deps{"Monotone::AutomateStdio"} = 1.00 if (! $use_dists_mas_lib);
+        $deps{"Monotone::AutomateStdio"} = 1.02 if (! $use_dists_mas_lib);
 
         # Do the check.
 
