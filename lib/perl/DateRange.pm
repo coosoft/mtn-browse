@@ -52,119 +52,17 @@ use warnings;
 # Public routines.
 
 sub get_date_range($$$);
+sub get_date_state($);
+sub reset_date_state($);
 sub set_date_range($$$);
+sub set_date_state($$);
 sub setup_date_range_widgets($);
 
 # Private routines.
 
 sub between_range_radiobutton_toggled_cb($$);
 sub date_range_checkbutton_toggled_cb($$);
-#
-##############################################################################
-#
-#   Routine      - date_range_checkbutton_toggled_cb
-#
-#   Description  - Callback routine called when the user changes the value of
-#                  the date range check button in the window.
-#
-#   Data         - $widget   : The widget object that received the signal.
-#                  $instance : The window instance that is associated with
-#                              this widget.
-#
-##############################################################################
-
-
-
-sub date_range_checkbutton_toggled_cb($$)
-{
-
-    my ($widget, $instance) = @_;
-
-    return if ($instance->{in_cb});
-    local $instance->{in_cb} = 1;
-
-    # Simply enable and disable the appropriate widgets.
-
-    if ($instance->{date_range_checkbutton}->get_active())
-    {
-        foreach my $widget (@{$instance->{date_sensitive_group}})
-        {
-            $widget->set_sensitive(TRUE);
-        }
-        if ($instance->{between_range_radiobutton}->get_active())
-        {
-            foreach my $widget (@{$instance->{during_dates_sensitive_group}})
-            {
-                $widget->set_sensitive(FALSE);
-            }
-        }
-        else
-        {
-            foreach my $widget (@{$instance->{between_dates_sensitive_group}})
-            {
-                $widget->set_sensitive(FALSE);
-            }
-        }
-    }
-    else
-    {
-        foreach my $widget (@{$instance->{date_sensitive_group}})
-        {
-            $widget->set_sensitive(FALSE);
-        }
-    }
-
-}
-#
-##############################################################################
-#
-#   Routine      - between_range_radiobutton_toggled_cb
-#
-#   Description  - Callback routine called when the user changes the value of
-#                  the between radio button in the window.
-#
-#   Data         - $widget   : The widget object that received the signal.
-#                  $instance : The window instance that is associated with
-#                              this widget.
-#
-##############################################################################
-
-
-
-sub between_range_radiobutton_toggled_cb($$)
-{
-
-    my ($widget, $instance) = @_;
-
-    return if ($instance->{in_cb});
-    local $instance->{in_cb} = 1;
-
-    # Simply enable and disable the appropriate widgets.
-
-    if ($instance->{between_range_radiobutton}->get_active())
-    {
-        foreach my $widget (@{$instance->{between_dates_sensitive_group}})
-        {
-            $widget->set_sensitive(TRUE);
-        }
-        foreach my $widget (@{$instance->{during_dates_sensitive_group}})
-        {
-            $widget->set_sensitive(FALSE);
-        }
-    }
-    else
-    {
-        foreach my $widget (@{$instance->{during_dates_sensitive_group}})
-        {
-            $widget->set_sensitive(TRUE);
-        }
-        foreach my $widget (@{$instance->{between_dates_sensitive_group}})
-        {
-            $widget->set_sensitive(FALSE);
-        }
-    }
-
-}
+sub set_date_widget_sensitivity($);
 #
 ##############################################################################
 #
@@ -322,9 +220,8 @@ sub get_date_range($$$)
 #
 #   Data         - $instance    : The window instance that is associated with
 #                                 these date range widgets.
-#                  $from_date   : The time() style time code for the from
-#                                 date.
-#                  $to_date     : The time() style time code for the to date.
+#                  $from_date   : The Monotone style from date/time string.
+#                  $to_date     : The Monotone style to date/time string.
 #
 ##############################################################################
 
@@ -334,6 +231,9 @@ sub set_date_range($$$)
 {
 
     my ($instance, $from_date, $to_date) = @_;
+
+    my ($from_tm,
+        $to_tm);
 
     # Enable and disable the appropriate widgets.
 
@@ -348,10 +248,146 @@ sub set_date_range($$$)
         $widget->set_sensitive(FALSE);
     }
 
-    # Now load in the date/time values into teh dateedit widgets.
+    # Now convert and load in the date/time values into the dateedit widgets.
 
-    $instance->{older_date_dateedit}->set_time($from_date);
-    $instance->{younger_date_dateedit}->set_time($to_date);
+    $instance->{older_date_dateedit}->set_time($from_tm)
+        if (defined($from_tm = mtn_time_string_to_time($from_date)));
+    $instance->{younger_date_dateedit}->set_time($to_tm)
+        if (defined($to_tm = mtn_time_string_to_time($to_date)));
+
+}
+#
+##############################################################################
+#
+#   Routine      - get_date_state
+#
+#   Description  - Returns the current state of the date/time range widgets in
+#                  the form of an opaque state record that can then be used
+#                  with the set_date_state() routine to restore that state at
+#                  a later date.
+#
+#   Data         - $instance    : The window instance that is associated with
+#                                 these date range widgets.
+#                  Return Value : The current state of the date/time widgets.
+#
+##############################################################################
+
+
+
+sub get_date_state($)
+{
+
+    my $instance = $_[0];
+
+    my $state = {a_range      => undef,
+                 range        => undef,
+                 older_date   => undef,
+                 younger_date => undef,
+                 period_units => undef,
+                 period       => undef};
+
+    # Please note that the update method needs to be called on the spinbutton
+    # so as to make sure that it's internal state is completely up to date (the
+    # user might have entered a value directly into the entry field). Updates
+    # are usually done when it looses the focus, however the parent window may
+    # not make use of any focus stealing buttons.
+
+    $instance->{time_spinbutton}->update();
+
+    # Now record the current state.
+
+    $state->{a_range} =
+        $instance->{date_range_checkbutton}->get_active() ? 1: 0;
+    $state->{range} =
+        $instance->{between_range_radiobutton}->get_active() ? 1: 0;
+    $state->{older_date} = $instance->{older_date_dateedit}->get_time();
+    $state->{younger_date} = $instance->{younger_date_dateedit}->get_time();
+    $state->{period_units} = $instance->{time_units_combobox}->get_active();
+    $state->{period} = $instance->{time_spinbutton}->get_value_as_int();
+
+    return $state;
+
+}
+#
+##############################################################################
+#
+#   Routine      - set_date_state
+#
+#   Description  - Sets the current state of the date/time range widgets to
+#                  the specified state.
+#
+#   Data         - $instance : The window instance that is associated with
+#                              these date range widgets.
+#                  $state    : The state that is to be restored that was
+#                              originally saved by calling get_date_state().
+#
+##############################################################################
+
+
+
+sub set_date_state($$)
+{
+
+    my ($instance, $state) = @_;
+
+    # Load the widgets with their values.
+
+    $instance->{date_range_checkbutton}->
+        set_active($state->{a_range} ? TRUE: FALSE);
+    if ($state->{range})
+    {
+        $instance->{between_range_radiobutton}->set_active(TRUE);
+    }
+    else
+    {
+        $instance->{during_range_radiobutton}->set_active(TRUE);
+    }
+    $instance->{older_date_dateedit}->set_time($state->{older_date});
+    $instance->{younger_date_dateedit}->set_time($state->{younger_date});
+    $instance->{time_units_combobox}->set_active($state->{period_units});
+    $instance->{time_spinbutton}->set_value($state->{period});
+
+    # Now enable and disable the appropriate widgets.
+
+    set_date_widget_sensitivity($instance);
+
+}
+#
+##############################################################################
+#
+#   Routine      - reset_date_state
+#
+#   Description  - Resets the current state of the date/time range widgets.
+#
+#   Data         - $instance : The window instance that is associated with
+#                              these date range widgets.
+#
+##############################################################################
+
+
+
+sub reset_date_state($)
+{
+
+    my $instance = $_[0];
+
+    my $time = time();
+
+    # Load the widgets with their default values.
+
+    $instance->{date_range_checkbutton}->set_active(FALSE);
+    $instance->{between_range_radiobutton}->set_active(TRUE);
+    $instance->{older_date_dateedit}->set_time($time);
+    $instance->{younger_date_dateedit}->set_time($time);
+    $instance->{time_units_combobox}->set_active(DURATION_DAYS);
+    $instance->{time_spinbutton}->set_value(1);
+
+    # Now disable all of the date/time widgets.
+
+    foreach my $widget (@{$instance->{date_sensitive_group}})
+    {
+        $widget->set_sensitive(FALSE);
+    }
 
 }
 #
@@ -411,6 +447,116 @@ sub setup_date_range_widgets($)
     foreach my $widget (@{$instance->{date_sensitive_group}})
     {
         $widget->set_sensitive(FALSE);
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - date_range_checkbutton_toggled_cb
+#
+#   Description  - Callback routine called when the user changes the value of
+#                  the date range check button in the window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub date_range_checkbutton_toggled_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    # Simply enable and disable the appropriate widgets.
+
+    set_date_widget_sensitivity($instance);
+
+}
+#
+##############################################################################
+#
+#   Routine      - between_range_radiobutton_toggled_cb
+#
+#   Description  - Callback routine called when the user changes the value of
+#                  the between radio button in the window.
+#
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub between_range_radiobutton_toggled_cb($$)
+{
+
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    # Simply enable and disable the appropriate widgets.
+
+    set_date_widget_sensitivity($instance);
+
+}
+#
+##############################################################################
+#
+#   Routine      - set_date_widget_sensitivity
+#
+#   Description  - Set up the date/time range widget sensitivity according to
+#                  its current mode.
+#
+#   Data         - $instance : The window instance that is associated with
+#                              this widget.
+#
+##############################################################################
+
+
+
+sub set_date_widget_sensitivity($)
+{
+
+    my $instance = $_[0];
+
+    # Simply enable and disable the appropriate widgets.
+
+    if ($instance->{date_range_checkbutton}->get_active())
+    {
+        foreach my $widget (@{$instance->{date_sensitive_group}})
+        {
+            $widget->set_sensitive(TRUE);
+        }
+        if ($instance->{between_range_radiobutton}->get_active())
+        {
+            foreach my $widget (@{$instance->{during_dates_sensitive_group}})
+            {
+                $widget->set_sensitive(FALSE);
+            }
+        }
+        else
+        {
+            foreach my $widget (@{$instance->{between_dates_sensitive_group}})
+            {
+                $widget->set_sensitive(FALSE);
+            }
+        }
+    }
+    else
+    {
+        foreach my $widget (@{$instance->{date_sensitive_group}})
+        {
+            $widget->set_sensitive(FALSE);
+        }
     }
 
 }

@@ -54,7 +54,7 @@ use warnings;
 
 # ***** GLOBAL DATA DECLARATIONS *****
 
-# Constants used to represent units for periods of time.
+# Constants used to represent units of periods of time.
 
 use constant DURATION_MINUTES => 0;
 use constant DURATION_HOURS   => 1;

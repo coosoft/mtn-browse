@@ -3308,6 +3308,7 @@ sub reset_history_graph_instance($)
         {parameters     =>
              {new                      => 0,
               branches                 => [],
+              date_state               => undef,
               from_date                => "",
               to_date                  => "",
               draw_left_to_right       => $draw_left_to_right,
@@ -3409,23 +3410,50 @@ sub change_history_graph_parameters($$)
         $instance->{mtn}->branches($instance->{branch_list});
         load_branch_liststore($instance, $parameters->{branches});
 
-        # Also load in any dates specified by the caller (but don't do this
-        # after the first time the user changes the parameters - otherwise his
-        # settings will keep getting reset which he will find annoying). Also
-        # remember to round up the to-date value as the date time widgets round
-        # down to the nearest minute.
+        # Reset the date/time widgets to sensible values. If this is the first
+        # time the user has changed the parameters for this history graph then
+        # set the date/time widgets to the values given in the parameters,
+        # otherwise simply restore the values previously saved for this history
+        # graph. Doing otherwise will annoy the user as their date/time ranges
+        # would keep getting reset.
 
-        if ($parameters->{new} && $parameters->{from_date} ne "")
+        if ($parameters->{new})
         {
-            my ($from_date,
-                $to_date);
-            $from_date = mtn_time_string_to_time($parameters->{from_date});
-            $to_date = ($parameters->{to_date} ne "")
-                ? mtn_time_string_to_time($parameters->{to_date}) : time();
-            $to_date = floor(($to_date + 59) / 60) * 60;
-            set_date_range($instance, $from_date, $to_date)
-                if (defined($from_date) && defined($to_date));
+
+            # New graph so use the date/time ranges given in the parameters if
+            # we have any, otherwise completely reset the date.time widgets.
+
+            if ($parameters->{from_date} ne "")
+            {
+                my $to_date;
+                $to_date = ($parameters->{to_date} ne "")
+                    ? mtn_time_string_to_time($parameters->{to_date}) : time();
+                $to_date = floor(($to_date + 59) / 60) * 60;
+                reset_date_state($instance);
+                set_date_range($instance,
+                               $parameters->{from_date},
+                               strftime(MTN_TIME_STRING, gmtime($to_date)))
+                    if ($parameters->{from_date} ne "" && defined($to_date));
+                $parameters->{date_state} = get_date_state($instance);
+            }
+            else
+            {
+                reset_date_state($instance);
+            }
+
             $parameters->{new} = 0;
+
+        }
+        else
+        {
+            if (defined($parameters->{date_state}))
+            {
+                set_date_state($instance, $parameters->{date_state});
+            }
+            else
+            {
+                reset_date_state($instance);
+            }
         }
 
         # Load the remaining settings into the GUI.
@@ -3504,6 +3532,7 @@ sub change_history_graph_parameters($$)
 
         # Leave the revision id parameter alone.
 
+        $parameters->{date_state} = get_date_state($instance);
         $ret_val = 1;
 
     }
