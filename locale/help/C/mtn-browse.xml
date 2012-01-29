@@ -135,7 +135,7 @@ GNOME or DocBook.
       </revision>
       <revision>
         <revnumber>&APP; Manual V&VERSION;</revnumber>
-        <date>25 November 2011</date>
+        <date>15 January 2012</date>
         <revdescription>
           <para role="author">Anthony Cooper</para>
           <para role="publisher">CooSoft</para>
@@ -204,6 +204,13 @@ GNOME or DocBook.
     <title>Getting Started</title>
 
     <para>This chapter covers the basic usage of <application>&APP;</application>. For more advanced usage topics please look at the subsequent chapters.</para>
+
+    <sect1 id="mtnb-gsc-command-line-options">
+      <title>Command Line Options</title>
+
+      <para>In addition to the standard Gnome application arguments, <application>&APP;</application> only takes one optional argument, the name of the Monotone database that is to be accessed. If this argument is given then it overrides anything specified by the user's preferences and any current workspace.</para>
+
+    </sect1>
 
     <sect1 id="mtnb-gsc-opening-a-database">
       <title>Opening A Database</title>
@@ -341,6 +348,9 @@ GNOME or DocBook.
         <itemizedlist>
           <listitem>
             <para><menuchoice><guimenu>File</guimenu><guimenuitem>New Blank</guimenuitem></menuchoice> - Displays a new <guilabel>Monotone Browser</guilabel> window but in its closed state rather than initially duplicating the contents of the existing window. This is particularly useful if the first thing you are going to do is to open a completely different database.</para>
+          </listitem>
+          <listitem>
+            <para><menuchoice><guimenu>File</guimenu><guimenuitem>Open Recent</guimenuitem></menuchoice> - Presents the user with a menu from which they can select a database to open. Up to ten of the most recently accessed Monotone databases are stored in this menu.</para>
           </listitem>
           <listitem>
             <para><menuchoice><guimenu>File</guimenu><guimenuitem>Connect To Server</guimenuitem></menuchoice> - Presents the user with a remote Monotone server bookmark menu from which they can select a server to connect to. There is also the <guimenuitem>Manage Server Bookmarks</guimenuitem> menu option for managing these bookmarks (see <xref linkend="mtnb-upc-the-manage-server-bookmarks-dialog-window"/>).</para>
