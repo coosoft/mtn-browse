@@ -36,10 +36,17 @@ How to prepare a mtn-browse-m.nn.tar.gz distribution:
      to create the Monotone directory). Make sure permissions are consistent
      with other files and directories (which they should be).
 
+   - Use the patch files to generate alternate code files by doing the
+     following:
+
+         patch -p0 -o mtn-browse-sv2 < mtn-browse-Gtk2-SourceView2.patch
+         patch -p0 -o lib/perl/HistoryGraph-with-labels.pm < \
+             HistoryGraph.pm-Use-Labels.patch
+
    - Remove unneeded files by doing the following:
 
          rm -rf .mtn-ignore _MTN artwork devl-install distro-readme \
-                generate-pot-file
+             generate-pot-file *.patch
 
    - Rename the parent directory from mtn-browse to mtn-browse-m.nn. Where m
      and nn are the major and minor version numbers of the release.
