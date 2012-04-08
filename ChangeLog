@@ -1,5 +1,56 @@
 Revision history for mtn-browse.
 
+1.00-RC2  Sun Feb 05 16:20:00 2011 Anthony Cooper <support@coosoft.plus.com>
+	- Implemented an `Open Recent' menu.
+	- mtn-browse now accepts one custom argument on the command line, the
+	  name of the database to open.
+	- Now allow Monotone style URLs when connecting to remote servers.
+	- The history graph button is now enabled for remote connections.
+	- The adjust_time() routine now checks that the `day of month' value is
+	  still valid when adjusting time by months or years. For example going
+	  forward by a month from 31/01/2012 should yield 29/01/2012 and not
+	  31/02/2012.
+	- Now reset the progress bar just before displaying the nothing found
+	  dialog window when doing custom queries via the advanced find dialog
+	  window. This prevents the progress bar from being shown in it's
+	  pulsed state when the dialog window is displayed. Other occurrences
+	  don't display a dialog window directly after pulsing the progress
+	  bar.
+	- Selected but suspended branches are now included in any list of
+	  selected branches in the change history graph dialog window.
+	- Now correctly save and restore change graph history date/time range
+	  values when switching between history graphs. Also cancelling out of
+	  the change history graph dialog window reverts any date/time range
+	  settings to those last used.
+	- Now reset the option widgets to the current settings when displaying
+	  the change history graph dialog window.
+	- The check_and_open_database() routine now displays the name of the
+	  database it is having problems with (it doesn't assume the context of
+	  an open database diaglog window).
+	- Now use the check_and_open_database() routine for opening the
+	  database on program startup. This gives better diagnostics for the
+	  user should something go wrong.
+	- The global variables used for storing the current option settings are
+	  now not altered by the change_history_graph_parameters() routine but
+	  by the caller instead (slightly more duplication but much better data
+	  ownership).
+	- Added some more separators to the File menu.
+	- Standardised some warning messages.
+	- Corrected some naming convention inconsistencies.
+	- Reordered a few routines to be more consistent.
+	- Corrected some spelling mistakes.
+	- Updated the README file with new dependency information and an
+	  explanation of the `Use Gtk2::Labels' installer option.  - Updated
+	  the help file to include details about the new changes and also
+	  making some unrelated corrections (mainly missing links).
+	- Updated the copyright information in the about dialog.
+	- Updated the MAS dependency in the installer.
+	- Updated the version number to 1.0.
+	- Corrected some help text regarding suspended branches in history
+	  graphs.
+	- Updated both patch files.
+	- Updated the locale POT database as a result of code changes.
+
 1.00-RC1  Wed Dec 28 16:40:00 2011 Anthony Cooper <support@coosoft.plus.com>
 	- Implemented a fully functional, fast, integrated history graph
 	  facility that replaces the need for monotone-viz.

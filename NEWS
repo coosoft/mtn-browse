@@ -1,3 +1,39 @@
+Overview Of Changes In mtn-browse 1.00-RC2 (2012-02-05 16:20:00)
+================================================================
+
+New:
+- Implemented an `Open Recent' menu.
+- mtn-browse now accepts one custom argument on the command line, the name of
+  the database to open.
+- Now allow Monotone style URLs when connecting to remote servers.
+
+Changes:
+- The history graph button is now enabled for remote connections.
+- Standardised some warning messages.
+- Updated the README file with new dependency information and an explanation of
+  the `Use Gtk2::Labels' installer option.
+- Updated the help file to include details about the new changes and also
+  making some unrelated corrections.
+
+Defects Fixed:
+- The `day of month' value is adjusted if incorrect when adjusting time by
+  months or years. For example going forward by a month from 31/01/2012 should
+  yield 29/01/2012 and not 31/02/2012.
+- Better diagnostics when opening databases.
+- Now reset the progress bar just before displaying the nothing found dialog
+  window when doing custom queries via the advanced find dialog window. This
+  prevents the progress bar from being shown in it's pulsed state when the
+  dialog window is displayed.
+- Selected but suspended branches are now included in any list of selected
+  branches in the change history graph dialog window.
+- Now correctly save and restore change graph history date/time range values
+  when switching between history graphs. Also cancelling out of the change
+  history graph dialog window reverts any date/time range settings to those
+  last used.
+- Now reset the option widgets to the current settings when displaying the
+  change history graph dialog window.
+
+
 Overview Of Changes In mtn-browse 1.00-RC1 (2011-12-28 16:40:00)
 ================================================================
 
@@ -41,7 +77,7 @@ Changes:
 - Now no longer have a dependency on Gnome2::Print (there should never have
   been one).
 
-Bugs Fixed:
+Defects Fixed:
 - Now correctly enable and disable the text entry and date edit widgets
   depending upon the type of selector chosen in the advanced find window.
 - Made the file name column in the main browser window unresizable when not
@@ -84,7 +120,7 @@ Changes:
 - Updated all of the screenshot style images to update them to Gnome's
   Clearlooks blue theme.
 
-Bugs Fixed:
+Defects Fixed:
 - Now guard against going off the end of the line input array when dealing with
   binary files at the end of a revision difference listing.
 - Re-instated the `==========' style file separators when displaying non-colour
@@ -111,7 +147,7 @@ Changes:
 - Updated the help documentation and the translation files in light of the
   changes made to mtn-browse.
 
-Bugs Fixed:
+Defects Fixed:
 - The ComboBoxEntry autocompletion and directory up button now display `busy'
   state feedback along with status messages when updating ComboBoxEntry
   pulldown lists. Also the display is updated more often and more consistently.
@@ -142,7 +178,7 @@ Changes:
 - Updated the help documentation and the translation files in light of the
   changes made to mtn-browse.
 
-Bugs Fixed:
+Defects Fixed:
 - Worked around a bug in Gnome::VFS which causes a core dump on Debian Lenny.
 - All menu items that rely on an open database are now disabled when there
   isn't one.
@@ -188,7 +224,7 @@ Changes:
 - Updated the POT file.
 - Locale update from Thomas Keller.
 
-Bugs Fixed:
+Defects Fixed:
 - History ordering is now consistent.
 - Now guard against files comparing the same between different revisions.
 - Autocompletion now does not allow "" as a valid complete entry against an
@@ -239,7 +275,7 @@ Changes:
 - Now display a file's author instead of file id in the main browser window.
 - Renamed the `Separator' selector to `Logical And', it makes more sense.
 
-Bugs Fixed:
+Defects Fixed:
 - Added calls to the present() method after each call to show()/show_all() for
   each window (fixes the focus issue with windows not shown by default on
   desktops that use click to focus).
@@ -282,7 +318,7 @@ Changes:
 - Switched all Perl scripts over to demanding Perl 5.8.5.
 - README file has been updated as a result of the changes in linux-installer.
 
-Bugs Fixed:
+Defects Fixed:
 - Now a little bit better at reporting helper application launch errors to the
   user.
 - Annotate no longer fails on an empty file.
