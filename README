@@ -24,7 +24,7 @@ mtn-browse see http://www.coosoft.plus.com/software.html.
 DEPENDENCIES
 ------------
 
-This module requires these other modules and libraries:
+This program requires these modules and libraries:
 
     * Perl 5.8.5 or later
     * Gnome and Gtk2

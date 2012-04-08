@@ -1,6 +1,9 @@
 Revision history for mtn-browse.
 
-1.00-RC2  Sun Feb 05 16:20:00 2011 Anthony Cooper <support@coosoft.plus.com>
+1.00  Sat Apr 07 16:42:00 2012 Anthony Cooper <support@coosoft.plus.com>
+	- Release of 1.00.
+
+1.00-RC2  Sun Feb 05 16:20:00 2012 Anthony Cooper <support@coosoft.plus.com>
 	- Implemented an `Open Recent' menu.
 	- mtn-browse now accepts one custom argument on the command line, the
 	  name of the database to open.
