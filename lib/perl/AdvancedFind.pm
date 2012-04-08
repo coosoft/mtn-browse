@@ -1106,6 +1106,7 @@ sub update_advanced_find_state($$)
                          "info",
                          "close",
                          __("No revisions matched your query."));
+                    $advanced_find->{appbar}->set_progress_percentage(0);
                     busy_dialog_run($dialog);
                     $dialog->destroy();
                 }

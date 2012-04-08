@@ -57,6 +57,16 @@ use constant CHUNK_SIZE => 10240;
 
 use constant WAITPID_INTERRUPT => "waitpid-interrupt";
 
+# A set containing the months that have 31 days in them (months start from 0).
+
+my %long_months = (0  => undef,
+                   2  => undef,
+                   4  => undef,
+                   6  => undef,
+                   7  => undef,
+                   9  => undef,
+                   11 => undef);
+
 # The saved directory locations where assorted Gtk2::FileChooserDialog dialog
 # windows were last used.
 
@@ -103,6 +113,7 @@ sub treeview_setup_search_column_selection($@);
 
 # Private routines.
 
+sub adjust_day_for_month($$$);
 sub build_help_ref_to_url_map();
 #
 ##############################################################################
@@ -2005,159 +2016,6 @@ sub glade_signal_autoconnect($$)
 #
 ##############################################################################
 #
-#   Routine      - build_help_ref_to_url_map
-#
-#   Description  - Build up a map that translates an HTML help file link name
-#                  into a fully qualified URL.
-#
-#   Data         - None.
-#
-##############################################################################
-
-
-
-sub build_help_ref_to_url_map()
-{
-
-    my ($dir,
-        $dir_path,
-        $fname,
-        $locale,
-        @lparts,
-        $nr_parts,
-        $prog,
-        $tmp);
-
-    # Ask Gnome where the based help directory is, failing that have an
-    # educated guess.
-
-    if (HTML_VIEWER_CMD eq ""
-        && defined($prog = Gnome2::Program->get_program()))
-    {
-        ($dir_path) = $prog->locate_file("app-help", "mtn-browse.xml", FALSE);
-        $dir_path = dirname($dir_path);
-    }
-    else
-    {
-        $dir_path = File::Spec->catfile(PREFIX_DIR,
-                                        "share",
-                                        "gnome",
-                                        "help",
-                                        APPLICATION_NAME);
-    }
-
-    # Work out the locale component, going from the most specific to the least.
-    # If a specific locale directory isn't found then fall back onto the
-    # POSIX/C locale.
-
-    $locale = setlocale(LC_MESSAGES);
-    @lparts = split(/[_.@]/, $locale);
-    $nr_parts = scalar(@lparts);
-    if (-d ($tmp = File::Spec->catfile($dir_path, $locale)))
-    {
-        $dir_path = $tmp;
-    }
-    elsif ($nr_parts >= 3
-           && -d ($tmp = File::Spec->catfile($dir_path,
-                                             $lparts[0] . "_"
-                                             . $lparts[1] . "."
-                                             . $lparts[2])))
-    {
-        $dir_path = $tmp;
-    }
-    elsif ($nr_parts >= 2
-           && -d ($tmp = File::Spec->catfile($dir_path,
-                                             $lparts[0] . "_" . $lparts[1])))
-    {
-        $dir_path = $tmp;
-    }
-    elsif ($nr_parts >= 1
-           && -d ($tmp = File::Spec->catfile($dir_path, $lparts[0])))
-    {
-        $dir_path = $tmp;
-    }
-    elsif (-d ($tmp = File::Spec->catfile($dir_path, "POSIX")))
-    {
-        $dir_path = $tmp;
-    }
-    elsif (-d ($tmp = File::Spec->catfile($dir_path, "C")))
-    {
-        $dir_path = $tmp;
-    }
-    else
-    {
-        return;
-    }
-
-    # Now open the directory and scan all HTML files for links.
-
-    return unless (defined($dir = IO::Dir->new($dir_path)));
-    while (defined($fname = $dir->read()))
-    {
-        my ($file,
-            $full_name);
-        $full_name = File::Spec->catfile($dir_path, $fname);
-        $full_name = File::Spec->rel2abs($full_name);
-
-        # Only scan HTML files.
-
-        if ($fname =~ m/^.*\.html$/
-            && defined($file = IO::File->new($full_name, "r")))
-        {
-            my $line;
-            while (defined($line = $file->getline()))
-            {
-
-                my ($dir_string,
-                    @dirs,
-                    $file_name,
-                    @list,
-                    $url,
-                    $volume);
-
-                # Mangle the file name into a URL.
-
-                ($volume, $dir_string, $file_name) =
-                    File::Spec->splitpath($full_name);
-                @dirs = File::Spec->splitdir($dir_string);
-                $url = "file://";
-                $url .= "/" . $volume . "/" if ($volume ne "");
-                $url .= join("/", @dirs);
-                $url .= "/" if ($url =~ m/.*[^\/]$/);
-                $url .= $file_name;
-
-                # Process each link of the form <a name="..."> but filter out
-                # the internally generated ones (used for all figures).
-
-                @list = ($line =~ m/<a name=\"([^\"]+)\">/g);
-                foreach my $link (@list)
-                {
-                    $help_ref_to_url_map{$link} = $url . "#" . $link
-                        if ($link !~ m/^id\d+$/);
-                }
-
-                # Special case the contents page making sure that it has
-                # appropiate default entries pointing to it.
-
-                if ($fname eq "monotone-browse.html")
-                {
-                    $help_ref_to_url_map{""} = $url;
-                    $help_ref_to_url_map{"contents"} = $url;
-                    $help_ref_to_url_map{"index"} = $url;
-                }
-
-            }
-            $file->close();
-        }
-    }
-    $dir->close();
-
-    return;
-
-}
-#
-##############################################################################
-#
 #   Routine      - adjust_time
 #
 #   Description  - This routine adjusts the specified gmtime()/localtime()
@@ -2187,9 +2045,10 @@ sub adjust_time($$$)
 
     if ($units == DURATION_MONTHS)
     {
-        my ($month,
+        my ($day,
+            $month,
             $year);
-        ($month, $year) = @$time_value[4, 5];
+        ($day, $month, $year) = @$time_value[3, 4, 5];
         if (abs($period) > 12)
         {
             $year += floor($period / 12);
@@ -2220,12 +2079,19 @@ sub adjust_time($$$)
                 $month -= $period;
             }
         }
-        @$time_value[4, 5] = ($month, $year);
+        $day = adjust_day_for_month($day, $month, $year);
+        @$time_value[3, 4, 5] = ($day, $month, $year);
         $time = timegm(@$time_value[0 .. 5]);
     }
     elsif ($units == DURATION_YEARS)
     {
-        @$time_value[5] += $period;
+        my ($day,
+            $month,
+            $year);
+        ($day, $month, $year) = @$time_value[3, 4, 5];
+        $year += $period;
+        $day = adjust_day_for_month($day, $month, $year);
+        @$time_value[3, 4, 5] = ($day, $month, $year);
         $time = timegm(@$time_value[0 .. 5]);
     }
     else
@@ -2420,6 +2286,221 @@ sub busy_dialog_run($)
     }
 
     return $choice;
+
+}
+#
+##############################################################################
+#
+#   Routine      - build_help_ref_to_url_map
+#
+#   Description  - Build up a map that translates an HTML help file link name
+#                  into a fully qualified URL.
+#
+#   Data         - None.
+#
+##############################################################################
+
+
+
+sub build_help_ref_to_url_map()
+{
+
+    my ($dir,
+        $dir_path,
+        $fname,
+        $locale,
+        @lparts,
+        $nr_parts,
+        $prog,
+        $tmp);
+
+    # Ask Gnome where the based help directory is, failing that have an
+    # educated guess.
+
+    if (HTML_VIEWER_CMD eq ""
+        && defined($prog = Gnome2::Program->get_program()))
+    {
+        ($dir_path) = $prog->locate_file("app-help", "mtn-browse.xml", FALSE);
+        $dir_path = dirname($dir_path);
+    }
+    else
+    {
+        $dir_path = File::Spec->catfile(PREFIX_DIR,
+                                        "share",
+                                        "gnome",
+                                        "help",
+                                        APPLICATION_NAME);
+    }
+
+    # Work out the locale component, going from the most specific to the least.
+    # If a specific locale directory isn't found then fall back onto the
+    # POSIX/C locale.
+
+    $locale = setlocale(LC_MESSAGES);
+    @lparts = split(/[_.@]/, $locale);
+    $nr_parts = scalar(@lparts);
+    if (-d ($tmp = File::Spec->catfile($dir_path, $locale)))
+    {
+        $dir_path = $tmp;
+    }
+    elsif ($nr_parts >= 3
+           && -d ($tmp = File::Spec->catfile($dir_path,
+                                             $lparts[0] . "_"
+                                             . $lparts[1] . "."
+                                             . $lparts[2])))
+    {
+        $dir_path = $tmp;
+    }
+    elsif ($nr_parts >= 2
+           && -d ($tmp = File::Spec->catfile($dir_path,
+                                             $lparts[0] . "_" . $lparts[1])))
+    {
+        $dir_path = $tmp;
+    }
+    elsif ($nr_parts >= 1
+           && -d ($tmp = File::Spec->catfile($dir_path, $lparts[0])))
+    {
+        $dir_path = $tmp;
+    }
+    elsif (-d ($tmp = File::Spec->catfile($dir_path, "POSIX")))
+    {
+        $dir_path = $tmp;
+    }
+    elsif (-d ($tmp = File::Spec->catfile($dir_path, "C")))
+    {
+        $dir_path = $tmp;
+    }
+    else
+    {
+        return;
+    }
+
+    # Now open the directory and scan all HTML files for links.
+
+    return unless (defined($dir = IO::Dir->new($dir_path)));
+    while (defined($fname = $dir->read()))
+    {
+        my ($file,
+            $full_name);
+        $full_name = File::Spec->catfile($dir_path, $fname);
+        $full_name = File::Spec->rel2abs($full_name);
+
+        # Only scan HTML files.
+
+        if ($fname =~ m/^.*\.html$/
+            && defined($file = IO::File->new($full_name, "r")))
+        {
+            my $line;
+            while (defined($line = $file->getline()))
+            {
+
+                my ($dir_string,
+                    @dirs,
+                    $file_name,
+                    @list,
+                    $url,
+                    $volume);
+
+                # Mangle the file name into a URL.
+
+                ($volume, $dir_string, $file_name) =
+                    File::Spec->splitpath($full_name);
+                @dirs = File::Spec->splitdir($dir_string);
+                $url = "file://";
+                $url .= "/" . $volume . "/" if ($volume ne "");
+                $url .= join("/", @dirs);
+                $url .= "/" if ($url =~ m/.*[^\/]$/);
+                $url .= $file_name;
+
+                # Process each link of the form <a name="..."> but filter out
+                # the internally generated ones (used for all figures).
+
+                @list = ($line =~ m/<a name=\"([^\"]+)\">/g);
+                foreach my $link (@list)
+                {
+                    $help_ref_to_url_map{$link} = $url . "#" . $link
+                        if ($link !~ m/^id\d+$/);
+                }
+
+                # Special case the contents page making sure that it has
+                # appropiate default entries pointing to it.
+
+                if ($fname eq "monotone-browse.html")
+                {
+                    $help_ref_to_url_map{""} = $url;
+                    $help_ref_to_url_map{"contents"} = $url;
+                    $help_ref_to_url_map{"index"} = $url;
+                }
+
+            }
+            $file->close();
+        }
+    }
+    $dir->close();
+
+    return;
+
+}
+#
+##############################################################################
+#
+#   Routine      - adjust_day_for_month
+#
+#   Description  - This routine adjusts the specified day so that it is valid
+#                  for the specified month and year.
+#
+#   Data         - $day         : The day within the month (1 - 31).
+#                  $month       : The month (0 - 11).
+#                  $year        : The year (relative to 1900).
+#                  Return Value : The adjusted day value.
+#
+##############################################################################
+
+
+
+sub adjust_day_for_month($$$)
+{
+
+    my ($day, $month, $year) = @_;
+
+    # Is the month February and the day is greater than 28?
+
+    if ($month == 1 && $day > 28)
+    {
+
+        # Yes so check for leap years.
+
+        $year += 1900;
+        if (($year % 4) == 0 && (($year % 100) != 0 || ($year % 400) == 0))
+        {
+            $day = 29;
+        }
+        else
+        {
+            $day = 28;
+        }
+
+    }
+
+    # Is the day is greater than 30?
+
+    elsif ($day > 30)
+    {
+
+        # Truncate depending upon whether it is a long month or not.
+
+        if (exists($long_months{$month}))
+        {
+            $day = 31;
+        }
+        else
+        {
+            $day = 30;
+        }
+
+    }
+
+    return $day;
 
 }
 

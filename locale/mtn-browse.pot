@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mtn-browse 0.1\n"
 "Report-Msgid-Bugs-To: support@coosoft.plus.com\n"
-"POT-Creation-Date: 2012-01-28 19:03+0000\n"
+"POT-Creation-Date: 2012-02-05 15:18+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -59,7 +59,7 @@ msgstr ""
 msgid "Connecting to server `{server}'"
 msgstr ""
 
-#: mtn-browse:728 mtn-browse:3794 lib/perl/Common.pm:1543
+#: mtn-browse:728 mtn-browse:3794 lib/perl/Common.pm:1554
 #: lib/perl/HistoryGraph.pm:339 lib/perl/Preferences.pm:262
 msgid "Your preferences could not be saved:\n"
 msgstr ""
@@ -95,7 +95,7 @@ msgid ""
 "{error_message}."
 msgstr ""
 
-#: mtn-browse:1577 lib/perl/Common.pm:776 lib/perl/History.pm:2498
+#: mtn-browse:1577 lib/perl/Common.pm:787 lib/perl/History.pm:2498
 #, perl-brace-format
 msgid "{error_message}."
 msgstr ""
@@ -473,18 +473,18 @@ msgstr ""
 msgid "No revisions matched your query."
 msgstr ""
 
-#: lib/perl/AdvancedFind.pm:1126
+#: lib/perl/AdvancedFind.pm:1127
 msgid "Populating revision details"
 msgstr ""
 
-#: lib/perl/AdvancedFind.pm:1300
+#: lib/perl/AdvancedFind.pm:1301
 #, perl-brace-format
 msgid "Found 1 revision"
 msgid_plural "Found {revisions_found} revisions"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/perl/AdvancedFind.pm:1307 lib/perl/FindFiles.pm:486
+#: lib/perl/AdvancedFind.pm:1308 lib/perl/FindFiles.pm:486
 msgid "Nothing found"
 msgstr ""
 
@@ -680,12 +680,12 @@ msgstr ""
 msgid "Populating {name} list"
 msgstr ""
 
-#: lib/perl/Common.pm:225
+#: lib/perl/Common.pm:236
 #, perl-brace-format
 msgid "open3 failed: {error_message}"
 msgstr ""
 
-#: lib/perl/Common.pm:239
+#: lib/perl/Common.pm:250
 #, perl-brace-format
 msgid ""
 "The {name} subprocess could not start,\n"
@@ -693,7 +693,7 @@ msgid ""
 "<b><i>{error_message}</b></i>"
 msgstr ""
 
-#: lib/perl/Common.pm:356
+#: lib/perl/Common.pm:367
 #, perl-brace-format
 msgid ""
 "The {name} subprocess failed with an exit status\n"
@@ -701,62 +701,62 @@ msgid ""
 "<b><i>{error_message}</i></b>"
 msgstr ""
 
-#: lib/perl/Common.pm:376
+#: lib/perl/Common.pm:387
 #, perl-brace-format
 msgid "The {name} subprocess was terminated by signal {number}."
 msgstr ""
 
-#: lib/perl/Common.pm:427
+#: lib/perl/Common.pm:438
 #, perl-brace-format
 msgid ""
 "waitpid failed with:\n"
 "<b><i>{error_message}</i></b>"
 msgstr ""
 
-#: lib/perl/Common.pm:551
+#: lib/perl/Common.pm:562
 msgid "Open Database"
 msgstr ""
 
-#: lib/perl/Common.pm:637
+#: lib/perl/Common.pm:648
 #, perl-brace-format
 msgid ""
 "Cannot open {database}.\n"
 "{error_message}."
 msgstr ""
 
-#: lib/perl/Common.pm:668
+#: lib/perl/Common.pm:679
 #, perl-brace-format
 msgid ""
 "There is a problem opening {database}. The details are:\n"
 "<b><i>{error_message}</i></b>"
 msgstr ""
 
-#: lib/perl/Common.pm:727
+#: lib/perl/Common.pm:738
 msgid "Save As"
 msgstr ""
 
-#: lib/perl/Common.pm:758
+#: lib/perl/Common.pm:769
 msgid ""
 "File already exists.\n"
 "Do you want to replace it?"
 msgstr ""
 
-#: lib/perl/Common.pm:759
+#: lib/perl/Common.pm:770
 msgid "Confirm"
 msgstr ""
 
-#: lib/perl/Common.pm:870
+#: lib/perl/Common.pm:881
 msgid "Select As Search Column"
 msgstr ""
 
-#: lib/perl/Common.pm:1414
+#: lib/perl/Common.pm:1425
 #, perl-brace-format
 msgid ""
 "The program `{program_name}' cannot be found.\n"
 "Is it installed?"
 msgstr ""
 
-#: lib/perl/Common.pm:1616
+#: lib/perl/Common.pm:1627
 msgid ""
 "The requested help section\n"
 "cannot be found or is not known."
