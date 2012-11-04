@@ -6,7 +6,7 @@
 
     <!ENTITY APP "Monotone Browser">
     <!ENTITY APP-CMD "mtn-browse">
-    <!ENTITY VERSION "1.00">
+    <!ENTITY VERSION "1.01">
 
   ]
 >
@@ -142,8 +142,16 @@ GNOME or DocBook.
         </revdescription>
       </revision>
       <revision>
-        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <revnumber>&APP; Manual V1.00</revnumber>
         <date>28 January 2012</date>
+        <revdescription>
+          <para role="author">Anthony Cooper</para>
+          <para role="publisher">CooSoft</para>
+        </revdescription>
+      </revision>
+      <revision>
+        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <date>03 November 2012</date>
         <revdescription>
           <para role="author">Anthony Cooper</para>
           <para role="publisher">CooSoft</para>
@@ -367,6 +375,12 @@ GNOME or DocBook.
             <para><menuchoice><guimenu>File</guimenu><guimenuitem>Quit</guimenuitem></menuchoice> - This completely quits out of the application regardless of what windows you may have open. Normally the application only exits when all of its <guilabel>Monotone Browser</guilabel> windows have been closed.</para>
           </listitem>
           <listitem>
+            <para><menuchoice><guimenu>Edit</guimenu><guimenu>Windows</guimenu><guimenuitem>Remember Sizes</guimenuitem></menuchoice> - Saves the dimensions of not only current but also previously displayed windows (including some dialog windows). Newly displayed windows will be sized according to those saved dimensions.</para>
+          </listitem>
+          <listitem>
+            <para><menuchoice><guimenu>Edit</guimenu><guimenu>Windows</guimenu><guimenuitem>Reset Sizes</guimenuitem></menuchoice> - Removes all information regarding saved window dimensions, causing newly displayed windows to revert to their original sizes.</para>
+          </listitem>
+          <listitem>
             <para><menuchoice><guimenu>View</guimenu><guimenuitem>File Encoding</guimenuitem></menuchoice> - Allows the user to select the character encoding for the files that they are going to display in <application>&APP;</application>. The most popular encodings are listed first but there is also the <guisubmenu>All Encodings</guisubmenu> submenu containing all of the encodings known to your system. The default character encoding used by <application>&APP;</application> is UTF-8.</para>
           </listitem>
           <listitem>
@@ -374,6 +388,9 @@ GNOME or DocBook.
           </listitem>
           <listitem>
             <para><menuchoice><guimenu>Tools</guimenu><guimenuitem>Compare Arbitrary Revisions</guimenuitem></menuchoice> - Displays a <guilabel>Compare Arbitrary Revisions</guilabel> window that allows the user to compare any two revisions in the database (see <xref linkend="mtnb-lachc-the-compare-arbitrary-revisions-window"/>).</para>
+          </listitem>
+          <listitem>
+            <para><menuchoice><guimenu>Tools</guimenu><guimenuitem>Compare Workspace</guimenuitem></menuchoice> - Performs a revision comparison between the current contents of the workspace and the revision upon which it is based (see <xref linkend="mtnb-lachc-the-differences-window"/>). This menu option is only available if <application>&APP;</application> was started within a workspace.</para>
           </listitem>
           <listitem>
             <para><menuchoice><guimenu>Help</guimenu><guimenuitem>Help On Window</guimenuitem></menuchoice> - Displays the relevant section in the <application>&APP;</application> manual for the current window.</para>
@@ -537,6 +554,10 @@ GNOME or DocBook.
                 <row valign="top">
                   <entry><para><inlinegraphic fileref="figures/find-button.png" format="png" valign="middle"/></para></entry>
                   <entry><para>Displays a <guilabel>Find Text</guilabel> dialog window that allows one to search for text within the currently displayed file. Within the dialog window there are a number of options. The <guilabel>Case sensitive</guilabel> and <guilabel>Search backwards</guilabel> options affect the search in the way that one would expect. The <guilabel>Regular expression</guilabel> option, when ticked, allows one to enter search terms that are extended regular expressions (RE). Please see <literal>regex(7)</literal> for further details on regular expressions.</para></entry>
+                </row>
+                <row valign="top">
+                  <entry><para><inlinegraphic fileref="figures/goto-button.png" format="png" valign="middle"/></para></entry>
+                  <entry><para>Displays a <guilabel>Go To Line</guilabel> dialog window that allows one to jump to the specified line within the currently displayed file.</para></entry>
                 </row>
                 <row valign="top">
                   <entry><para><inlinegraphic fileref="figures/save-button.png" format="png" valign="middle"/></para></entry>
@@ -1247,6 +1268,10 @@ GNOME or DocBook.
                 <entry><para>Displays a new <guilabel>Monotone Browser</guilabel> window showing the contents of that version of the file. This button is only displayed in <guilabel>File History</guilabel> windows.</para></entry>
               </row>
               <row valign="top">
+                <entry><para><guilabel>Annotate File</guilabel></para></entry>
+                <entry><para>Displays a <guilabel>Annotated Listing</guilabel> window showing an annotated listing of that version of the file. This button is only displayed in <guilabel>File History</guilabel> windows.</para></entry>
+              </row>
+              <row valign="top">
                 <entry><para><guilabel>Full Change Log</guilabel></para></entry>
                 <entry><para>Displays a <guilabel>Change Log</guilabel> window containing the full change log for that revision. In addition to the summary information already displayed, a full change log also contains the list of files changed and the parent and manifest ids.</para></entry>
               </row>
@@ -1453,8 +1478,16 @@ GNOME or DocBook.
               <entry><para>Compares the revision with its parent. The comparison is not restricted to just the annotated file.</para></entry>
             </row>
             <row valign="top">
+              <entry><para><guilabel>Annotate File At Previous Version</guilabel></para></entry>
+              <entry><para>Annotates the file at the version just prior to the one found in that revision.</para></entry>
+            </row>
+            <row valign="top">
               <entry><para><guilabel>Find</guilabel></para></entry>
               <entry><para>Calls up the standard <guilabel>Find Text</guilabel> dialog window that can be used to find text within the annotated listing.</para></entry>
+            </row>
+            <row valign="top">
+              <entry><para><guilabel>Go To Line</guilabel></para></entry>
+              <entry><para>Calls up the standard <guilabel>Go To Line</guilabel> dialog window that can be used to jump to a specific line within the annotated listing.</para></entry>
             </row>
           </tbody>
         </tgroup>
@@ -1635,7 +1668,7 @@ GNOME or DocBook.
                 <entry><para>Toggles the displaying of the colour key for the colours used in the revision nodes on the history graph. The colour key lists all of the branch names or authors (depending upon what the user has decided to base the colouring on) along with the related colour.</para></entry>
               </row>
               <row valign="top">
-                <entry><para><inlinegraphic fileref="figures/history-graph-goto-button.png" format="png" valign="middle"/></para></entry>
+                <entry><para><inlinegraphic fileref="figures/goto-button.png" format="png" valign="middle"/></para></entry>
                 <entry><para>Scrolls the history graph to the currently selected revision node.</para></entry>
               </row>
               <row valign="top">
@@ -2140,14 +2173,14 @@ GNOME or DocBook.
                     </row>
                     <row valign="top">
                       <entry><para><guilabel>Helper application</guilabel></para></entry>
-                      <entry><para>This entry field contains the name of the program that is to be used to display a file of this type when the user left clicks on a <guilabel>Monotone Browser</guilabel> window's <guilabel>Load Into Viewer</guilabel> button. <literal>{file}</literal> is a special token that is replaced with the corresponding file name.</para>
+                      <entry><para>This entry field contains the name of the program that is to be used to display a file of this type when the user left clicks on a <guilabel>Monotone Browser</guilabel> window's <guilabel>Load Into Viewer</guilabel> button. <literal>{file}</literal> and <literal>{line}</literal> are special tokens that are replaced with the corresponding file name and the number of the line that is currently visible half way down the file viewer.</para>
                         <note>
                           <orderedlist numeration="arabic">
                             <listitem>
                               <para>If the <guilabel>Helper application</guilabel> entry field is left blank then the file's default desktop application is used.</para>
                             </listitem>
                             <listitem>
-                              <para>The <literal>{file}</literal> token is optional but if it is not present then it is automatically appended to the command in the entry field. If you do use this token then it would probably be a good idea to enclose it in single quotes so that if a file name contains spaces then this does not cause a problem.</para>
+                              <para>Whilst both tokens are optional, if the <literal>{file}</literal> token is not present then it is automatically appended to the command in the entry field. If you do use this token then it would probably be a good idea to enclose it in single quotes so that if a file name contains spaces then this does not cause a problem.</para>
                             </listitem>
                           </orderedlist>
                         </note></entry>
