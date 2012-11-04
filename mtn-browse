@@ -45,7 +45,7 @@ require 5.008005;
 BEGIN
 {
     use constant APPLICATION_NAME        => "mtn-browse";
-    use constant APPLICATION_VERSION     => "1.00";
+    use constant APPLICATION_VERSION     => "1.10";
     use constant FILE_COMPARE_CMD        => "@INST:FILE_COMPARE_CMD@";
     use constant HTML_VIEWER_CMD         => "@INST:HTML_VIEWER_CMD@";
     use constant GRAPHVIZ_LAYOUT_PROGRAM => "@INST:GRAPHVIZ_LAYOUT_PROGRAM@";
@@ -1752,12 +1752,27 @@ sub view_button_clicked_cb($$)
     if (defined($mime_details) && $mime_details->{helper_application} ne "")
     {
 
+        my $line_nr = 1;
+
         # Use the specified helper application (having validated it first),
-        # replacing `{file}' with the real file name.
+        # replacing `{line}' with the number of the line currently in the
+        # middle of the viewer window and `{file}' with the real file name.
 
         $helper = $mime_details->{helper_application};
         return unless (program_valid((split(/[[:blank:]]/, $helper))[0],
                                      $browser->{window}));
+        if ($browser->{file_displayed_is_textual})
+        {
+            my ($iter,
+                $rect,
+                $y);
+            $rect = $browser->{file_view_sv}->get_visible_rect();
+            $y = $rect->y() + floor(($rect->height() + 0.5) / 2);
+            $iter = ($browser->{file_view_sv}->get_line_at_y($y))[0];
+            $line_nr = $iter->get_line();
+            ++ $line_nr;
+        }
+        $helper =~ s/\{line\}/$line_nr/g;
         if ($helper =~ m/\{file\}/)
         {
             $helper =~ s/\{file\}/$file_name/g;
@@ -2461,6 +2476,7 @@ sub get_browser_window(;$$$$$)
         $browser->{directory_combo_details}->{preset} = 0;
         $browser->{file_being_viewed_preset_value} = "";
         $browser->{file_displayed_id} = "";
+        $browser->{file_displayed_is_textual} = 0;
         &{$browser->{update_handler}}($browser, ALL_CHANGED);
 
         # Now the browser instance is completely initialised, set up the
@@ -2489,6 +2505,7 @@ sub get_browser_window(;$$$$$)
         $browser->{directory_combo_details}->{preset} = 0;
         $browser->{file_being_viewed_preset_value} = "";
         $browser->{file_displayed_id} = "";
+        $browser->{file_displayed_is_textual} = 0;
         $browser->{manifest_liststore}->clear();
         $browser->{manifest_liststore} =
             Gtk2::ListStore->new(MLS_COLUMN_TYPES);
@@ -3417,8 +3434,7 @@ sub update_browser_state($$)
             if ($browser->{file_displayed_id} ne $manifest_entry->{file_id})
             {
 
-                my ($last_update,
-                    $textual_data);
+                my $last_update;
 
                 # Enable the file buttons, keeping the ones relating to text
                 # files disabled, and reset any associated find text window.
@@ -3433,13 +3449,13 @@ sub update_browser_state($$)
 
                 # Display the selected file's contents.
 
-                display_file($browser, \$textual_data);
+                display_file($browser, \$browser->{file_displayed_is_textual});
 
                 # If we have just displayed a text file then enable the file
                 # buttons applicable to text files and enable any associated
                 # find text window that may be displayed.
 
-                if ($textual_data)
+                if ($browser->{file_displayed_is_textual})
                 {
                     foreach my $widget
                         (@{$browser->{text_file_sensitive_group}})
@@ -3484,6 +3500,7 @@ sub update_browser_state($$)
             # Reset the file view buffer and the associated find text window.
 
             $browser->{file_displayed_id} = "";
+            $browser->{file_displayed_is_textual} = 0;
             $browser->{file_button_vbox}->set_sensitive(FALSE);
             $browser->{file_view_svbuffer}->
                 place_cursor($browser->{file_view_svbuffer}->get_start_iter());
@@ -3585,11 +3602,12 @@ sub handle_advanced_find($)
 #   Description  - Display the currenty selected file in the sourceview
 #                  textview.
 #
-#   Data         - $browser   : The browser instance that is to display the
-#                               file.
-#                  $text_data : A reference to a variable that is to contain a
-#                               boolean indicator as to whether the displayed
-#                               file contains textual or binary data.
+#   Data         - $browser      : The browser instance that is to display the
+#                                  file.
+#                  $textual_data : A reference to a variable that is to
+#                                  contain a boolean indicator as to whether
+#                                  the displayed file contains textual or
+#                                  binary data.
 #
 ##############################################################################
 
@@ -3802,7 +3820,7 @@ sub determine_mime_type($$$$)
     # If that didn't work then try determining the MIME type based upon its
     # contents.
 
-    $$mime_type = Gnome2::VFS->get_mime_type_for_data($contents);
+    $$mime_type = Gnome2::VFS->get_mime_type_for_data($$contents);
 
     # If we now have a MIME type then do another lookup with it but by matching
     # MIME type names and not file name patterns.

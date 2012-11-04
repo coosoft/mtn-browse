@@ -7874,7 +7874,12 @@ replaced with the file's full path
 name, if this token is not
 present then the file name is
 simply appended onto the end
-of the command</property>
+of the command
+
+3) The optional token {line} is
+replaced with the number of
+the line currently displayed in
+the middle of the file viewer</property>
 				      <property name="visible_window">True</property>
 				      <property name="above_child">False</property>
 
