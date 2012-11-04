@@ -885,6 +885,13 @@ sub save_query_from_gui_and_validate($)
         $re_text,
         $to_date);
 
+    # Please note that the update method needs to be called on all spinbuttons
+    # so as to make sure that it's internal state is completely up to date (the
+    # user might have entered a value directly into the entry field). Updates
+    # are usually done when it looses the focus, which is fine for the find
+    # files window as it stands but it's probably best not to rely on the
+    # presence of any focus stealing buttons.
+
     # Do the name page.
 
     $query{file_glob} =
@@ -919,6 +926,7 @@ sub save_query_from_gui_and_validate($)
     }
     if ($instance->{size_comparitor_combobox}->get_active() != CMP_ANY_SIZE)
     {
+        $instance->{size_spinbutton}->update();
         $query{file_size} = $instance->{size_spinbutton}->get_value_as_int();
         $query{file_size_operator} =
             $instance->{size_comparitor_combobox}->get_active();

@@ -236,11 +236,8 @@ sub display_annotation($$$;$$)
 
         # Get an iter for the current line.
 
-        if (defined($goto_iter = $instance->{annotation_buffer}->
-                    get_iter_at_line($line_nr)))
-        {
-            $goto_iter->backward_line() unless $goto_iter->starts_line();
-        }
+        $goto_iter =
+            $instance->{annotation_buffer}->get_iter_at_line($line_nr);
 
         # Now attempt to synchronise line position between the two versions of
         # the file if we have the data.
@@ -1024,7 +1021,8 @@ sub get_annotation_window()
                  my ($widget, $event, $instance) = @_;
                  return TRUE if ($instance->{in_cb});
                  local $instance->{in_cb} = 1;
-                 hide_find_text($instance->{annotation_textview});
+                 hide_find_text_and_goto_line
+                     ($instance->{annotation_textview});
                  $widget->hide();
                  $instance->{annotation_buffer}->set_text("");
                  $instance->{mtn} = undef;
@@ -1125,7 +1123,6 @@ sub sync_line_position($$$)
 
     return unless (defined($goto_iter = $instance->{annotation_buffer}->
                            get_iter_at_line($line_nr)));
-    $goto_iter->backward_line() unless $goto_iter->starts_line();
 
     # Get surrounding line details.
 

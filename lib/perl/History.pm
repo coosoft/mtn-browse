@@ -1921,7 +1921,7 @@ sub get_history_window()
                  my ($widget, $event, $instance) = @_;
                  return TRUE if ($instance->{in_cb});
                  local $instance->{in_cb} = 1;
-                 hide_find_text($instance->{history_textview});
+                 hide_find_text_and_goto_line($instance->{history_textview});
                  $widget->hide();
                  $instance->{history_buffer}->set_text("");
                  $instance->{restrict_to_combobox}->get_model()->clear();
@@ -2342,7 +2342,8 @@ sub get_revision_comparison_window($)
                  my ($widget, $event, $instance) = @_;
                  return TRUE if ($instance->{in_cb});
                  local $instance->{in_cb} = 1;
-                 hide_find_text($instance->{comparison_textview});
+                 hide_find_text_and_goto_line
+                     ($instance->{comparison_textview});
                  $widget->hide();
                  $instance->{file_comparison_combobox}->get_model()->clear();
                  $instance->{comparison_buffer}->set_text("");

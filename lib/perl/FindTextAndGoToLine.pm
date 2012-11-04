@@ -1,10 +1,10 @@
 ##############################################################################
 #
-#   File Name    - FindText.pm
+#   File Name    - FindTextAndGoToLine.pm
 #
-#   Description  - The find text module for the mtn-browse application. This
-#                  module contains all the routines for implementing find text
-#                  window.
+#   Description  - The find text and go to line module for the mtn-browse
+#                  application. This module contains all the routines for
+#                  implementing find text and go to line windows.
 #
 #   Author       - A.E.Cooper.
 #
@@ -48,27 +48,31 @@ use warnings;
 
 # ***** GLOBAL DATA DECLARATIONS *****
 
-# The type of window that is going to be managed by this module.
+# The types of windows that are going to be managed by this module.
 
-my $window_type = "find_text_window";
+my $find_text_window_type = "find_text_window";
+my $goto_line_window_type = "goto_line_window";
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
 # Public routines.
 
-sub enable_find_text($$);
+sub enable_find_text_and_goto_line($$);
 sub find_text($$);
-sub find_text_textview_key_press_event_cb($$$);
-sub find_text_textview_populate_popup_cb($$$);
-sub hide_find_text($);
+sub find_text_and_goto_line_textview_key_press_event_cb($$$);
+sub find_text_and_goto_line_textview_populate_popup_cb($$$);
+sub goto_line($$);
+sub hide_find_text_and_goto_line($);
 sub reset_find_text($);
 
 # Private routines.
 
 sub find_comboboxentry_changed_cb($$);
-sub find_current_window($);
+sub find_current_window($$);
 sub find_text_button_clicked_cb($$);
 sub get_find_text_window($$);
+sub get_goto_line_window($$);
+sub goto_line_button_clicked_cb($$);
 #
 ##############################################################################
 #
@@ -95,9 +99,43 @@ sub find_text($$)
     # if there isn't one already mapped for the specified textview widget.
 
     get_find_text_window($parent, $text_view)
-        if (! defined(find_current_window($text_view)));
+        unless (defined(find_current_window($text_view,
+                                            $find_text_window_type)));
 
-    delete($text_view->{find_text_disabled});
+    delete($text_view->{find_text_and_goto_line_disabled});
+
+}
+#
+##############################################################################
+#
+#   Routine      - goto_line
+#
+#   Description  - Display the go to line window associated with the specified
+#                  textview widget, creating one if necessary, and allow the
+#                  user jump to a specific line in the related text buffer.
+#
+#   Data         - $parent    : The parent window widget for the go to line
+#                               window.
+#                  $text_view : The textview widget where the user wants to
+#                               jump to a specific line.
+#
+##############################################################################
+
+
+
+sub goto_line($$)
+{
+
+    my ($parent, $text_view) = @_;
+
+    # Only go looking for a spare go to line window, creating one if necessary,
+    # if there isn't one already mapped for the specified textview widget.
+
+    get_goto_line_window($parent, $text_view)
+        unless (defined(find_current_window($text_view,
+                                            $goto_line_window_type)));
+
+    delete($text_view->{find_text_and_goto_line_disabled});
 
 }
 #
@@ -125,36 +163,38 @@ sub reset_find_text($)
     # Simply reset the search context for the found find text window.
 
     $instance->{match_offset_start} = $instance->{match_offset_end} = -1
-        if (defined($instance = find_current_window($text_view)));
+        if (defined($instance = find_current_window($text_view,
+                                                    $find_text_window_type)));
 
 }
 #
 ##############################################################################
 #
-#   Routine      - enable_find_text
+#   Routine      - enable_find_text_and_goto_line
 #
-#   Description  - Enables or disables the find text window associated with
-#                  the specified textview widget.
+#   Description  - Enables or disables the find text and go to line windows
+#                  associated with the specified textview widget.
 #
 #   Data         - $text_view : The textview widget to which the find text
 #                               window is associated.
-#                  $disable   : True if the window is to be enabled,
+#                  $enable    : True if the window is to be enabled,
 #                               otherwise false if it is to be disabled.
 #
 ##############################################################################
 
 
 
-sub enable_find_text($$)
+sub enable_find_text_and_goto_line($$)
 {
 
     my ($text_view, $enable) = @_;
 
     my $instance;
 
-    # Simply enable/disable the found find text window.
+    # Simply enable/disable the found find text and go to line windows.
 
-    if (defined($instance = find_current_window($text_view)))
+    if (defined($instance = find_current_window($text_view,
+                                                $find_text_window_type)))
     {
         if ($enable)
         {
@@ -171,26 +211,41 @@ sub enable_find_text($$)
         }
     }
 
+    if (defined($instance = find_current_window($text_view,
+                                                $goto_line_window_type)))
+    {
+        if ($enable)
+        {
+            $instance->{main_hbox}->set_sensitive(TRUE);
+            $instance->{goto_line_button}->set_sensitive(TRUE);
+        }
+        else
+        {
+            $instance->{main_hbox}->set_sensitive(FALSE);
+            $instance->{goto_line_button}->set_sensitive(FALSE);
+        }
+    }
+
     # Amend the textview object to reflect its file text enabled/disabled
     # state.
 
     if ($enable)
     {
-        delete($text_view->{find_text_disabled});
+        delete($text_view->{find_text_and_goto_line_disabled});
     }
     else
     {
-        $text_view->{find_text_disabled} = 1;
+        $text_view->{find_text_and_goto_line_disabled} = 1;
     }
 
 }
 #
 ##############################################################################
 #
-#   Routine      - hide_find_text
+#   Routine      - hide_find_text_and_goto_line
 #
-#   Description  - Hides the find text window associated with the specified
-#                  textview widget.
+#   Description  - Hides the find text and go to line windows associated with
+#                  the specified textview widget.
 #
 #   Data         - $text_view : The textview widget to which the find text
 #                               window is associated.
@@ -199,23 +254,27 @@ sub enable_find_text($$)
 
 
 
-sub hide_find_text($)
+sub hide_find_text_and_goto_line($)
 {
 
     my $text_view = $_[0];
 
     my $instance;
 
-    # Simply hide the found find text window.
+    # Simply hide the found find text and go to line windows.
 
-    $instance->{window}->hide()
-        if (defined($instance = find_current_window($text_view)));
+    foreach my $window_type ($find_text_window_type, $goto_line_window_type)
+    {
+        $instance->{window}->hide()
+            if (defined($instance = find_current_window($text_view,
+                                                        $window_type)));
+    }
 
 }
 #
 ##############################################################################
 #
-#   Routine      - find_text_textview_populate_popup_cb
+#   Routine      - find_text_and_goto_line_textview_populate_popup_cb
 #
 #   Description  - Callback routine called when the user right clicks on any
 #                  textview window.
@@ -229,7 +288,7 @@ sub hide_find_text($)
 
 
 
-sub find_text_textview_populate_popup_cb($$$)
+sub find_text_and_goto_line_textview_populate_popup_cb($$$)
 {
 
     my ($widget, $menu, $instance) = @_;
@@ -240,11 +299,15 @@ sub find_text_textview_populate_popup_cb($$$)
     my ($menu_item,
         $separator);
 
-    # Add a `Find' option to the right-click menu that displays the find text
-    # dialog.
+    # Add a `Find' and `Go To Line' options to the right-click menu that
+    # displays those dialogs accordingly.
+
+    $separator = Gtk2::SeparatorMenuItem->new();
+    $separator->show();
+    $menu->append($separator);
 
     $menu_item = Gtk2::MenuItem->new(__("_Find"));
-    if ($widget->{find_text_disabled})
+    if ($widget->{find_text_and_goto_line_disabled})
     {
         $menu_item->set_sensitive(FALSE);
     }
@@ -263,16 +326,35 @@ sub find_text_textview_populate_popup_cb($$$)
               textview_widget => $widget});
     }
     $menu_item->show();
-    $separator = Gtk2::SeparatorMenuItem->new();
-    $separator->show();
-    $menu->append($separator);
+    $menu->append($menu_item);
+
+    $menu_item = Gtk2::MenuItem->new(__("_Go To Line"));
+    if ($widget->{find_text_and_goto_line_disabled})
+    {
+        $menu_item->set_sensitive(FALSE);
+    }
+    else
+    {
+        $menu_item->signal_connect
+            ("activate",
+             sub {
+                 my ($widget, $details) = @_;
+                 return if ($details->{instance}->{in_cb});
+                 local $details->{instance}->{in_cb} = 1;
+                 goto_line($details->{instance}->{window},
+                           $details->{textview_widget});
+             },
+             {instance        => $instance,
+              textview_widget => $widget});
+    }
+    $menu_item->show();
     $menu->append($menu_item);
 
 }
 #
 ##############################################################################
 #
-#   Routine      - find_text_textview_key_press_event_cb
+#   Routine      - find_text_and_goto_line_textview_key_press_event_cb
 #
 #   Description  - Callback routine called when the user presses a key inside
 #                  a textview window.
@@ -291,12 +373,13 @@ sub find_text_textview_populate_popup_cb($$$)
 
 
 
-sub find_text_textview_key_press_event_cb($$$)
+sub find_text_and_goto_line_textview_key_press_event_cb($$$)
 {
 
     my ($widget, $event, $instance) = @_;
 
-    return FALSE if ($instance->{in_cb} || $widget->{find_text_disabled});
+    return FALSE
+        if ($instance->{in_cb} || $widget->{find_text_and_goto_line_disabled});
     local $instance->{in_cb} = 1;
 
     my ($consumed_modifiers,
@@ -317,13 +400,20 @@ sub find_text_textview_key_press_event_cb($$$)
         ($keymap->translate_keyboard_state
          ($event->hardware_keycode(), $state, $event->group()))[0, 3];
 
-    # We are only interested in Ctrl-f.
+    # We are only interested in Ctrl-f and Ctrl-g.
 
-    if (defined($keyval) && $keyval == $Gtk2::Gdk::Keysyms{f}
-        && ($state - $consumed_modifiers) eq "control-mask")
+    if (defined($keyval) && ($state - $consumed_modifiers) eq "control-mask")
     {
-        find_text($instance->{window}, $widget);
-        return TRUE;
+        if ($keyval == $Gtk2::Gdk::Keysyms{f})
+        {
+            find_text($instance->{window}, $widget);
+            return TRUE;
+        }
+        elsif ($keyval == $Gtk2::Gdk::Keysyms{g})
+        {
+            goto_line($instance->{window}, $widget);
+            return TRUE;
+        }
     }
 
     return FALSE;
@@ -608,21 +698,74 @@ sub find_comboboxentry_changed_cb($$)
 #
 ##############################################################################
 #
-#   Routine      - find_current_window
+#   Routine      - goto_line_button_clicked_cb
 #
-#   Description  - Look for a find text window that is mapped and belongs to
-#                  the specified textview widget.
+#   Description  - Callback routine called when the user clicks on the go to
+#                  button in the go to line window.
 #
-#   Data         - $text_view : The textview widget that is to be searched.
+#   Data         - $widget   : The widget object that received the signal.
+#                  $instance : The window instance that is associated with
+#                              this widget.
 #
 ##############################################################################
 
 
 
-sub find_current_window($)
+sub goto_line_button_clicked_cb($$)
 {
 
-    my $text_view = $_[0];
+    my ($widget, $instance) = @_;
+
+    return if ($instance->{in_cb});
+    local $instance->{in_cb} = 1;
+
+    my ($iter,
+        $line_nr);
+
+    # Get the line number. Please note that the update method needs to be
+    # called on the spinbutton so as to make sure that it's internal state is
+    # completely up to date (the user might have entered a value directly into
+    # the entry field). Updates are usually done when it looses the focus,
+    # which is fine for the go to line dialog window as it stands but it's
+    # probably best not to rely on the presence of any focus stealing buttons.
+
+    $instance->{goto_line_spinbutton}->update();
+    $line_nr = $instance->{goto_line_spinbutton}->get_value_as_int();
+
+    # Gtk2::TextBuffer lines start at 0.
+
+    -- $line_nr;
+
+    # Get the iter at the desired line and then scroll to it.
+
+    if (defined($iter = $instance->{text_buffer}->get_iter_at_line($line_nr)))
+    {
+        $instance->{text_view}->scroll_to_iter($iter, 0, TRUE, 0, 0.5);
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - find_current_window
+#
+#   Description  - Look for the specified type of window (either a find text
+#                  or go to line window) that is mapped and belongs to the
+#                  specified textview widget.
+#
+#   Data         - $text_view   : The textview widget that is to be searched.
+#                  $window_type : The type of window that is to be found.
+#                  Return Value : Either a reference to the window's instance
+#                                 record on success of undef on failure.
+#
+##############################################################################
+
+
+
+sub find_current_window($$)
+{
+
+    my ($text_view, $window_type) = @_;
 
     return WindowManager->instance()->cond_find
         ($window_type,
@@ -664,11 +807,11 @@ sub get_find_text_window($$)
     # Create a new find text window if an unused one wasn't found, otherwise
     # reuse an existing unused one.
 
-    if (! defined($instance = $wm->find_unused($window_type)))
+    if (! defined($instance = $wm->find_unused($find_text_window_type)))
     {
         $instance = {};
         $glade = Gtk2::GladeXML->new($glade_file,
-                                     $window_type,
+                                     $find_text_window_type,
                                      APPLICATION_NAME);
 
         # Flag to stop recursive calling of callbacks.
@@ -682,7 +825,7 @@ sub get_find_text_window($$)
 
         # Get the widgets that we are interested in.
 
-        $instance->{window} = $glade->get_widget($window_type);
+        $instance->{window} = $glade->get_widget($find_text_window_type);
         foreach my $widget ("main_vbox",
                             "find_comboboxentry",
                             "case_sensitive_checkbutton",
@@ -775,7 +918,127 @@ sub get_find_text_window($$)
 
     if (defined($glade))
     {
-        $wm->manage($instance, $window_type, $instance->{window});
+        $wm->manage($instance, $find_text_window_type, $instance->{window});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => undef,
+              help_ref => __("mtnb-gsc-browser-buttons")});
+    }
+
+    return $instance;
+
+}
+#
+##############################################################################
+#
+#   Routine      - get_goto_line_window
+#
+#   Description  - Creates or prepares an existing go to line window for use.
+#
+#   Data         - $parent      : The parent window widget for the go to line
+#                                 window.
+#                  $text_view   : The textview widget in which we are to go to
+#                                 a line.
+#                  Return Value : A reference to the newly created or unused
+#                                 go to line instance record.
+#
+##############################################################################
+
+
+
+sub get_goto_line_window($$)
+{
+
+    my ($parent, $text_view) = @_;
+
+    my ($glade,
+        $instance);
+    my $wm = WindowManager->instance();
+
+    # Create a new find text window if an unused one wasn't found, otherwise
+    # reuse an existing unused one.
+
+    if (! defined($instance = $wm->find_unused($goto_line_window_type)))
+    {
+        $instance = {};
+        $glade = Gtk2::GladeXML->new($glade_file,
+                                     $goto_line_window_type,
+                                     APPLICATION_NAME);
+
+        # Flag to stop recursive calling of callbacks.
+
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
+
+        # Connect Glade registered signal handlers.
+
+        glade_signal_autoconnect($glade, $instance);
+
+        # Get the widgets that we are interested in.
+
+        $instance->{window} = $glade->get_widget($goto_line_window_type);
+        foreach my $widget ("main_hbox",
+                            "goto_line_spinbutton",
+                            "goto_line_button")
+        {
+            $instance->{$widget} = $glade->get_widget($widget);
+        }
+
+        # Setup the find text window deletion handlers.
+
+        $instance->{window}->signal_connect
+            ("delete_event",
+             sub {
+                 my ($widget, $event, $instance) = @_;
+                 return TRUE if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 $instance->{window}->hide();
+                 return TRUE;
+             },
+             $instance);
+        $glade->get_widget("close_button")->signal_connect
+            ("clicked",
+             sub {
+                 my ($widget, $instance) = @_;
+                 return TRUE if ($instance->{in_cb});
+                 local $instance->{in_cb} = 1;
+                 $instance->{window}->hide();
+             },
+             $instance);
+    }
+    else
+    {
+        $instance->{in_cb} = 0;
+        local $instance->{in_cb} = 1;
+        $instance->{main_hbox}->set_sensitive(TRUE);
+        $instance->{goto_line_button}->set_sensitive(TRUE);
+    }
+
+    local $instance->{in_cb} = 1;
+
+    # Store the associated textview and textbuffer.
+
+    $instance->{text_view} = $text_view;
+    $instance->{text_buffer} = $instance->{text_view}->get_buffer();
+
+    # Reparent window and display it.
+
+    $instance->{window}->set_transient_for($parent);
+    $instance->{window}->show_all();
+    $instance->{window}->present();
+
+    # Make sure that the go to line spinbutton has the focus.
+
+    $instance->{goto_line_spinbutton}->grab_focus();
+    $instance->{goto_line_spinbutton}->set_position(-1);
+
+    # If necessary, register the window for management and set up the help
+    # callbacks.
+
+    if (defined($glade))
+    {
+        $wm->manage($instance, $goto_line_window_type, $instance->{window});
         register_help_callbacks
             ($instance,
              $glade,

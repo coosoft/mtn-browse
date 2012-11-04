@@ -112,7 +112,7 @@ use Common;
 use Completion;
 use DateRange;
 use FindFiles;
-use FindText;
+use FindTextAndGoToLine;
 use History;
 use HistoryGraph;
 use ManageServerBookmarks;
@@ -174,6 +174,7 @@ sub display_file($$);
 sub file_change_history_button_clicked_cb($$);
 sub find_files_button_clicked_cb($$);
 sub get_browser_window(;$$$$$);
+sub goto_text_line_button_clicked_cb($$);
 sub handle_advanced_find($);
 sub help_on_window_activate_cb($$);
 sub help_toolbutton_clicked_cb($$);
@@ -1607,6 +1608,33 @@ sub search_text_button_clicked_cb($$)
 #
 ##############################################################################
 #
+#   Routine      - goto_text_line_button_clicked_cb
+#
+#   Description  - Callback routine called when the user clicks on the go to
+#                  text line button in a main browser window.
+#
+#   Data         - $widget  : The widget object that received the signal.
+#                  $browser : The browser instance that is associated with
+#                             this widget.
+#
+##############################################################################
+
+
+
+sub goto_text_line_button_clicked_cb($$)
+{
+
+    my ($widget, $browser) = @_;
+
+    return if ($browser->{in_cb});
+    local $browser->{in_cb} = 1;
+
+    goto_line($browser->{window}, $browser->{file_view_sv});
+
+}
+#
+##############################################################################
+#
 #   Routine      - save_as_button_clicked_cb
 #
 #   Description  - Callback routine called when the user clicks on the save as
@@ -2031,7 +2059,7 @@ sub main_window_delete_event_cb($$$)
              return;
          });
 
-    hide_find_text($browser->{file_view_sv});
+    hide_find_text_and_goto_line($browser->{file_view_sv});
     $browser->{window}->hide();
     $browser->{mtn} = undef;
 
@@ -2166,7 +2194,7 @@ sub get_browser_window(;$$$$$)
         # Setup button sensitivity groups.
 
         $browser->{text_file_sensitive_group} = [];
-        foreach my $item ("search_text", "annotate")
+        foreach my $item ("search_text", "goto_text_line", "annotate")
         {
             push(@{$browser->{text_file_sensitive_group}},
                  $glade->get_widget($item . "_button"));
@@ -2281,21 +2309,6 @@ sub get_browser_window(;$$$$$)
         $submenu->show();
         $browser->{choose_authentication_key_menuitem}->set_submenu($submenu);
 
-        # Setup button sensitivity groups.
-
-        $browser->{text_file_sensitive_group} = [];
-        foreach my $item ("search_text", "annotate")
-        {
-            push(@{$browser->{text_file_sensitive_group}},
-                 $glade->get_widget($item . "_button"));
-        }
-        $browser->{revision_sensitive_group} = [];
-        foreach my $item ("revision_change_history", "revision_change_log")
-        {
-            push(@{$browser->{revision_sensitive_group}},
-                 $glade->get_widget($item . "_button"));
-        }
-
         # Setup the tree view manifest file browser.
 
         $browser->{manifest_liststore} =
@@ -2389,12 +2402,12 @@ sub get_browser_window(;$$$$$)
         $browser->{file_view_sv_populate_popup_handler} =
             $browser->{file_view_sv}->signal_connect
                 ("populate_popup",
-                 \&find_text_textview_populate_popup_cb,
+                 \&find_text_and_goto_line_textview_populate_popup_cb,
                  $browser);
         $browser->{file_view_sv_key_press_handler} =
             $browser->{file_view_sv}->signal_connect
                 ("key_press_event",
-                 \&find_text_textview_key_press_event_cb,
+                 \&find_text_and_goto_line_textview_key_press_event_cb,
                  $browser);
         $browser->{file_view_sv}->show_all();
 
@@ -3416,7 +3429,7 @@ sub update_browser_state($$)
                     $widget->set_sensitive(FALSE);
                 }
                 reset_find_text($browser->{file_view_sv});
-                enable_find_text($browser->{file_view_sv}, 0);
+                enable_find_text_and_goto_line($browser->{file_view_sv}, 0);
 
                 # Display the selected file's contents.
 
@@ -3435,7 +3448,8 @@ sub update_browser_state($$)
                     }
                     $browser->{annotate_button}->set_sensitive(FALSE)
                         if (defined($browser->{mtn}->get_service_name()));
-                    enable_find_text($browser->{file_view_sv}, 1);
+                    enable_find_text_and_goto_line($browser->{file_view_sv},
+                                                   1);
                 }
 
                 # Update the file details labels.
@@ -3479,7 +3493,7 @@ sub update_browser_state($$)
             set_label_value($browser->{file_author_value_label}, "");
             set_label_value($browser->{last_update_value_label}, "");
             set_label_value($browser->{file_revision_id_value_label}, "");
-            enable_find_text($browser->{file_view_sv}, 0);
+            enable_find_text_and_goto_line($browser->{file_view_sv}, 0);
 
         }
 

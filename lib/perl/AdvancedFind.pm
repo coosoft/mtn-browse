@@ -183,7 +183,7 @@ sub advanced_find($$$;$$)
     }
     $wm->make_busy($advanced_find, 0);
     local $advanced_find->{in_cb} = 1;
-    hide_find_text($advanced_find->{details_textview});
+    hide_find_text_and_goto_line($advanced_find->{details_textview});
     $advanced_find->{window}->hide();
 
     # Deal with the result.
@@ -1279,13 +1279,15 @@ sub update_advanced_find_state($$)
 
             $advanced_find->{ok_button}->set_sensitive(TRUE);
             reset_find_text($advanced_find->{details_textview});
-            enable_find_text($advanced_find->{details_textview}, 1);
+            enable_find_text_and_goto_line($advanced_find->{details_textview},
+                                           1);
         }
         else
         {
             $advanced_find->{ok_button}->set_sensitive(FALSE);
             $advanced_find->{details_buffer}->set_text("");
-            enable_find_text($advanced_find->{details_textview}, 0);
+            enable_find_text_and_goto_line($advanced_find->{details_textview},
+                                           0);
         }
 
     }

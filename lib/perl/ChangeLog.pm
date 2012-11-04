@@ -447,7 +447,7 @@ sub get_change_log_window()
                  my ($widget, $event, $instance) = @_;
                  return TRUE if ($instance->{in_cb});
                  local $instance->{in_cb} = 1;
-                 hide_find_text($instance->{changelog_textview});
+                 hide_find_text_and_goto_line($instance->{changelog_textview});
                  $widget->hide();
                  $instance->{changelog_buffer}->set_text("");
                  return TRUE;
