@@ -108,6 +108,7 @@ sub register_help_callbacks($$@);
 sub run_command($$$$$@);
 sub save_as_file($$$);
 sub set_label_value($$);
+sub set_window_size($$);
 sub treeview_column_searcher($$$$);
 sub treeview_setup_search_column_selection($@);
 
@@ -1539,23 +1540,7 @@ sub handle_history($$$)
 
         splice(@$history_ref, $max_size)
             if (unshift(@$history_ref, $value) > $max_size);
-        eval
-        {
-            save_preferences($user_preferences);
-        };
-        if ($@)
-        {
-            chomp($@);
-            my $dialog = Gtk2::MessageDialog->new
-                (undef,
-                 ["modal"],
-                 "warning",
-                 "close",
-                 __("Your preferences could not be saved:\n") . $@);
-            busy_dialog_run($dialog);
-            $dialog->destroy();
-            return;
-        }
+        save_preferences($user_preferences);
 
         return 1;
 
@@ -1937,6 +1922,42 @@ sub colour_to_string($)
 #
 ##############################################################################
 #
+#   Routine      - set_window_size
+#
+#   Description  - Sets the size of the specified window based upon what has
+#                  been previously saved or it's default window size if
+#                  nothing has been saved.
+#
+#   Data         - $window : The window that is to be sized.
+#                  $type   : The type of window that is to be sized.
+#
+##############################################################################
+
+
+
+sub set_window_size($$)
+{
+
+    my ($window, $type) = @_;
+
+    my ($height,
+        $width);
+
+    if (exists($user_preferences->{window_sizes}->{$type}))
+    {
+        $width = $user_preferences->{window_sizes}->{$type}->{width};
+        $height = $user_preferences->{window_sizes}->{$type}->{height};
+    }
+    else
+    {
+        ($width, $height) = $window->get_default_size();
+    }
+    $window->resize($width, $height);
+
+}
+#
+##############################################################################
+#
 #   Routine      - set_label_value
 #
 #   Description  - Set the text for the given label and the tooltip for the
@@ -2271,6 +2292,10 @@ sub busy_dialog_run($)
 
     my $choice;
     my $wm = WindowManager->instance();
+
+    # If it's an unmanaged transient dialog window then make every managed
+    # window busy and let the dialog window run unhindered, otherwise make sure
+    # that the custom dialog window is not made busy when run.
 
     if (blessed($item) && $item->isa("Gtk2::Dialog"))
     {

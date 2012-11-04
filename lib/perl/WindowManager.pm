@@ -381,8 +381,13 @@ sub find_unused($$)
 #                                 called for all window instance records.
 #                  $predicate   : A reference to the predicate routine that is
 #                                 to be called against every window of the
-#                                 specified type. The one argument to this
-#                                 routine is a window instance record.
+#                                 specified type. The two arguments to this
+#                                 routine are a window instance record and the
+#                                 associated window type (as given when
+#                                 originally registering the window instance).
+#                                 This routine should return true if the
+#                                 window instance record has been found and
+#                                 false if the search is to continue.
 #                  Return Value : A reference to the found window instance
 #                                 record on success, otherwise undef on
 #                                 failure.
@@ -400,7 +405,8 @@ sub cond_find($$&)
     {
         return $win_instance->{instance}
             if ((! defined($type) || $win_instance->{type} eq $type)
-                && &$predicate($win_instance->{instance}));
+                && &$predicate($win_instance->{instance},
+                               $win_instance->{type}));
     }
 
     return;

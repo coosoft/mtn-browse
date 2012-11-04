@@ -1804,9 +1804,7 @@ sub generate_history_report($$)
 sub get_history_window()
 {
 
-    my ($height,
-        $instance,
-        $width);
+    my $instance;
     my $window_type = "history_window";
     my $wm = WindowManager->instance();
 
@@ -1817,7 +1815,9 @@ sub get_history_window()
     {
 
         my ($glade,
-            $renderer);
+            $height,
+            $renderer,
+            $width);
 
         $instance = {};
         $glade = Gtk2::GladeXML->new($glade_file,
@@ -1850,6 +1850,8 @@ sub get_history_window()
             $instance->{$widget} = $glade->get_widget($widget);
         }
 
+        set_window_size($instance->{window}, $window_type);
+
         # Setup the history callbacks.
 
         $instance->{window}->signal_connect
@@ -1878,6 +1880,12 @@ sub get_history_window()
             $instance->{history_textview}->get_buffer();
         create_format_tags($instance->{history_buffer});
         $instance->{history_textview}->modify_font($mono_font);
+
+        # Display the window (it needs to be realised before we get any widget
+        # sizes).
+
+        $instance->{window}->show_all();
+        $instance->{window}->present();
 
         # Lock the width of the numbers value label so that the combobox button
         # to its right does not keep shrinking as this label's value increases.
@@ -1931,8 +1939,7 @@ sub get_history_window()
         $instance->{in_cb} = 0;
         local $instance->{in_cb} = 1;
 
-        ($width, $height) = $instance->{window}->get_default_size();
-        $instance->{window}->resize($width, $height);
+        set_window_size($instance->{window}, $window_type);
         $instance->{restrict_to_combobox}->get_model()->clear();
         $instance->{restrict_to_combobox}->get_model()->set
             ($instance->{restrict_to_combobox}->get_model()->append(),
@@ -2264,6 +2271,8 @@ sub get_revision_comparison_window($)
             $instance->{$widget} = $glade->get_widget($widget);
         }
 
+        set_window_size($instance->{window}, $window_type);
+
         # Setup the file history callbacks.
 
         $instance->{window}->signal_connect
@@ -2352,6 +2361,11 @@ sub get_revision_comparison_window($)
                 set_text(__("+ Revision Change Log"));
         }
 
+        # Display the window (it needs to be realised before it is registered).
+
+        $instance->{window}->show_all();
+        $instance->{window}->present();
+
         # Register the window for management and set up the help callbacks.
 
         $wm->manage($instance,
@@ -2372,14 +2386,10 @@ sub get_revision_comparison_window($)
     else
     {
 
-        my ($height,
-            $width);
-
         $instance->{in_cb} = 0;
         local $instance->{in_cb} = 1;
 
-        ($width, $height) = $instance->{window}->get_default_size();
-        $instance->{window}->resize($width, $height);
+        set_window_size($instance->{window}, $window_type);
         $instance->{external_diffs_button}->set_sensitive(FALSE);
         $instance->{stop_button}->set_sensitive(FALSE);
         $instance->{file_comparison_combobox}->get_model()->clear();

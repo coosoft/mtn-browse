@@ -6,7 +6,6 @@
 <requires lib="bonobo"/>
 
 <widget class="GnomeApp" id="main_window">
-  <property name="visible">True</property>
   <property name="title" translatable="yes">Monotone Browser</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
@@ -64,7 +63,7 @@
 			  <signal name="activate" handler="new_blank_activate_cb" last_modification_time="Sat, 14 Jan 2012 15:48:05 GMT"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image234">
+			    <widget class="GtkImage" id="image259">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-new</property>
 			      <property name="icon_size">1</property>
@@ -98,7 +97,7 @@
 			  <property name="use_underline">True</property>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image235">
+			    <widget class="GtkImage" id="image260">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-open</property>
 			      <property name="icon_size">1</property>
@@ -124,7 +123,7 @@
 			  <property name="use_underline">True</property>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image236">
+			    <widget class="GtkImage" id="image261">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-network</property>
 			      <property name="icon_size">1</property>
@@ -159,7 +158,7 @@
 			  <signal name="activate" handler="quit_activate_cb" last_modification_time="Fri, 20 Jun 2008 12:07:24 GMT"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image237">
+			    <widget class="GtkImage" id="image262">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-quit</property>
 			      <property name="icon_size">1</property>
@@ -189,6 +188,60 @@
 			  <property name="visible">True</property>
 			  <property name="stock_item">GNOMEUIINFO_MENU_PREFERENCES_ITEM</property>
 			  <signal name="activate" handler="preferences_toolbutton_clicked_cb" last_modification_time="Fri, 25 Apr 2008 16:20:21 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="windows1">
+			  <property name="visible">True</property>
+			  <property name="stock_item">GNOMEUIINFO_MENU_WINDOWS_TREE</property>
+
+			  <child>
+			    <widget class="GtkMenu" id="windows1_menu">
+
+			      <child>
+				<widget class="GtkImageMenuItem" id="remember_sizes1">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Remember _Sizes</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="remember_sizes_activate_cb" last_modification_time="Sat, 29 Sep 2012 15:25:04 GMT"/>
+
+				  <child internal-child="image">
+				    <widget class="GtkImage" id="image263">
+				      <property name="visible">True</property>
+				      <property name="stock">gtk-save</property>
+				      <property name="icon_size">1</property>
+				      <property name="xalign">0.5</property>
+				      <property name="yalign">0.5</property>
+				      <property name="xpad">0</property>
+				      <property name="ypad">0</property>
+				    </widget>
+				  </child>
+				</widget>
+			      </child>
+
+			      <child>
+				<widget class="GtkImageMenuItem" id="reset_sizes1">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">_Reset Sizes</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="reset_sizes_activate_cb" last_modification_time="Sat, 29 Sep 2012 15:25:04 GMT"/>
+
+				  <child internal-child="image">
+				    <widget class="GtkImage" id="image264">
+				      <property name="visible">True</property>
+				      <property name="stock">gtk-revert-to-saved</property>
+				      <property name="icon_size">1</property>
+				      <property name="xalign">0.5</property>
+				      <property name="yalign">0.5</property>
+				      <property name="xpad">0</property>
+				      <property name="ypad">0</property>
+				    </widget>
+				  </child>
+				</widget>
+			      </child>
+			    </widget>
+			  </child>
 			</widget>
 		      </child>
 		    </widget>
@@ -263,7 +316,7 @@
 			  <accelerator key="F1" modifiers="0" signal="activate"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image238">
+			    <widget class="GtkImage" id="image265">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-help</property>
 			      <property name="icon_size">1</property>
@@ -285,7 +338,7 @@
 			  <accelerator key="F1" modifiers="GDK_SHIFT_MASK" signal="activate"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image239">
+			    <widget class="GtkImage" id="image266">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-help</property>
 			      <property name="icon_size">1</property>
@@ -307,7 +360,7 @@
 			  <accelerator key="F1" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image240">
+			    <widget class="GtkImage" id="image267">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-help</property>
 			      <property name="icon_size">1</property>
@@ -334,7 +387,7 @@
 			  <signal name="activate" handler="home_page_activate_cb" last_modification_time="Sun, 15 Feb 2009 17:15:45 GMT"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image241">
+			    <widget class="GtkImage" id="image268">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-home</property>
 			      <property name="icon_size">1</property>
@@ -3392,7 +3445,6 @@ pick()</property>
 </widget>
 
 <widget class="GtkWindow" id="changelog_window">
-  <property name="visible">True</property>
   <property name="title" translatable="yes"></property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
@@ -3444,7 +3496,6 @@ pick()</property>
 </widget>
 
 <widget class="GtkWindow" id="history_window">
-  <property name="visible">True</property>
   <property name="title" translatable="yes"></property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
@@ -4046,7 +4097,6 @@ revisions or files</property>
 </widget>
 
 <widget class="GtkWindow" id="revision_comparison_window">
-  <property name="visible">True</property>
   <property name="title" translatable="yes"></property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
@@ -4370,7 +4420,6 @@ selected file in an external viewer</property>
 </widget>
 
 <widget class="GtkWindow" id="annotation_window">
-  <property name="visible">True</property>
   <property name="title" translatable="yes"></property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
@@ -7913,7 +7962,6 @@ of the command</property>
 </widget>
 
 <widget class="GtkWindow" id="find_files_window">
-  <property name="visible">True</property>
   <property name="title" translatable="yes"></property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
@@ -10296,7 +10344,6 @@ chosen revisions</property>
 </widget>
 
 <widget class="GtkWindow" id="history_graph_window">
-  <property name="visible">True</property>
   <property name="title" translatable="yes">History Graph</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>

@@ -437,6 +437,8 @@ sub get_change_log_window()
             $instance->{$widget} = $glade->get_widget($widget);
         }
 
+        set_window_size($instance->{window}, $window_type);
+
         # Setup the changelog window deletion handler.
 
         $instance->{window}->signal_connect
@@ -459,6 +461,11 @@ sub get_change_log_window()
         create_format_tags($instance->{changelog_buffer});
         $instance->{changelog_textview}->modify_font($mono_font);
 
+        # Display the window (it needs to be realised before it is registered).
+
+        $instance->{window}->show_all();
+        $instance->{window}->present();
+
         # Register the window for management and set up the help callbacks.
 
         $wm->manage($instance, $window_type, $instance->{window});
@@ -471,16 +478,9 @@ sub get_change_log_window()
     }
     else
     {
-
-        my ($height,
-            $width);
-
         $instance->{in_cb} = 0;
         local $instance->{in_cb} = 1;
-
-        ($width, $height) = $instance->{window}->get_default_size();
-        $instance->{window}->resize($width, $height);
-
+        set_window_size($instance->{window}, $window_type);
     }
 
     local $instance->{in_cb} = 1;

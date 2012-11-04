@@ -723,6 +723,8 @@ sub get_find_files_window()
             $instance->{$widget} = $glade->get_widget($widget);
         }
 
+        set_window_size($instance->{window}, $window_type);
+
         # Setup widget sensitivity groups.
 
         $instance->{size_sensitive_group} = [];
@@ -796,6 +798,11 @@ sub get_find_files_window()
             $widget->set_sensitive(FALSE);
         }
 
+        # Display the window (it needs to be realised before it is registered).
+
+        $instance->{window}->show_all();
+        $instance->{window}->present();
+
         # Register the window for management and set up the help callbacks.
 
         $wm->manage($instance,
@@ -820,13 +827,10 @@ sub get_find_files_window()
     else
     {
 
-        my ($height,
-            $width);
-
         $instance->{in_cb} = 0;
         local $instance->{in_cb} = 1;
-        ($width, $height) = $instance->{window}->get_default_size();
-        $instance->{window}->resize($width, $height);
+
+        set_window_size($instance->{window}, $window_type);
         $instance->{stop_button}->set_sensitive(FALSE);
         $instance->{appbar}->set_progress_percentage(0);
         $instance->{appbar}->clear_stack();

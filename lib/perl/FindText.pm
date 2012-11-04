@@ -630,7 +630,7 @@ sub find_current_window($)
     return WindowManager->instance()->cond_find
         ($window_type,
          sub {
-             my $instance = $_[0];
+             my ($instance, $type) = @_;
              return 1
                  if ($instance->{window}->mapped()
                      && $instance->{text_view} == $text_view);

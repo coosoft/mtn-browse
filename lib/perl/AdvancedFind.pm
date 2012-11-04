@@ -692,6 +692,8 @@ sub get_advanced_find_window($)
             $instance->{$widget} = $glade->get_widget($widget);
         }
 
+        set_window_size($instance->{window}, $window_type);
+
         # Setup the advanced find callbacks.
 
         $instance->{window}->signal_connect
@@ -854,17 +856,13 @@ sub get_advanced_find_window($)
     else
     {
 
-        my ($height,
-            $width);
-
         $instance->{in_cb} = 0;
         local $instance->{in_cb} = 1;
 
         # Reset the advanced find dialog's state.
 
         $instance->{mtn} = $parent_instance->{mtn};
-        ($width, $height) = $instance->{window}->get_default_size();
-        $instance->{window}->resize($width, $height);
+        set_window_size($instance->{window}, $window_type);
         $instance->{revisions_hpaned}->set_position(300);
         $instance->{window}->set_transient_for($parent_instance->{window});
         $instance->{stop_button}->set_sensitive(FALSE);

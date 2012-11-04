@@ -190,6 +190,8 @@ sub preferences_toolbutton_clicked_cb($$);
 sub quit_activate_cb($$);
 sub quit_from_gtk2();
 sub reload_toolbutton_clicked_cb($$);
+sub remember_sizes_activate_cb($$);
+sub reset_sizes_activate_cb($$);
 sub revision_change_history_button_clicked_cb($$);
 sub revision_change_log_button_clicked_cb($$);
 sub save_as_button_clicked_cb($$);
@@ -266,26 +268,9 @@ sub view_button_clicked_cb($$);
 
     # Load in user preferences.
 
-    eval
-    {
-        $user_preferences = load_preferences();
-        $mime_match_table =
-            build_mime_match_table($user_preferences->{mime_table});
-    };
-    if ($@)
-    {
-        chomp($@);
-        my $dialog = Gtk2::MessageDialog->new
-            ($browser->{window},
-             ["modal"],
-             "warning",
-             "close",
-             __x("Your preferences cannot be loaded:\n{error_message}",
-                 error_message => $@));
-        busy_dialog_run($dialog);
-        $dialog->destroy();
-        exit(1);
-    }
+    exit(1) unless (defined($user_preferences = load_preferences()));
+    $mime_match_table =
+        build_mime_match_table($user_preferences->{mime_table});
     $mono_font = Gtk2::Pango::FontDescription->
         from_string($user_preferences->{fixed_font});
 
@@ -713,29 +698,14 @@ sub manage_server_bookmarks_activate_cb($$)
                                 $user_preferences->{server_bookmarks}))
     {
 
-        eval
-        {
-            save_preferences($user_preferences);
-        };
-        if ($@)
-        {
-            chomp($@);
-            my $dialog = Gtk2::MessageDialog->new
-                (undef,
-                 ["modal"],
-                 "warning",
-                 "close",
-                 __("Your preferences could not be saved:\n") . $@);
-            busy_dialog_run($dialog);
-            $dialog->destroy();
-        }
+        save_preferences($user_preferences, $browser->{window});
 
         # We now need to update all server bookmark menus.
 
         WindowManager->instance()->cond_find
             ($window_type,
              sub {
-                 my $browser = $_[0];
+                 my ($browser, $type) = @_;
                  update_server_bookmarks_menu($browser);
                  return;
              });
@@ -768,6 +738,98 @@ sub quit_activate_cb($$)
     local $browser->{in_cb} = 1;
 
     quit_from_gtk2();
+
+}
+#
+##############################################################################
+#
+#   Routine      - remember_sizes_activate_cb
+#
+#   Description  - Callback routine called when the user selects the remember
+#                  sizes menu option.
+#
+#   Data         - $widget  : The widget object that received the signal.
+#                  $browser : The browser instance that is associated with
+#                             this widget.
+#
+##############################################################################
+
+
+
+sub remember_sizes_activate_cb($$)
+{
+
+    my ($widget, $browser) = @_;
+
+    return if ($browser->{in_cb});
+    local $browser->{in_cb} = 1;
+
+    my %mapped_windows;
+
+    # Go through all window instances and save their current window sizes.
+    # Mapped windows take precedence over unmapped ones.
+
+    WindowManager->instance()->cond_find
+        (undef,
+         sub {
+             my ($instance, $type) = @_;
+             my ($height,
+                 $width);
+             if ($instance->{window}->mapped()
+                 || ! exists($mapped_windows{$type}))
+             {
+                 ($width, $height) = $instance->{window}->get_size();
+                 $user_preferences->{window_sizes}->{$type} =
+                     {width  => $width,
+                      height => $height};
+                 $mapped_windows{$type} = undef
+                     if ($instance->{window}->mapped());
+             }
+             return;
+         });
+
+    # Save the user's preferences.
+
+    if (save_preferences($user_preferences, $browser->{window}))
+    {
+        $browser->{appbar}->set_status(__("Saved current window sizes"));
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - reset_sizes_activate_cb
+#
+#   Description  - Callback routine called when the user selects the reset
+#                  sizes menu option.
+#
+#   Data         - $widget  : The widget object that received the signal.
+#                  $browser : The browser instance that is associated with
+#                             this widget.
+#
+##############################################################################
+
+
+
+sub reset_sizes_activate_cb($$)
+{
+
+    my ($widget, $browser) = @_;
+
+    return if ($browser->{in_cb});
+    local $browser->{in_cb} = 1;
+
+    # Simply blank out all the stored window sizes.
+
+    $user_preferences->{window_sizes} = {};
+
+    # Save the user's preferences.
+
+    if (save_preferences($user_preferences, $browser->{window}))
+    {
+        $browser->{appbar}->set_status(__("Reset saved window sizes"));
+    }
 
 }
 #
@@ -1898,7 +1960,7 @@ sub main_window_delete_event_cb($$$)
     WindowManager->instance()->cond_find
         ($window_type,
          sub {
-             my $instance = $_[0];
+             my ($instance, $type) = @_;
              if ($instance != $browser && $instance->{window}->mapped())
              {
                  $others_mapped = 1;
@@ -2035,6 +2097,8 @@ sub get_browser_window(;$$$$$)
         {
             $browser->{$widget} = $glade->get_widget($widget);
         }
+
+        set_window_size($browser->{window}, $window_type);
 
         # Setup button sensitivity groups.
 
@@ -2334,16 +2398,12 @@ sub get_browser_window(;$$$$$)
     else
     {
 
-        my ($height,
-            $width);
-
         $browser->{in_cb} = 0;
         local $browser->{in_cb} = 1;
 
         # Reset the browser's state.
 
-        ($width, $height) = $browser->{window}->get_default_size();
-        $browser->{window}->resize($width, $height);
+        set_window_size($browser->{window}, $window_type);
         $browser->{browser_hpaned}->set_position(300);
         $browser->{tagged_checkbutton}->set_active(FALSE);
         $browser->{appbar}->set_progress_percentage(0);
@@ -3699,7 +3759,7 @@ sub quit_from_gtk2()
     WindowManager->instance()->cond_find
         (undef,
          sub {
-             my $instance = $_[0];
+             my ($instance, $type) = @_;
              $instance->{window}->hide() if ($instance->{window}->mapped());
              $instance->{mtn} = undef if (exists($instance->{mtn}));
              if (exists($instance->{cleanup_handler})
@@ -3779,22 +3839,7 @@ sub setup_mtn_object($$)
 
     if ($save_prefs)
     {
-        eval
-        {
-            save_preferences($user_preferences);
-        };
-        if ($@)
-        {
-            chomp($@);
-            my $dialog = Gtk2::MessageDialog->new
-                (undef,
-                 ["modal"],
-                 "warning",
-                 "close",
-                 __("Your preferences could not be saved:\n") . $@);
-            busy_dialog_run($dialog);
-            $dialog->destroy();
-        }
+        save_preferences($user_preferences, $parent);
     }
 
 }
@@ -3929,7 +3974,7 @@ sub sigchld_handler()
             $wm->cond_find
                 (undef,
                  sub {
-                     my $instance = $_[0];
+                     my ($instance, $type) = @_;
                      if (exists($instance->{mtn}) && defined($instance->{mtn})
                          && $instance->{mtn}->get_pid() == $pid)
                      {

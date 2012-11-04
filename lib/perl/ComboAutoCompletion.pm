@@ -683,7 +683,7 @@ sub update_completions_list_window($$$$$)
     if (defined($instance = $wm->cond_find
                 ($completions_window_type,
                  sub {
-                     my $instance = $_[0];
+                     my ($instance, $type) = @_;
                      return 1 if ($instance->{window}->mapped());
                  })))
     {
@@ -1137,7 +1137,7 @@ sub hide_completions_window()
     if (defined($instance = WindowManager->instance()->cond_find
                 ($completions_window_type,
                  sub {
-                     my $instance = $_[0];
+                     my ($instance, $type) = @_;
                      return $instance->{window}->mapped();
                  })))
     {
@@ -1178,7 +1178,7 @@ sub hide_tooltip_window()
     if (defined($instance = WindowManager->instance()->cond_find
                 ($tooltip_window_type,
                  sub {
-                     my $instance = $_[0];
+                     my ($instance, $type) = @_;
                      return $instance->{window}->mapped();
                  })))
     {

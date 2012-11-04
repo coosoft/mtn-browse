@@ -324,29 +324,14 @@ sub tag_weightings_button_clicked_cb($$)
                               $user_preferences->{tag_weightings}))
     {
 
-        eval
-        {
-            save_preferences($user_preferences);
-        };
-        if ($@)
-        {
-            chomp($@);
-            my $dialog = Gtk2::MessageDialog->new
-                (undef,
-                 ["modal"],
-                 "warning",
-                 "close",
-                 __("Your preferences could not be saved:\n") . $@);
-            busy_dialog_run($dialog);
-            $dialog->destroy();
-        }
+        save_preferences($user_preferences, $instance->{window});
 
         # Regenerate all of the compiled tag weightings tables.
 
         WindowManager->instance()->cond_find
             ($window_type,
              sub {
-                 my $instance = $_[0];
+                 my ($instance, $type) = @_;
                  compile_tag_weighting_patterns
                      ($instance->{compiled_tag_weightings});
                  return;
@@ -3169,6 +3154,8 @@ sub get_history_graph_window()
             $instance->{$widget} = $glade->get_widget($widget);
         }
 
+        set_window_size($instance->{window}, $window_type);
+
         # Create the graph canvas widget. We can't do this in Glade as
         # something does not honour the anti-aliased setting.
 
@@ -3234,6 +3221,11 @@ sub get_history_graph_window()
         $instance->{key_buffer} = $instance->{key_textview}->get_buffer();
         $instance->{key_textview}->modify_font($mono_font);
 
+        # Display the window (it needs to be realised before it is registered).
+
+        $instance->{window}->show_all();
+        $instance->{window}->present();
+
         # Register the window for management and set up the help callbacks.
 
         $wm->manage($instance,
@@ -3254,13 +3246,10 @@ sub get_history_graph_window()
     else
     {
 
-        my ($height,
-            $width);
-
         $instance->{in_cb} = 0;
         local $instance->{in_cb} = 1;
-        ($width, $height) = $instance->{window}->get_default_size();
-        $instance->{window}->resize($width, $height);
+
+        set_window_size($instance->{window}, $window_type);
         $instance->{graph_hpaned}->set_position(600);
         $instance->{show_key_togglebutton}->set_active(FALSE);
         $instance->{stop_button}->set_sensitive(FALSE);
@@ -3862,6 +3851,8 @@ sub get_change_history_graph_window($)
             $instance->{$widget} = $glade->get_widget($widget);
         }
 
+        set_window_size($instance->{window}, $change_window_type);
+
         # Setup the change history graph callbacks.
 
         $instance->{window}->signal_connect
@@ -3962,16 +3953,12 @@ sub get_change_history_graph_window($)
     else
     {
 
-        my ($height,
-            $width);
-
         $instance->{in_cb} = 0;
         local $instance->{in_cb} = 1;
 
         # Reset the change history graph dialog's state.
 
-        ($width, $height) = $instance->{window}->get_default_size();
-        $instance->{window}->resize($width, $height);
+        set_window_size($instance->{window}, $change_window_type);
         $instance->{window}->set_transient_for($parent_instance->{window});
         $instance->{branches_liststore}->clear();
         $instance->{branches_liststore} =

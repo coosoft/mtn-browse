@@ -84,7 +84,7 @@ use constant PREFERENCES_FILE_NAME => ".mtn-browserc";
 
 # Constant for the preferences file's format version.
 
-use constant PREFERENCES_FORMAT_VERSION => 14;
+use constant PREFERENCES_FORMAT_VERSION => 15;
 
 # Text viewable application MIME types.
 
@@ -144,9 +144,9 @@ my @colour_mapping_table =
 # Public routines.
 
 sub build_mime_match_table($);
-sub load_preferences();
+sub load_preferences(;$);
 sub preferences($);
-sub save_preferences($);
+sub save_preferences($;$);
 
 # Private routines.
 
@@ -200,23 +200,8 @@ sub preferences($)
 
     # Load in the user's preferences.
 
-    eval
-    {
-        $preferences = load_preferences();
-    };
-    if ($@)
-    {
-        chomp($@);
-        my $dialog = Gtk2::MessageDialog->new
-            ($browser->{window},
-             ["modal"],
-             "warning",
-             "close",
-             __("The preferences dialog cannot be displayed:\n") . $@);
-        busy_dialog_run($dialog);
-        $dialog->destroy();
-        return;
-    }
+    return
+        unless (defined($preferences = load_preferences($browser->{window})));
 
     # Get the preferences dialog window.
 
@@ -247,23 +232,8 @@ sub preferences($)
 
     if ($instance->{preferences_to_be_saved})
     {
-        eval
-        {
-            save_preferences($preferences);
-        };
-        if ($@)
-        {
-            chomp($@);
-            my $dialog = Gtk2::MessageDialog->new
-                ($browser->{window},
-                 ["modal"],
-                 "warning",
-                 "close",
-                 __("Your preferences could not be saved:\n") . $@);
-            busy_dialog_run($dialog);
-            $dialog->destroy();
-            return;
-        }
+        $instance->{preferences_to_be_saved} =
+            save_preferences($preferences, $browser->{window});
     }
 
     # Cleanup.
@@ -283,49 +253,77 @@ sub preferences($)
 #   Description  - Loads in the user's preferences or initialises them from
 #                  scratch if no preferences can be found.
 #
-#   Data         - Return Value : A reference to the newly created preferences
-#                                 record.
+#   Data         - $parent      : The parent window for any dialogs that are
+#                                 to be displayed. This is optional.
+#                  Return Value : A reference to the newly created preferences
+#                                 record on success, otherwise undef on
+#                                 failure.
 #
 ##############################################################################
 
 
 
-sub load_preferences()
+sub load_preferences(;$)
 {
 
-    my ($file_name,
-        %preferences,
-        $prefs_file);
+    my $parent = $_[0];
 
-    # Determine the name of the user's preferences file.
+    my $return_value;
 
-    $file_name = File::Spec->catfile(home_dir(), PREFERENCES_FILE_NAME);
-
-    # Either load in the preferences or initialise them from scratch depending
-    # upon whether the preferences file exists or not.
-
-    if (-f $file_name)
+    eval
     {
-        die(__x("open failed: {error_message}\n", error_message => $!))
-            unless (defined($prefs_file = IO::File->new($file_name, "r")));
-        eval(join("", $prefs_file->getlines()));
-        die(__x("Invalid user preferences file: {error_message}\n",
-                error_message => $@))
-            if ($@);
-        $prefs_file->close();
-        die(__x("Preferences file, `{file_name}',\n", file_name => $file_name)
-            . __("is corrupt, please remove it.\n"))
-            if (! exists($preferences{version})
-                || $preferences{version} == 0
-                || $preferences{version} > PREFERENCES_FORMAT_VERSION);
-        upgrade_preferences(\%preferences)
-            if ($preferences{version} < PREFERENCES_FORMAT_VERSION);
-        return \%preferences;
-    }
-    else
+
+        my ($file_name,
+            %preferences,
+            $prefs_file);
+
+        # Determine the name of the user's preferences file.
+
+        $file_name = File::Spec->catfile(home_dir(), PREFERENCES_FILE_NAME);
+
+        # Either load in the preferences or initialise them from scratch
+        # depending upon whether the preferences file exists or not.
+
+        if (-f $file_name)
+        {
+            die(__x("open failed: {error_message}\n", error_message => $!))
+                unless (defined($prefs_file = IO::File->new($file_name, "r")));
+            eval(join("", $prefs_file->getlines()));
+            die(__x("Invalid user preferences file: {error_message}\n",
+                    error_message => $@))
+                if ($@);
+            $prefs_file->close();
+            die(__x("Preferences file, `{file_name}',\n",
+                    file_name => $file_name)
+                . __("is corrupt, please remove it.\n"))
+                if (! exists($preferences{version})
+                    || $preferences{version} == 0
+                    || $preferences{version} > PREFERENCES_FORMAT_VERSION);
+            upgrade_preferences(\%preferences)
+                if ($preferences{version} < PREFERENCES_FORMAT_VERSION);
+            $return_value = \%preferences;
+        }
+        else
+        {
+            $return_value = initialise_preferences();
+        }
+
+    };
+    if ($@)
     {
-        return initialise_preferences();
+        chomp($@);
+        my $dialog = Gtk2::MessageDialog->new
+            ($parent,
+             ["modal"],
+             "warning",
+             "close",
+             __("Your preferences could not be loaded:\n") . $@);
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        $return_value = undef;
     }
+
+    return $return_value;
 
 }
 #
@@ -338,35 +336,59 @@ sub load_preferences()
 #
 #   Data         - $preferences : A reference to the preferences record that
 #                                 is to be saved.
+#                  $parent      : The parent window for any dialogs that are
+#                                 to be displayed. This is optional.
+#                  Return Value : True on success, otherwise false on failure.
 #
 ##############################################################################
 
 
 
-sub save_preferences($)
+sub save_preferences($;$)
 {
 
-    my $preferences = $_[0];
+    my ($preferences, $parent) = @_;
 
-    my ($file_name,
-        $prefs_file);
+    eval
+    {
 
-    # Determine the name of the user's preferences file.
+        my ($file_name,
+            $prefs_file);
 
-    $file_name = File::Spec->catfile(home_dir(), PREFERENCES_FILE_NAME);
+        # Determine the name of the user's preferences file.
 
-    # Write out the preferences record to disk.
+        $file_name = File::Spec->catfile(home_dir(), PREFERENCES_FILE_NAME);
 
-    die(__x("open failed: {error_message}\n", error_message => $!))
-        unless (defined($prefs_file = IO::File->new($file_name, "w")));
-    $prefs_file->print("#\n");
-    $prefs_file->
-        print(__("# DO NOT EDIT! This is an automatically generated file.\n"));
-    $prefs_file->print(__("# Changes to this file may be lost or cause ")
-                       . __("mtn-browse to malfunction.\n"));
-    $prefs_file->print("#\n");
-    $prefs_file->print(Data::Dumper->Dump([$preferences], ["*preferences"]));
-    $prefs_file->close();
+        # Write out the preferences record to disk.
+
+        die(__x("open failed: {error_message}\n", error_message => $!))
+            unless (defined($prefs_file = IO::File->new($file_name, "w")));
+        $prefs_file->print("#\n");
+        $prefs_file->print(__("# DO NOT EDIT! This is an automatically "
+                              . "generated file.\n"));
+        $prefs_file->print(__("# Changes to this file may be lost or cause ")
+                           . __("mtn-browse to malfunction.\n"));
+        $prefs_file->print("#\n");
+        $prefs_file->print(Data::Dumper->Dump([$preferences],
+                                              ["*preferences"]));
+        $prefs_file->close();
+
+    };
+    if ($@)
+    {
+        chomp($@);
+        my $dialog = Gtk2::MessageDialog->new
+            ($parent,
+             ["modal"],
+             "warning",
+             "close",
+             __("Your preferences could not be saved:\n") . $@);
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+        return;
+    }
+
+    return 1;
 
 }
 #
@@ -1078,6 +1100,9 @@ sub get_preferences_window($$)
         {
             $instance->{$widget} = $glade->get_widget($widget);
         }
+
+        set_window_size($instance->{window}, $window_type);
+
         $instance->{mime_type_sensitivity_list} =
             [$glade->get_widget("file_name_patterns_label"),
              $glade->get_widget("file_name_pattern_entry"),
@@ -1240,16 +1265,12 @@ sub get_preferences_window($$)
     else
     {
 
-        my ($height,
-            $width);
-
         $instance->{in_cb} = 0;
         local $instance->{in_cb} = 1;
 
         # Reset the preferences dialog's state.
 
-        ($width, $height) = $instance->{window}->get_default_size();
-        $instance->{window}->resize($width, $height);
+        set_window_size($instance->{window}, $window_type);
         $instance->{mime_types_hpaned}->set_position(700);
         $instance->{window}->set_transient_for($parent);
         $instance->{mime_types_liststore}->clear();
@@ -1794,6 +1815,11 @@ sub upgrade_preferences($)
     if ($preferences->{version} == 12)
     {
         delete($preferences->{static_lists});
+        $preferences->{version} = 14;
+    }
+    if ($preferences->{version} == 14)
+    {
+        $preferences->{window_sizes} = {};
     }
 
     $preferences->{version} = PREFERENCES_FORMAT_VERSION;
@@ -1863,7 +1889,8 @@ sub initialise_preferences()
          histories           => {},
          remote_connections  => 0,
          server_bookmarks    => [],
-         tag_weightings      => []);
+         tag_weightings      => [],
+         window_sizes        => {});
 
     return \%preferences;
 
