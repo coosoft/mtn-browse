@@ -70,7 +70,7 @@ use base qw(Exporter);
 
 our @EXPORT = qw();
 our @EXPORT_OK = qw();
-our $VERSION = 0.1;
+our $VERSION = "0.11";
 #
 ##############################################################################
 #
@@ -78,8 +78,7 @@ our $VERSION = 0.1;
 #
 #   Description  - Class constructor.
 #
-#   Data         - $class       : Either the name of the class that is to be
-#                                 created or an object of that class.
+#   Data         - $class       : The name of the class that is to be created.
 #                  $list        : A reference to a list of all possible
 #                                 completions.
 #                  Return Value : A reference to the newly created object.
@@ -91,8 +90,7 @@ our $VERSION = 0.1;
 sub new($;$)
 {
 
-    my $class = (ref($_[0]) ne "") ? ref($_[0]) : $_[0];
-    my $list = $_[1];
+    my ($class, $list) = @_;
 
     my ($char,
         $item,

@@ -120,7 +120,7 @@ use base qw(Exporter);
 
 our @EXPORT = qw();
 our @EXPORT_OK = qw();
-our $VERSION = "0.10";
+our $VERSION = "0.11";
 #
 ##############################################################################
 #
@@ -128,8 +128,7 @@ our $VERSION = "0.10";
 #
 #   Description  - Class constructor and accessor for a singleton class.
 #
-#   Data         - $class       : Either the name of the class that is to be
-#                                 created or an object of that class.
+#   Data         - $class       : The name of the class that is to be created.
 #                  Return Value : A reference to the WindowManager object,
 #                                 which may have been created.
 #
@@ -140,7 +139,7 @@ our $VERSION = "0.10";
 sub instance($)
 {
 
-    my $class = (ref($_[0]) ne "") ? ref($_[0]) : $_[0];
+    my $class = $_[0];
 
     if (! defined($singleton))
     {
