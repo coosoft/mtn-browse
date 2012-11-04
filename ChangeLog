@@ -1,5 +1,68 @@
 Revision history for mtn-browse.
 
+1.10  Sun Nov 04 10:04:00 2012 Anthony Cooper <support@coosoft.plus.com>
+	- Release of 1.10.
+	- Implemented a workspace comparison tool.
+	- Implemented the ability to annotate files from a file's history list
+	  and to annotate a file at its parent revision in the annotation
+	  window itself.
+	- Implemented the go to line window as a part of what was FindText.pm
+	- Implemented a facility for saving the current window sizes and
+	  resetting them back to their default settings.
+	- Added a go to text line button to the main browser window.
+	- Now provide a `{line}' token that contains the number of the line
+	  currently displayed in the middle of the file viewer when launching
+	  external viewer applications.
+	- Difference listings now prefer the new file name when referring to
+	  files in the listing.
+	- Made buttons on info dialogs consistent.
+	- Corrected help URL for the change history graph dialog window.
+	- Updated patch files.
+	- Renamed the distro-readme file so as to be more consistent with the
+	  other README file.
+	- Updated the help to take into account the changes in the GUI.
+	- FindText.pm has now been renamed FindTextAndGoToLine.pm.
+	- Now correctly set the cb block boolean when calling a browser's
+	  update handler due to a user selecting an entry in an auto-completion
+	  list (otherwise the resetting of the tagged tick box would unload the
+	  selected revision when dealing with the selection of a revision with
+	  a non-unique tag).
+	- Also added in another re-entry block for the completion list update
+	  handler.
+	- Implemented the concept of a no-help callback that is called when no
+	  help can be found for the given widget, window or application.
+	- The help callback no longer worries about re-entrancy (this was
+	  stopping it from working on some modal dialog windows).
+	- Improved the error handling for processes, handling of process
+	  reaping and now have finer grained control over
+	  Monotone::AutomateStdio object creation.
+	- Fixed a bug where Gnome2::VFS->get_mime_type_for_data() was being
+	  given a reference to a scalar rather than the scalar itself. This
+	  helps to correctly set up syntax highlighting for files without a
+	  dedicated MIME entry and no extension.
+	- The load_preferences() and save_preferences() routines now handle any
+	  errors, telling the user, rather than let the caller do it. Saves
+	  code duplication.
+	- All resizable windows are now not visible by default so as to allow
+	  any resizing of new windows to go on before they get displayed.
+	- The cond_find() method in the WindowManager class now passes the
+	  window's type as the second argument to the predicate function.
+	- Registered some help for the multiple revisions dialog window.
+	- All constructors now only honour <Class Name>->new() and not
+	  <Object>->new() as well. This makes the code cleaner and is less
+	  confusing to the caller as the object way of calling the constructor
+	  could be misinterpreted as some sort of clone method (which it
+	  isn't).
+	- Now make sure that all Gtk2::SpinButtons have their update() method
+	  called before getting their value.
+	- Now more defensive when using Gtk2::TextBuffer->get_iter_at_line().
+	- No longer check that iters returned from
+	  GTK2::TextBuffer->get_iter_at_line() are at the start of a line as
+	  this is what the method does.
+	- Now clone iters rather than recreate them from scratch each time.
+	- Removed duplicated code in mtn-browse.
+	- Made some code more consistent and improved some comments.
+
 1.00  Sat Apr 07 16:42:00 2012 Anthony Cooper <support@coosoft.plus.com>
 	- Release of 1.00.
 

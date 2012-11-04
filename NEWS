@@ -1,3 +1,37 @@
+Overview Of Changes In mtn-browse 1.10 (2012-11-04 16:15:00)
+============================================================
+
+New:
+- Release of 1.10.
+- Implemented a workspace comparison tool.
+- Implemented the ability to annotate files from a file's history list and to
+  annotate a file at its parent revision in the annotation window itself.
+- Implemented the go to line window as a part of what was FindText.pm
+- Implemented a facility for saving the current window sizes and
+  resetting them back to their default settings.
+- Added a go to text line button to the main browser window.
+- Now provide a `{line}' token that contains the number of the line currently
+  displayed in the middle of the file viewer when launching external viewer
+  applications.
+
+Changes:
+- Difference listings now prefer the new file name when referring to files in
+  the listing.
+- Made buttons on info dialogs consistent.
+- Updated the help to take into account the changes in the GUI.
+
+Defects Fixed:
+- Can now get help for the change history graph dialog window.
+- The browser no longer unloads all its displayed data when a revision is
+  selected via the advanced find dialog window and the tagged tick box was also
+  ticked.
+- A message is now displayed when no context help can be found.
+- Help can now be accessed via all non-standard modal dialog windows.
+- Files without extensions now have their MIME type correctly determined by
+  their contents (this failed before).
+- Registered some help for the multiple revisions dialog window.
+
+
 Overview Of Changes In mtn-browse 1.00 (2012-04-07 16:42:00)
 ============================================================
 
