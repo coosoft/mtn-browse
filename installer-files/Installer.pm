@@ -73,7 +73,7 @@ use base qw(Exporter);
 
 our @EXPORT = qw();
 our @EXPORT_OK = qw();
-our $VERSION = 0.1;
+our $VERSION = "0.11";
 #
 ##############################################################################
 #
@@ -81,8 +81,7 @@ our $VERSION = 0.1;
 #
 #   Description  - Class constructor.
 #
-#   Data         - $class       : Either the name of the class that is to be
-#                                 created or an object of that class.
+#   Data         - $class       : The name of the class that is to be created.
 #                  $owner       : The owner id for any destination files and
 #                                 directories.
 #                  $group       : The group id for any destination files and
@@ -101,10 +100,7 @@ our $VERSION = 0.1;
 sub new($$$$$$)
 {
 
-
-    my $class = (ref($_[0]) ne "") ? ref($_[0]) : $_[0];
-    shift();
-    my($owner, $group, $dir_perms, $exec_perms, $nexec_perms) = @_;
+    my($class, $owner, $group, $dir_perms, $exec_perms, $nexec_perms) = @_;
 
     my $this = {owner          => $owner,
                 group          => $group,
