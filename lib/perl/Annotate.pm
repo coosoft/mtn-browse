@@ -54,7 +54,7 @@ sub display_annotation($$$;$);
 
 # Private routines.
 
-sub annotate_previous_version_of_file($$);
+sub annotate_previous_version_of_file($$$);
 sub annotation_textview_populate_popup_cb($$$);
 sub annotation_textview_popup_menu_item_cb($$);
 sub compare_file_with_previous($$);
@@ -75,9 +75,10 @@ sub mtn_annotate($$$$);
 #                                 of the file resides.
 #                  $file_name   : The name of the file that is to be
 #                                 annotated.
-#                  $line        : The number of the line line that should be
+#                  $line        : The number of the line that should be
 #                                 scrolled to once the file has been
-#                                 annotated. This is otional.
+#                                 annotated (starting from 0). This is
+#                                 otional.
 #
 ##############################################################################
 
@@ -267,7 +268,8 @@ sub annotation_textview_populate_popup_cb($$$)
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my ($menu_item,
+    my ($iter,
+        $menu_item,
         $revision_part,
         $separator,
         $start_iter,
@@ -281,10 +283,14 @@ sub annotation_textview_populate_popup_cb($$$)
     ($x, $y) = $widget->window_to_buffer_coords("widget", $x, $y);
     if (defined($start_iter = ($widget->get_line_at_y($y))[0]))
     {
+
         my ($end_iter,
             $prefix,
             $no_more,
             $text_buffer);
+
+        $iter = $start_iter;
+
         $end_iter = ($widget->get_line_at_y($y))[0];
         $end_iter->forward_to_line_end();
         $text_buffer = $widget->get_buffer();
@@ -309,6 +315,7 @@ sub annotation_textview_populate_popup_cb($$$)
         }
         ($revision_part) = ($prefix =~ m/^ *([0-9a-f]+)\.+.*$/)
             unless ($no_more);
+
     }
 
     # Add a number of display, browse and comparison options to the right-click
@@ -331,14 +338,15 @@ sub annotation_textview_populate_popup_cb($$$)
              \&annotation_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
-                                      my ($instance, $revision_id) = @_;
+                                      my ($instance, $revision_id, $iter) = @_;
                                       display_change_log($instance->{mtn},
                                                          $revision_id,
                                                          "",
                                                          undef);
                                   },
               progress_message => __("Displaying change log"),
-              revision_part    => $revision_part});
+              revision_part    => $revision_part,
+              iter             => $iter});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -355,7 +363,7 @@ sub annotation_textview_populate_popup_cb($$$)
              \&annotation_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
-                                      my ($instance, $revision_id) = @_;
+                                      my ($instance, $revision_id, $iter) = @_;
                                       my $old_file_name;
                                       $instance->{mtn}->get_corresponding_path
                                           (\$old_file_name,
@@ -368,7 +376,8 @@ sub annotation_textview_populate_popup_cb($$$)
                                            $old_file_name);
                                   },
               progress_message => __("Displaying file history"),
-              revision_part    => $revision_part});
+              revision_part    => $revision_part,
+              iter             => $iter});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -385,14 +394,15 @@ sub annotation_textview_populate_popup_cb($$$)
              \&annotation_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
-                                      my ($instance, $revision_id) = @_;
+                                      my ($instance, $revision_id, $iter) = @_;
                                       display_revision_change_history
                                           ($instance->{mtn},
                                            undef,
                                            $revision_id);
                                   },
               progress_message => __("Displaying revision history"),
-              revision_part    => $revision_part});
+              revision_part    => $revision_part,
+              iter             => $iter});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -413,7 +423,7 @@ sub annotation_textview_populate_popup_cb($$$)
              \&annotation_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
-                                      my ($instance, $revision_id) = @_;
+                                      my ($instance, $revision_id, $iter) = @_;
                                       my (@certs,
                                           $dir,
                                           $file,
@@ -446,7 +456,8 @@ sub annotation_textview_populate_popup_cb($$$)
                                                          $file);
                                   },
               progress_message => __("Displaying revision in a new browser"),
-              revision_part    => $revision_part});
+              revision_part    => $revision_part,
+              iter             => $iter});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -468,12 +479,13 @@ sub annotation_textview_populate_popup_cb($$$)
              \&annotation_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
-                                      my ($instance, $revision_id) = @_;
+                                      my ($instance, $revision_id, $iter) = @_;
                                       compare_file_with_previous($instance,
                                                                  $revision_id);
                                   },
               progress_message => __("Doing file comparison"),
-              revision_part    => $revision_part});
+              revision_part    => $revision_part,
+              iter             => $iter});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -491,12 +503,13 @@ sub annotation_textview_populate_popup_cb($$$)
              \&annotation_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
-                                      my ($instance, $revision_id) = @_;
+                                      my ($instance, $revision_id, $iter) = @_;
                                       compare_revision_with_parent
                                           ($instance, $revision_id);
                                   },
               progress_message => __("Doing revision comparison"),
-              revision_part    => $revision_part});
+              revision_part    => $revision_part,
+              iter             => $iter});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -518,12 +531,13 @@ sub annotation_textview_populate_popup_cb($$$)
              \&annotation_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
-                                      my ($instance, $revision_id) = @_;
+                                      my ($instance, $revision_id, $iter) = @_;
                                       annotate_previous_version_of_file
-                                          ($instance, $revision_id);
+                                          ($instance, $revision_id, $iter);
                                   },
               progress_message => __("Doing file annotation"),
-              revision_part    => $revision_part});
+              revision_part    => $revision_part,
+              iter             => $iter});
     }
     $menu_item->show();
     $menu->append($menu_item);
@@ -541,8 +555,11 @@ sub annotation_textview_populate_popup_cb($$$)
 #                  $menu    : The Gtk2::Menu widget that is to be updated.
 #                  $details : A reference to an anonymous hash containing the
 #                             window instance, callback routine, progress
-#                             message and the revision start string that is
-#                             associated with this widget.
+#                             message, the start of the revision id extracted
+#                             from the annotated listing and the
+#                             Gtk2::TextIter representing the textual position
+#                             of the mouse within the annotated listing when
+#                             the user right clicked.
 #
 ##############################################################################
 
@@ -569,7 +586,9 @@ sub annotation_textview_popup_menu_item_cb($$)
         select(\@revision_ids, "i:" . $details->{revision_part});
     if (scalar(@revision_ids) == 1)
     {
-        $details->{cb}($details->{instance}, $revision_ids[0]);
+        $details->{cb}($details->{instance},
+                       $revision_ids[0],
+                       $details->{iter});
     }
     else
     {
@@ -652,15 +671,18 @@ sub compare_file_with_previous($$)
 #   Data         - $instance    : The window instance that is associated with
 #                                 the annotation window.
 #                  $revision_id : The revision id on which this file changed.
+#                  $iter        : The Gtk2::TextIter representing the textual
+#                                 position of the mouse within the annotated
+#                                 listing when the user right clicked.
 #
 ##############################################################################
 
 
 
-sub annotate_previous_version_of_file($$)
+sub annotate_previous_version_of_file($$$)
 {
 
-    my ($instance, $revision_id) = @_;
+    my ($instance, $revision_id, $iter) = @_;
 
     my ($ancestor_id,
         $file_name,
@@ -672,23 +694,10 @@ sub annotate_previous_version_of_file($$)
                                            \$file_name,
                                            \$old_file_name))
     {
-
-        my ($iter,
-            $rect);
-
-        # Ok now work out where we are and use the line number to scroll to the
-        # same place in the new annotation window. This could be improved upon
-        # (especially for cases where there are large changes between versions
-        # of a file) but this is better than nothing.
-
-        $rect = $instance->{annotation_textview}->get_visible_rect();
-        $iter =
-            ($instance->{annotation_textview}->get_line_at_y($rect->y()))[0];
         display_annotation($instance->{mtn},
                            $ancestor_id,
                            $old_file_name,
                            $iter->get_line());
-
     }
 
 }
