@@ -58,6 +58,9 @@ use constant CLS_FILE_ID_2_COLUMN => 3;
 
 # The translated history strings.
 
+my $__annotate_file         = __("Annotate File");
+my $__annotate_file_ttip    = __("Annotate the file in a\n"
+                                 . "new annotation window");
 my $__browse_file           = __("Browse File");
 my $__browse_file_ttip      = __("Browse the file in\na new browser window");
 my $__browse_rev            = __("Browse Revision");
@@ -1111,12 +1114,22 @@ sub history_list_button_clicked_cb($$)
                            $file);
 
     }
-    else
+    elsif ($details->{button_type} eq "revision-changelog")
     {
 
         # Display the full revision change log.
 
         display_change_log($instance->{mtn}, $revision_id);
+
+    }
+    else
+    {
+
+        # Annotate the file.
+
+        display_annotation($instance->{mtn},
+                           $revision_id,
+                           ${$instance->{revision_hits}->{$revision_id}});
 
     }
 
@@ -1682,9 +1695,9 @@ sub generate_history_report($$)
                  create_child_anchor($instance->{history_buffer}->
                                      get_end_iter()));
         $button->show_all();
+
         $instance->{history_buffer}->
             insert($instance->{history_buffer}->get_end_iter(), " ");
-
         $button = Gtk2::Button->new($__select_id_2);
         $button->signal_connect("clicked",
                                 \&history_list_button_clicked_cb,
@@ -1698,9 +1711,9 @@ sub generate_history_report($$)
                  create_child_anchor($instance->{history_buffer}->
                                      get_end_iter()));
         $button->show_all();
+
         $instance->{history_buffer}->
             insert($instance->{history_buffer}->get_end_iter(), " ");
-
         $button = Gtk2::Button->new($$browse_button);
         $button->signal_connect("clicked",
                                 \&history_list_button_clicked_cb,
@@ -1714,9 +1727,28 @@ sub generate_history_report($$)
                  create_child_anchor($instance->{history_buffer}->
                                      get_end_iter()));
         $button->show_all();
+
+        if (defined($instance->{file_name}))
+        {
+            $instance->{history_buffer}->
+                insert($instance->{history_buffer}->get_end_iter(), " ");
+            $button = Gtk2::Button->new($__annotate_file);
+            $button->signal_connect("clicked",
+                                    \&history_list_button_clicked_cb,
+                                    {instance    => $instance,
+                                     revision_id => $revision_id,
+                                     button_type => "annotate-file"});
+            $tooltips->set_tip($button, $__annotate_file_ttip);
+            $instance->{history_textview}->add_child_at_anchor
+                ($button,
+                 $instance->{history_buffer}->
+                     create_child_anchor($instance->{history_buffer}->
+                                         get_end_iter()));
+            $button->show_all();
+        }
+
         $instance->{history_buffer}->
             insert($instance->{history_buffer}->get_end_iter(), " ");
-
         $button = Gtk2::Button->new($__full_changelog);
         $button->signal_connect("clicked",
                                 \&history_list_button_clicked_cb,
@@ -2655,7 +2687,7 @@ sub mtn_diff($$$$$;$)
         $cwd,
         $diff_wd,
         $error_msg,
-        $ret_val);
+        $ok);
 
     # Run mtn diff in the root directory so as to avoid any workspace
     # conflicts.
@@ -2682,20 +2714,20 @@ sub mtn_diff($$$$$;$)
     eval
     {
         die(__("chdir failed: ") . $!) unless (chdir($diff_wd));
-        $ret_val = run_command(\$buffer,
-                               undef,
-                               undef,
-                               undef,
-                               $abort,
-                               \$error_msg,
-                               @cmd);
-        cleanup_mtn_error_message(\$error_msg);
+        $ok = run_command(\$buffer,
+                          undef,
+                          undef,
+                          undef,
+                          $abort,
+                          \$error_msg,
+                          @cmd);
+        cleanup_mtn_error_message(\$error_msg) unless ($ok);
     };
     $error_msg = $@ if ($@);
     chdir($cwd);
     if (! $$abort)
     {
-        if ($error_msg)
+        if (! $ok)
         {
             my $dialog = Gtk2::MessageDialog->new_with_markup
                 (undef,
@@ -2720,7 +2752,7 @@ sub mtn_diff($$$$$;$)
         @$list = ();
     }
 
-    return $ret_val;
+    return $ok;
 
 }
 

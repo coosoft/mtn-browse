@@ -54,11 +54,13 @@ sub display_annotation($$$);
 
 # Private routines.
 
+sub annotate_previous_version_of_file($$);
 sub annotation_textview_populate_popup_cb($$$);
 sub annotation_textview_popup_menu_item_cb($$);
 sub compare_file_with_previous($$);
 sub compare_revision_with_parent($$);
 sub get_annotation_window();
+sub get_files_previous_version_details($$$$$);
 sub mtn_annotate($$$$);
 #
 ##############################################################################
@@ -480,6 +482,33 @@ sub annotation_textview_populate_popup_cb($$$)
     $menu_item->show();
     $menu->append($menu_item);
 
+    $separator = Gtk2::SeparatorMenuItem->new();
+    $separator->show();
+    $menu->append($separator);
+
+    $menu_item =
+        Gtk2::MenuItem->new(__("A_nnotate File At Previous Version"));
+    if (! defined($revision_part))
+    {
+        $menu_item->set_sensitive(FALSE);
+    }
+    else
+    {
+        $menu_item->signal_connect
+            ("activate",
+             \&annotation_textview_popup_menu_item_cb,
+             {instance         => $instance,
+              cb               => sub {
+                                      my ($instance, $revision_id) = @_;
+                                      annotate_previous_version_of_file
+                                          ($instance, $revision_id);
+                                  },
+              progress_message => __("Doing file annotation"),
+              revision_part    => $revision_part});
+    }
+    $menu_item->show();
+    $menu->append($menu_item);
+
 }
 #
 ##############################################################################
@@ -544,8 +573,8 @@ sub annotation_textview_popup_menu_item_cb($$)
 #
 #   Routine      - compare_file_with_previous
 #
-#   Description  - Compare the annotate file at the specified version with the
-#                  previous version of the file.
+#   Description  - Compare the file at the specified version with the previous
+#                  version of the file.
 #
 #   Data         - $instance    : The window instance that is associated with
 #                                 the annotation window.
@@ -560,9 +589,113 @@ sub compare_file_with_previous($$)
 
     my ($instance, $revision_id) = @_;
 
-    my (@chg_ancestors,
+    my ($ancestor_id,
         $file_name,
-        $old_file_name,
+        $old_file_name);
+
+    if (get_files_previous_version_details($instance,
+                                           $revision_id,
+                                           \$ancestor_id,
+                                           \$file_name,
+                                           \$old_file_name))
+    {
+
+        # Ok now make sure the file name hasn't changed. If it has then use the
+        # external differences tool.
+
+        if ($old_file_name ne $file_name)
+        {
+            display_renamed_file_comparison($instance->{window},
+                                            $instance->{mtn},
+                                            $ancestor_id,
+                                            $old_file_name,
+                                            $revision_id,
+                                            $file_name);
+        }
+        else
+        {
+            display_revision_comparison($instance->{mtn},
+                                        $ancestor_id,
+                                        $revision_id,
+                                        $file_name);
+        }
+
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - annotate_previous_version_of_file
+#
+#   Description  - Annotate the previous version of the file.
+#
+#   Data         - $instance    : The window instance that is associated with
+#                                 the annotation window.
+#                  $revision_id : The revision id on which this file changed.
+#
+##############################################################################
+
+
+
+sub annotate_previous_version_of_file($$)
+{
+
+    my ($instance, $revision_id) = @_;
+
+    my ($ancestor_id,
+        $file_name,
+        $old_file_name);
+
+    if (get_files_previous_version_details($instance,
+                                           $revision_id,
+                                           \$ancestor_id,
+                                           \$file_name,
+                                           \$old_file_name))
+    {
+        display_annotation($instance->{mtn}, $ancestor_id, $old_file_name);
+    }
+
+}
+#
+##############################################################################
+#
+#   Routine      - get_files_previous_version_details
+#
+#   Description  - Tries to get details about the previous version of the
+#                  file, dealing with assorted edge cases.
+#
+#   Data         - $instance      : The window instance that is associated
+#                                   with the annotation window.
+#                  $revision_id   : The current revision id on which this file
+#                                   changed.
+#                  $ancestor_id   : A reference to a variable that is to
+#                                   contain the ancestor revision id where the
+#                                   file previously last changed.
+#                  $file_name     : A reference to a variable that is to
+#                                   contain the name of the file in the
+#                                   current revision. This will be different
+#                                   if the file was renamed.
+#                  $old_file_name : A reference to a variable that is to
+#                                   contain the name of the file in the
+#                                   ancestor revision. This will be different
+#                                   if the file was renamed.
+#                  Return Value   : Either true if everything was ok, no edge
+#                                   cases etc, otherwise false if there was an
+#                                   edge case or something went wrong (either
+#                                   way it was dealt with).
+#
+##############################################################################
+
+
+
+sub get_files_previous_version_details($$$$$)
+{
+
+    my ($instance, $revision_id, $ancestor_id, $file_name, $old_file_name)
+        = @_;
+
+    my (@chg_ancestors,
         @parents);
 
     # Remember that a warning is generated when one goes back beyond a file's
@@ -575,7 +708,7 @@ sub compare_file_with_previous($$)
         # First get the name of the file at the specified revision (it might
         # have been moved or renamed).
 
-        $instance->{mtn}->get_corresponding_path(\$file_name,
+        $instance->{mtn}->get_corresponding_path($file_name,
                                                  $instance->{revision_id},
                                                  $instance->{file_name},
                                                  $revision_id);
@@ -598,7 +731,7 @@ sub compare_file_with_previous($$)
             $dialog->destroy();
             display_file_change_history($instance->{mtn},
                                         $revision_id,
-                                        $file_name);
+                                        $$file_name);
             return;
         }
         elsif (scalar(@parents) == 0)
@@ -615,7 +748,7 @@ sub compare_file_with_previous($$)
         }
         $instance->{mtn}->get_content_changed(\@chg_ancestors,
                                               $parents[0],
-                                              $file_name);
+                                              $$file_name);
         if (scalar(@chg_ancestors) > 1)
         {
             my $dialog = Gtk2::MessageDialog->new
@@ -632,7 +765,7 @@ sub compare_file_with_previous($$)
             $dialog->destroy();
             display_file_change_history($instance->{mtn},
                                         $revision_id,
-                                        $file_name);
+                                        $$file_name);
             return;
         }
         elsif (scalar(@chg_ancestors) == 0)
@@ -650,29 +783,18 @@ sub compare_file_with_previous($$)
 
     }
 
-    # Ok now make sure the file name hasn't changed. If it has then use the
-    # external differences tool.
+    # Ok now get the old name of the file.
 
-    $instance->{mtn}->get_corresponding_path(\$old_file_name,
+    $instance->{mtn}->get_corresponding_path($old_file_name,
                                              $revision_id,
-                                             $file_name,
+                                             $$file_name,
                                              $chg_ancestors[0]);
-    if ($old_file_name ne $file_name)
-    {
-        display_renamed_file_comparison($instance->{window},
-                                        $instance->{mtn},
-                                        $chg_ancestors[0],
-                                        $old_file_name,
-                                        $revision_id,
-                                        $file_name);
-    }
-    else
-    {
-        display_revision_comparison($instance->{mtn},
-                                    $chg_ancestors[0],
-                                    $revision_id,
-                                    $file_name);
-    }
+
+    # Return remaining information.
+
+    $$ancestor_id = $chg_ancestors[0];
+
+    return 1;
 
 }
 #
@@ -880,7 +1002,7 @@ sub mtn_annotate($$$$)
         @cmd,
         $cwd,
         $error_msg,
-        $ret_val);
+        $ok);
 
     # Run mtn annotate in the root directory so as to avoid any workspace
     # conflicts.
@@ -896,18 +1018,18 @@ sub mtn_annotate($$$$)
     eval
     {
         die("chdir failed: " . $!) unless (chdir(File::Spec->rootdir()));
-        $ret_val = run_command(\$buffer,
-                               undef,
-                               undef,
-                               undef,
-                               undef,
-                               \$error_msg,
-                               @cmd);
-        cleanup_mtn_error_message(\$error_msg);
+        $ok = run_command(\$buffer,
+                          undef,
+                          undef,
+                          undef,
+                          undef,
+                          \$error_msg,
+                          @cmd);
+        cleanup_mtn_error_message(\$error_msg) unless ($ok);
     };
     $error_msg = $@ if ($@);
     chdir($cwd);
-    if ($error_msg)
+    if (! $ok)
     {
         my $dialog = Gtk2::MessageDialog->new_with_markup
             (undef,
@@ -926,7 +1048,7 @@ sub mtn_annotate($$$$)
 
     @$list = split(/\n/, $buffer);
 
-    return $ret_val;
+    return $ok;
 
 }
 
