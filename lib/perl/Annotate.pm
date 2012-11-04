@@ -50,7 +50,7 @@ use warnings;
 
 # Public routines.
 
-sub display_annotation($$$);
+sub display_annotation($$$;$);
 
 # Private routines.
 
@@ -75,15 +75,18 @@ sub mtn_annotate($$$$);
 #                                 of the file resides.
 #                  $file_name   : The name of the file that is to be
 #                                 annotated.
+#                  $line        : The number of the line line that should be
+#                                 scrolled to once the file has been
+#                                 annotated. This is otional.
 #
 ##############################################################################
 
 
 
-sub display_annotation($$$)
+sub display_annotation($$$;$)
 {
 
-    my ($mtn, $revision_id, $file_name) = @_;
+    my ($mtn, $revision_id, $file_name, $line) = @_;
 
     my ($i,
         $instance,
@@ -209,12 +212,28 @@ sub display_annotation($$$)
         ($iter, $instance->{annotation_buffer}->get_end_iter())
         if ($iter->backward_char());
 
-    # Make sure we are at the top.
+    # Make sure we are either at the top or have scrolled to the desired line.
 
-    $instance->{annotation_buffer}->
-        place_cursor($instance->{annotation_buffer}->get_start_iter());
-    $instance->{annotation_scrolledwindow}->get_vadjustment()->set_value(0);
-    $instance->{annotation_scrolledwindow}->get_hadjustment()->set_value(0);
+    if (defined($line) && $line >= 0)
+    {
+        my $start_line_iter;
+        $start_line_iter =
+            $instance->{annotation_buffer}->get_iter_at_line($line);
+        $start_line_iter->backward_line()
+            unless $start_line_iter->starts_line();
+        $instance->{annotation_textview}->
+            scroll_to_iter($start_line_iter, 0.05, TRUE, 0, 0);
+    }
+    else
+    {
+        $instance->{annotation_buffer}->
+            place_cursor($instance->{annotation_buffer}->get_start_iter());
+        $instance->{annotation_scrolledwindow}->get_vadjustment()->
+            set_value(0);
+        $instance->{annotation_scrolledwindow}->get_hadjustment()->
+            set_value(0);
+    }
+
     $instance->{appbar}->set_progress_percentage(0);
     $instance->{appbar}->set_status("");
     $wm->update_gui();
@@ -653,7 +672,23 @@ sub annotate_previous_version_of_file($$)
                                            \$file_name,
                                            \$old_file_name))
     {
-        display_annotation($instance->{mtn}, $ancestor_id, $old_file_name);
+
+        my ($iter,
+            $rect);
+
+        # Ok now work out where we are and use the line number to scroll to the
+        # same place in the new annotation window. This could be improved upon
+        # (especially for cases where there are large changes between versions
+        # of a file) but this is better than nothing.
+
+        $rect = $instance->{annotation_textview}->get_visible_rect();
+        $iter =
+            ($instance->{annotation_textview}->get_line_at_y($rect->y()))[0];
+        display_annotation($instance->{mtn},
+                           $ancestor_id,
+                           $old_file_name,
+                           $iter->get_line());
+
     }
 
 }
