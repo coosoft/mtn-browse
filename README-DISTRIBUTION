@@ -45,7 +45,7 @@ How to prepare a mtn-browse-m.nn.tar.gz distribution:
 
    - Remove unneeded files by doing the following:
 
-         rm -rf .mtn-ignore _MTN artwork devl-install distro-readme \
+         rm -rf .mtn-ignore _MTN artwork devl-install README-DISTRIBUTION \
              generate-pot-file *.patch
 
    - Rename the parent directory from mtn-browse to mtn-browse-m.nn. Where m
