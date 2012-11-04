@@ -1364,9 +1364,12 @@ sub file_comparison_combobox_changed_cb($$)
     $iter = $instance->{file_comparison_combobox}->get_active_iter();
     $line_nr = $instance->{file_comparison_combobox}->get_model()->
         get($iter, CLS_LINE_NR_COLUMN);
-    $line_iter = $instance->{comparison_buffer}->get_iter_at_line($line_nr);
-    $instance->{comparison_textview}->
-        scroll_to_iter($line_iter, 0, TRUE, 0, 0);
+    if (defined($line_iter = $instance->{comparison_buffer}->
+                get_iter_at_line($line_nr)))
+    {
+        $instance->{comparison_textview}->
+            scroll_to_iter($line_iter, 0, TRUE, 0, 0);
+    }
 
     # Only enable the external differences button if an actual file is
     # selected.

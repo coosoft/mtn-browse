@@ -236,9 +236,11 @@ sub display_annotation($$$;$$)
 
         # Get an iter for the current line.
 
-        $goto_iter =
-            $instance->{annotation_buffer}->get_iter_at_line($line_nr);
-        $goto_iter->backward_line() unless $goto_iter->starts_line();
+        if (defined($goto_iter = $instance->{annotation_buffer}->
+                    get_iter_at_line($line_nr)))
+        {
+            $goto_iter->backward_line() unless $goto_iter->starts_line();
+        }
 
         # Now attempt to synchronise line position between the two versions of
         # the file if we have the data.
@@ -304,7 +306,6 @@ sub annotation_textview_populate_popup_cb($$$)
         $menu_item,
         $revision_part,
         $separator,
-        $start_iter,
         $x,
         $y);
 
@@ -313,19 +314,16 @@ sub annotation_textview_populate_popup_cb($$$)
 
     ($x, $y) = ($widget->window()->get_pointer())[1 .. 2];
     ($x, $y) = $widget->window_to_buffer_coords("widget", $x, $y);
-    if (defined($start_iter = ($widget->get_line_at_y($y))[0]))
+    if (defined($iter = ($widget->get_line_at_y($y))[0]))
     {
 
-        my ($end_iter,
-            $prefix,
-            $no_more,
-            $text_buffer);
+        my ($prefix,
+            $no_more);
+        my $end_iter = $iter->copy();
+        my $start_iter = $iter->copy();
+        my $text_buffer = $widget->get_buffer();
 
-        $iter = $start_iter;
-
-        $end_iter = $start_iter->copy();
-        $end_iter->forward_to_line_end();
-        $text_buffer = $widget->get_buffer();
+        $end_iter->forward_to_line_end() unless ($end_iter->ends_line());
         $prefix = substr($text_buffer->get_text($start_iter, $end_iter, TRUE),
                          0,
                          $instance->{prefix_length});
@@ -337,8 +335,7 @@ sub annotation_textview_populate_popup_cb($$$)
                 last;
             }
             $end_iter->backward_line();
-            $end_iter->forward_to_line_end()
-                unless ($end_iter->ends_line());
+            $end_iter->forward_to_line_end() unless ($end_iter->ends_line());
             $prefix = substr($text_buffer->get_text($start_iter,
                                                     $end_iter,
                                                     TRUE),
@@ -1126,7 +1123,8 @@ sub sync_line_position($$$)
 
     # Get an iter for the current line.
 
-    $goto_iter = $instance->{annotation_buffer}->get_iter_at_line($line_nr);
+    return unless (defined($goto_iter = $instance->{annotation_buffer}->
+                           get_iter_at_line($line_nr)));
     $goto_iter->backward_line() unless $goto_iter->starts_line();
 
     # Get surrounding line details.
@@ -1134,7 +1132,6 @@ sub sync_line_position($$$)
     $details = get_significant_lines_around_iter($instance,
                                                  $goto_iter,
                                                  LINE_SYNC_SIZE);
-    $goto_iter = undef;
 
     # Cheat a little and add the details of the current line to the start of
     # the backwards list.

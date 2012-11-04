@@ -438,8 +438,7 @@ sub find_text_button_clicked_cb($$)
         {
             $start_iter = $instance->{text_buffer}->
                 get_iter_at_offset($instance->{match_offset_end});
-            $end_iter = $instance->{text_buffer}->
-                get_iter_at_offset($instance->{match_offset_end});
+            $end_iter = $start_iter->copy();
             if ($start_iter->ends_line())
             {
                 $done = ! $start_iter->forward_line();
@@ -454,8 +453,7 @@ sub find_text_button_clicked_cb($$)
         {
             $start_iter = $instance->{text_buffer}->
                 get_iter_at_offset($instance->{match_offset_start});
-            $end_iter = $instance->{text_buffer}->
-                get_iter_at_offset($instance->{match_offset_start});
+            $end_iter = $start_iter->copy();
             if ($start_iter->starts_line())
             {
                 $done = ! $start_iter->backward_line();
@@ -486,7 +484,7 @@ sub find_text_button_clicked_cb($$)
             $y = $rect->y() + $rect->height();
         }
         $start_iter = ($instance->{text_view}->get_line_at_y($y))[0];
-        $end_iter = ($instance->{text_view}->get_line_at_y($y))[0];
+        $end_iter = $start_iter->copy();
         $end_iter->forward_to_line_end() unless ($end_iter->ends_line());
 
     }
@@ -548,8 +546,7 @@ sub find_text_button_clicked_cb($$)
         my $start_line_iter;
         $start_iter = $instance->{text_buffer}->
             get_iter_at_offset($instance->{match_offset_start});
-        $start_line_iter = $instance->{text_buffer}->
-            get_iter_at_offset($instance->{match_offset_start});
+        $start_line_iter = $start_iter->copy();
         $start_line_iter->backward_line()
             unless $start_line_iter->starts_line();
         $end_iter = $instance->{text_buffer}->
