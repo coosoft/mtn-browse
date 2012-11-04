@@ -51,10 +51,11 @@ no warnings qw(recursion);
 
 # Constants for the columns within the comparison files ListStore widget.
 
-use constant CLS_FILE_NAME_COLUMN => 0;
-use constant CLS_LINE_NR_COLUMN   => 1;
-use constant CLS_FILE_ID_1_COLUMN => 2;
-use constant CLS_FILE_ID_2_COLUMN => 3;
+use constant CLS_FILE_NAME_COLUMN     => 0;
+use constant CLS_OLD_FILE_NAME_COLUMN => 1;
+use constant CLS_LINE_NR_COLUMN       => 2;
+use constant CLS_FILE_ID_1_COLUMN     => 3;
+use constant CLS_FILE_ID_2_COLUMN     => 4;
 
 # The translated history strings.
 
@@ -416,6 +417,7 @@ sub display_revision_comparison($$$;$)
             @lines,
             $max_len,
             $name,
+            $old_name,
             $padding,
             $rest,
             $separator);
@@ -506,18 +508,28 @@ sub display_revision_comparison($$$;$)
                 # binary.
 
                 ++ $i;
+                $name = undef;
+                $old_name = "";
                 if ($lines[$i] =~ m/^--- (.+)\t[0-9a-f]{40}$/)
                 {
                     $name = $1;
                 }
-                elsif (($i + 1) < scalar(@lines)
-                       && $lines[$i + 1] =~ m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
+                if (($i + 1) < scalar(@lines)
+                    && $lines[$i + 1] =~ m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
                 {
-                    $name = $1;
-                }
-                else
-                {
-                    $name = undef;
+                    my $new_name = $1;
+                    if (defined($name))
+                    {
+                        if ($new_name ne $name)
+                        {
+                            $old_name = $name;
+                            $name = $new_name;
+                        }
+                    }
+                    else
+                    {
+                        $name = $new_name;
+                    }
                 }
                 if (defined($name))
                 {
@@ -562,10 +574,11 @@ sub display_revision_comparison($$$;$)
 
                 $iter = $instance->{comparison_buffer}->get_end_iter();
                 $iter->backward_line();
-                push(@files, {file_name => $name,
-                              line_nr   => $iter->get_line(),
-                              file_id_1 => $file_id_1,
-                              file_id_2 => $file_id_2});
+                push(@files, {file_name     => $name,
+                              old_file_name => $old_name,
+                              line_nr       => $iter->get_line(),
+                              file_id_1     => $file_id_1,
+                              file_id_2     => $file_id_2});
 
                 # Print out the details for the second file if there is one.
 
@@ -642,7 +655,8 @@ sub display_revision_comparison($$$;$)
         my ($file_id_1,
             $file_id_2,
             $is_binary,
-            $name);
+            $name,
+            $old_name);
 
         # No the user wants the raw differences output.
 
@@ -666,20 +680,30 @@ sub display_revision_comparison($$$;$)
                 # probably a comment stating that the file is binary.
 
                 ++ $i;
+                $name = undef;
+                $old_name = "";
                 if ($instance->{diff_output}->[$i] =~
                     m/^--- (.+)\t[0-9a-f]{40}$/)
                 {
                     $name = $1;
                 }
-                elsif (($i + 1) < scalar(@{$instance->{diff_output}})
-                       && $instance->{diff_output}->[$i + 1] =~
-                           m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
+                if (($i + 1) < scalar(@{$instance->{diff_output}})
+                    && $instance->{diff_output}->[$i + 1] =~
+                        m/^\+\+\+ (.+)\t[0-9a-f]{40}$/)
                 {
-                    $name = $1;
-                }
-                else
-                {
-                    $name = undef;
+                    my $new_name = $1;
+                    if (defined($name))
+                    {
+                        if ($new_name ne $name)
+                        {
+                            $old_name = $name;
+                            $name = $new_name;
+                        }
+                    }
+                    else
+                    {
+                        $name = $new_name;
+                    }
                 }
                 if (defined($name))
                 {
@@ -728,10 +752,11 @@ sub display_revision_comparison($$$;$)
 
                 $iter = $instance->{comparison_buffer}->get_end_iter();
                 $iter->backward_line();
-                push(@files, {file_name => $name,
-                              line_nr   => $iter->get_line(),
-                              file_id_1 => $file_id_1,
-                              file_id_2 => $file_id_2});
+                push(@files, {file_name     => $name,
+                              old_file_name => $old_name,
+                              line_nr       => $iter->get_line(),
+                              file_id_1     => $file_id_1,
+                              file_id_2     => $file_id_2});
 
                 # Print out the details for the second file if there is one.
 
@@ -793,6 +818,7 @@ sub display_revision_comparison($$$;$)
     $instance->{file_comparison_combobox}->get_model()->set
         ($instance->{file_comparison_combobox}->get_model()->append(),
          CLS_FILE_NAME_COLUMN, __("Summary"),
+         CLS_OLD_FILE_NAME_COLUMN, "",
          CLS_LINE_NR_COLUMN,
              $instance->{comparison_buffer}->get_start_iter()->get_line(),
          CLS_FILE_ID_1_COLUMN, "",
@@ -802,6 +828,7 @@ sub display_revision_comparison($$$;$)
         $instance->{file_comparison_combobox}->get_model()->set
             ($instance->{file_comparison_combobox}->get_model()->append(),
              CLS_FILE_NAME_COLUMN, $file->{file_name},
+             CLS_OLD_FILE_NAME_COLUMN, $file->{old_file_name},
              CLS_LINE_NR_COLUMN, $file->{line_nr},
              CLS_FILE_ID_1_COLUMN, $file->{file_id_1},
              CLS_FILE_ID_2_COLUMN, $file->{file_id_2});
@@ -1420,21 +1447,25 @@ sub external_diffs_button_clicked_cb($$)
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    my ($file_id_1,
-        $file_id_2,
-        $file_name,
-        $iter);
+    my ($iter,
+        $new_file_id,
+        $new_file_name,
+        $old_file_id,
+        $old_file_name);
 
     # Get the details associated with the currently selected file.
 
     $iter = $instance->{file_comparison_combobox}->get_active_iter();
-    $file_name = $instance->{file_comparison_combobox}->get_model()->
+    $new_file_name = $instance->{file_comparison_combobox}->get_model()->
         get($iter, CLS_FILE_NAME_COLUMN);
-    $file_id_1 = $instance->{file_comparison_combobox}->get_model()->
+    $old_file_name = $instance->{file_comparison_combobox}->get_model()->
+        get($iter, CLS_OLD_FILE_NAME_COLUMN);
+    $old_file_name = $new_file_name if ($old_file_name eq "");
+    $old_file_id = $instance->{file_comparison_combobox}->get_model()->
         get($iter, CLS_FILE_ID_1_COLUMN);
     if (defined($instance->{revision_id_2}))
     {
-        $file_id_2 = $instance->{file_comparison_combobox}->get_model()->
+        $new_file_id = $instance->{file_comparison_combobox}->get_model()->
             get($iter, CLS_FILE_ID_2_COLUMN);
     }
 
@@ -1442,10 +1473,10 @@ sub external_diffs_button_clicked_cb($$)
 
     external_diffs($instance->{window},
                    $instance->{mtn},
-                   $file_name,
-                   $file_id_1,
-                   $file_name,
-                   $file_id_2);
+                   $old_file_name,
+                   $old_file_id,
+                   $new_file_name,
+                   $new_file_id);
 
 }
 #
@@ -1548,7 +1579,7 @@ sub comparison_revision_change_log_button_clicked_cb($$)
     else
     {
         my $dialog = Gtk2::MessageDialog->new
-            (undef,
+            ($instance->{window},
              ["modal"],
              "info",
              "close",
@@ -2375,6 +2406,7 @@ sub get_revision_comparison_window($)
 
         $instance->{file_comparison_combobox}->
             set_model(Gtk2::ListStore->new("Glib::String",
+                                           "Glib::String",
                                            "Glib::Int",
                                            "Glib::String",
                                            "Glib::String"));
@@ -2385,6 +2417,7 @@ sub get_revision_comparison_window($)
         $instance->{file_comparison_combobox}->get_model()->set
             ($instance->{file_comparison_combobox}->get_model()->append(),
              CLS_FILE_NAME_COLUMN, " ",
+             CLS_OLD_FILE_NAME_COLUMN, "",
              CLS_LINE_NR_COLUMN, 0,
              CLS_FILE_ID_1_COLUMN, "",
              CLS_FILE_ID_2_COLUMN, "");
