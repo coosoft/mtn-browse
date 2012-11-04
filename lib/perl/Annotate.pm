@@ -46,22 +46,31 @@ use locale;
 use strict;
 use warnings;
 
+# ***** GLOBAL DATA DECLARATIONS *****
+
+# Constant for the nujmber of lines to examine when trying to sync up a line
+# position between different versions of a file.
+
+use constant LINE_SYNC_SIZE => 1000;
+
 # ***** FUNCTIONAL PROTOTYPES *****
 
 # Public routines.
 
-sub display_annotation($$$;$);
+sub display_annotation($$$;$$);
 
 # Private routines.
 
-sub annotate_previous_version_of_file($$$);
+sub annotate_previous_version($$$);
 sub annotation_textview_populate_popup_cb($$$);
 sub annotation_textview_popup_menu_item_cb($$);
 sub compare_file_with_previous($$);
 sub compare_revision_with_parent($$);
 sub get_annotation_window();
 sub get_files_previous_version_details($$$$$);
+sub get_significant_lines_around_iter($$$);
 sub mtn_annotate($$$$);
+sub sync_line_position($$$);
 #
 ##############################################################################
 #
@@ -75,21 +84,27 @@ sub mtn_annotate($$$$);
 #                                 of the file resides.
 #                  $file_name   : The name of the file that is to be
 #                                 annotated.
-#                  $line        : The number of the line that should be
+#                  $line_nr     : The number of the line that should be
 #                                 scrolled to once the file has been
 #                                 annotated (starting from 0). This is
 #                                 otional.
+#                  $sync_data   : A reference to a record containing the
+#                                 current line, previous lines and subsequent
+#                                 lines. This is used to attempt to
+#                                 synchronise a position between different
+#                                 versions of the file. This is optional.
 #
 ##############################################################################
 
 
 
-sub display_annotation($$$;$)
+sub display_annotation($$$;$$)
 {
 
-    my ($mtn, $revision_id, $file_name, $line) = @_;
+    my ($mtn, $revision_id, $file_name, $line_nr, $sync_data) = @_;
 
-    my ($i,
+    my ($goto_iter,
+        $i,
         $instance,
         $iter,
         $len,
@@ -213,17 +228,34 @@ sub display_annotation($$$;$)
         ($iter, $instance->{annotation_buffer}->get_end_iter())
         if ($iter->backward_char());
 
-    # Make sure we are either at the top or have scrolled to the desired line.
+    # If the caller cares about file position then attempt to go to the line
+    # indicated by the arguments, synchronising if possible.
 
-    if (defined($line) && $line >= 0)
+    if (defined($line_nr) && $line_nr >= 0)
     {
-        my $start_line_iter;
-        $start_line_iter =
-            $instance->{annotation_buffer}->get_iter_at_line($line);
-        $start_line_iter->backward_line()
-            unless $start_line_iter->starts_line();
+
+        # Get an iter for the current line.
+
+        $goto_iter =
+            $instance->{annotation_buffer}->get_iter_at_line($line_nr);
+        $goto_iter->backward_line() unless $goto_iter->starts_line();
+
+        # Now attempt to synchronise line position between the two versions of
+        # the file if we have the data.
+
+        if (defined($sync_data))
+        {
+            $goto_iter = sync_line_position($instance, $line_nr, $sync_data);
+        }
+
+    }
+
+    # Either go to the chosen line if we have one or the top if we don't.
+
+    if (defined($goto_iter))
+    {
         $instance->{annotation_textview}->
-            scroll_to_iter($start_line_iter, 0.05, TRUE, 0, 0);
+            scroll_to_iter($goto_iter, 0, TRUE, 0, 0.5);
     }
     else
     {
@@ -291,7 +323,7 @@ sub annotation_textview_populate_popup_cb($$$)
 
         $iter = $start_iter;
 
-        $end_iter = ($widget->get_line_at_y($y))[0];
+        $end_iter = $start_iter->copy();
         $end_iter->forward_to_line_end();
         $text_buffer = $widget->get_buffer();
         $prefix = substr($text_buffer->get_text($start_iter, $end_iter, TRUE),
@@ -532,7 +564,7 @@ sub annotation_textview_populate_popup_cb($$$)
              {instance         => $instance,
               cb               => sub {
                                       my ($instance, $revision_id, $iter) = @_;
-                                      annotate_previous_version_of_file
+                                      annotate_previous_version
                                           ($instance, $revision_id, $iter);
                                   },
               progress_message => __("Doing file annotation"),
@@ -557,9 +589,8 @@ sub annotation_textview_populate_popup_cb($$$)
 #                             window instance, callback routine, progress
 #                             message, the start of the revision id extracted
 #                             from the annotated listing and the
-#                             Gtk2::TextIter representing the textual position
-#                             of the mouse within the annotated listing when
-#                             the user right clicked.
+#                             Gtk2::TextIter for the start of the text line
+#                             under the mouse when the user right clicked.
 #
 ##############################################################################
 
@@ -664,22 +695,22 @@ sub compare_file_with_previous($$)
 #
 ##############################################################################
 #
-#   Routine      - annotate_previous_version_of_file
+#   Routine      - annotate_previous_version
 #
 #   Description  - Annotate the previous version of the file.
 #
 #   Data         - $instance    : The window instance that is associated with
 #                                 the annotation window.
 #                  $revision_id : The revision id on which this file changed.
-#                  $iter        : The Gtk2::TextIter representing the textual
-#                                 position of the mouse within the annotated
-#                                 listing when the user right clicked.
+#                  $iter        : The Gtk2::TextIter for the start of the text
+#                                 line under the mouse when the user right
+#                                 clicked.
 #
 ##############################################################################
 
 
 
-sub annotate_previous_version_of_file($$$)
+sub annotate_previous_version($$$)
 {
 
     my ($instance, $revision_id, $iter) = @_;
@@ -694,10 +725,42 @@ sub annotate_previous_version_of_file($$$)
                                            \$file_name,
                                            \$old_file_name))
     {
+
+        my ($line_nr,
+            $sync_details);
+
+        # We have an iter representing where we are in the listing. This could
+        # be used to jump to a line in the previous version of the file but the
+        # contents has changed. Therefore build up a list of text either side
+        # of the line so that we can later scan the previous version of the
+        # file looking for a matching line and hence get back in sync.
+
+        if (defined($iter))
+        {
+            my (@backwards,
+                $details,
+                @forwards);
+
+            $line_nr = $iter->get_line();
+            $details = get_significant_lines_around_iter($instance,
+                                                         $iter,
+                                                         LINE_SYNC_SIZE);
+
+            # Strip off the iter objects.
+
+            @backwards = map($_->{text}, @{$details->{backwards}});
+            @forwards = map($_->{text}, @{$details->{forwards}});
+            $sync_details = {current   => $details->{current}->{text},
+                             backwards => \@backwards,
+                             forwards  => \@forwards};
+        }
+
         display_annotation($instance->{mtn},
                            $ancestor_id,
                            $old_file_name,
-                           $iter->get_line());
+                           $line_nr,
+                           $sync_details);
+
     }
 
 }
@@ -1013,6 +1076,324 @@ sub get_annotation_window()
     $instance->{annotation_buffer}->set_text("");
 
     return $instance;
+
+}
+#
+##############################################################################
+#
+#   Routine      - sync_line_position
+#
+#   Description  - Attempt to synchronise the current line position between
+#                  different versions of the file.
+#
+#                  Just to clarify subsequent comments:
+#                  The previous version of the file is the one where the user
+#                  selected the annotate file at previous version menu option
+#                  (i.e. the younger version of the file) and the current
+#                  version is the one currently being annotated.
+#
+#   Data         - $instance    : The window instance that is associated with
+#                                 the annotation window.
+#                  $line_nr     : The number of the line that should be
+#                                 scrolled to once the file has been
+#                                 annotated (starting from 0). This is
+#                                 otional.
+#                  $sync_data   : A reference to a record containing the
+#                                 current line, previous lines and subsequent
+#                                 lines. This is used to attempt to
+#                                 synchronise a position between different
+#                                 versions of the file. This is optional.
+#                  Return Value : Either a Gtk2::TextIter marking the position
+#                                 of the line in the buffer on success or
+#                                 undef on failure.
+#
+##############################################################################
+
+
+
+sub sync_line_position($$$)
+{
+
+    my ($instance, $line_nr, $sync_data) = @_;
+
+    my ($details,
+        $done,
+        $goto_iter,
+        %line_hash,
+        @matches,
+        $nr_backward_lines,
+        $nr_forward_lines);
+
+    # Get an iter for the current line.
+
+    $goto_iter = $instance->{annotation_buffer}->get_iter_at_line($line_nr);
+    $goto_iter->backward_line() unless $goto_iter->starts_line();
+
+    # Get surrounding line details.
+
+    $details = get_significant_lines_around_iter($instance,
+                                                 $goto_iter,
+                                                 LINE_SYNC_SIZE);
+    $goto_iter = undef;
+
+    # Cheat a little and add the details of the current line to the start of
+    # the backwards list.
+
+    unshift(@{$details->{backwards}}, $details->{current});
+
+    # Build up a hash containing information about the lines of text around the
+    # current line in the current version of the file. The hash key is the SHA1
+    # hash of the text and the value is a list of records containing the list
+    # that the line came from, it's index in that list and the size of the list
+    # (cached for efficiency reasons).
+
+    $nr_backward_lines = scalar(@{$details->{backwards}});
+    $nr_forward_lines = scalar(@{$details->{forwards}});
+    for (my $i = 0, $done = undef; ! $done; ++ $i)
+    {
+        my @items;
+        $done = 1;
+        if ($i < $nr_backward_lines)
+        {
+            push(@items,
+                 {list  => $details->{backwards},
+                  size  => $nr_backward_lines,
+                  key   => sha1($details->{backwards}->[$i]->{text})});
+        }
+        if ($i < $nr_forward_lines)
+        {
+            push(@items,
+                 {list  => $details->{forwards},
+                  size  => $nr_forward_lines,
+                  key   => sha1($details->{forwards}->[$i]->{text})});
+        }
+        foreach my $item (@items)
+        {
+            if (exists($line_hash{$item->{key}}))
+            {
+                push(@{$line_hash{$item->{key}}}, {list  => $item->{list},
+                                                   size  => $item->{size},
+                                                   index => $i});
+            }
+            else
+            {
+                $line_hash{$item->{key}} = [{list  => $item->{list},
+                                             size  => $item->{size},
+                                             index => $i}];
+            }
+            $done = undef;
+        }
+    }
+
+    # Now go through the sync data (which came from the previous version of the
+    # file) looking for matching lines.
+
+    $nr_backward_lines = scalar(@{$sync_data->{backwards}});
+    $nr_forward_lines = scalar(@{$sync_data->{forwards}});
+    for (my $i = 0, $done = undef; ! $done; ++ $i)
+    {
+
+        $done = 1;
+
+        # Process the next line from the backwards list and then the forwards
+        # one.
+
+        foreach my $direction ({size => $nr_backward_lines,
+                                list => $sync_data->{backwards}},
+                               {size => $nr_forward_lines,
+                                list => $sync_data->{forwards}})
+        {
+
+            # Only do something if we haven't come to the end of the list.
+
+            if ($i < $direction->{size})
+            {
+
+                my $key = sha1($direction->{list}->[$i]);
+
+                $done = undef;
+
+                # See if we have a matching line in the current version of the
+                # file.
+
+                if (exists($line_hash{$key}))
+                {
+
+                    # Yes we have so check each instance of that line of text.
+
+                    foreach my $entry (@{$line_hash{$key}})
+                    {
+
+                        my $index = $entry->{index};
+                        my $list = $entry->{list};
+                        my $match = 1;
+                        my $size = $entry->{size};
+
+                        # Ok so now make sure we have a match with the
+                        # surrounding lines also (two in both directions).
+
+                        foreach my $j (-2, -1, 1, 2)
+                        {
+                            my $curr = (($index + $j) < 0
+                                        || ($index + $j) >= $size)
+                                ? "" : $$list[$index + $j]->{text};
+                            my $prev = (($i + $j) < 0
+                                        || ($i + $j) >= $direction->{size})
+                                ? "" : $direction->{list}->[$i + $j];
+                            if ($prev ne $curr)
+                            {
+                                $match = undef;
+                                last;
+                            }
+                        }
+                        if ($match)
+                        {
+
+                            # Ok we have a match so save the details. The
+                            # offset field basically contains the distance from
+                            # the original line in the previous version of the
+                            # file to a line block of lines that match in the
+                            # current version of the file.
+
+                            push(@matches, {iter   => $$list[$index]->{iter},
+                                            offset => $i});
+                            last;
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+    # If we have some matches then sort them on their offsets and return t he
+    # first one. In English basically pick the matching block of text which is
+    # as close to the original line in the previous version of the file as we
+    # can get.
+
+    if (scalar(@matches) > 0)
+    {
+        @matches = sort({ $a->{offset} <=> $b->{offset} } @matches);
+        return $matches[0]->{iter};
+    }
+
+    return;
+
+}
+#
+##############################################################################
+#
+#   Routine      - get_significant_lines_around_iter
+#
+#   Description  - Return the significant lines of text around the specified
+#                  Gtk2::TextIter (assumed to be at the start of a line).
+#                  Significant lines are deemed to be non-whitespace lines
+#                  with at least four non-whitespace characters on them
+#                  (bascially it is not much use matching lines just
+#                  containing braces etc).
+#
+#   Data         - $instance    : The window instance that is associated with
+#                                 the annotation window.
+#                  $iter        : The Gtk2::TextIter for the start of the text
+#                                 line under the mouse when the user right
+#                                 clicked.
+#                  $nr_lines    : The number of lines to go back and forward
+#                                 by from the specified iter.
+#                  Return Value : A reference to a record containing the text
+#                                 in the buffer around the specified iter on a
+#                                 line by line basis along with associated
+#                                 iters.
+#
+##############################################################################
+
+
+
+sub get_significant_lines_around_iter($$$)
+{
+
+    my ($instance, $iter, $nr_lines) = @_;
+
+    my (@backwards,
+        $current,
+        $end_iter,
+        @forwards,
+        $prefix_length,
+        $start_iter);
+    my $text_buffer = $instance->{annotation_textview}->get_buffer();
+
+    # Remember that the prefix length doesn't include the extra space we put in
+    # to separate the prefix from the text.
+
+    $prefix_length = $instance->{prefix_length} + 1;
+
+    # Ok so start storing non-whitespace lines back from but also including the
+    # current line. Also strip out the annotation prefix and any trailing
+    # whitespace padding that was added during the pretty printing stage.
+
+    # Go backwards.
+
+    $start_iter = $iter->copy();
+    $end_iter = $iter->copy();
+    $end_iter->forward_to_line_end() unless ($end_iter->ends_line());
+    for (my $i = 0; $i <= $nr_lines;)
+    {
+        my $line = substr($text_buffer->get_text($start_iter,
+                                                 $end_iter,
+                                                 TRUE),
+                          $prefix_length);
+        if ($line =~ m/^.*\S{4}.*$/)
+        {
+            $line =~ s/\s+$//;
+            push(@backwards, {iter => $start_iter->copy(), text => $line});
+            ++ $i;
+        }
+        last unless ($start_iter->backward_line());
+        $end_iter->backward_line();
+        $end_iter->forward_to_line_end() unless ($end_iter->ends_line());
+    }
+    $current = shift(@backwards);
+
+    # Go forwards.
+
+    $start_iter = $iter->copy();
+    $end_iter = $iter->copy();
+    $end_iter->forward_to_line_end() unless ($end_iter->ends_line());
+    for (my $i = 0; $i <= $nr_lines;)
+    {
+
+        # Skip the iter line.
+
+        if ($i > 0)
+        {
+            my $line = substr($text_buffer->get_text($start_iter,
+                                                     $end_iter,
+                                                     TRUE),
+                              $prefix_length);
+            if ($line =~ m/^.*\S{4}.*$/)
+            {
+                $line =~ s/\s+$//;
+                push(@forwards, {iter => $start_iter->copy(), text => $line});
+                ++ $i;
+            }
+        }
+        else
+        {
+            ++ $i;
+        }
+
+        last unless ($start_iter->forward_line());
+        $end_iter->forward_to_line_end();
+
+    }
+
+    return {current   => $current,
+            backwards => \@backwards,
+            forwards  => \@forwards};
 
 }
 #
