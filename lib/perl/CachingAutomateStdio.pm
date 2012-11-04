@@ -4,8 +4,9 @@
 #
 #   Description  - A class module that provides an interface to Monotone's
 #                  automate stdio interface with caching of certain
-#                  information (currently only branch lists). This class is
-#                  derived from the Monotone::AutomateStdio class.
+#                  information (currently branch lists and whether we have an
+#                  associated workspace or not). This class is derived from
+#                  the Monotone::AutomateStdio class.
 #
 #   Authors      - A.E.Cooper.
 #
@@ -65,6 +66,7 @@ use Monotone::AutomateStdio qw(:capabilities :severities);
 # Public methods.
 
 sub branches($$);
+sub has_workspace($;$);
 
 # ***** PACKAGE INFORMATION *****
 
@@ -75,7 +77,7 @@ use base qw(Monotone::AutomateStdio);
 *EXPORT = *Monotone::AutomateStdio::EXPORT;
 *EXPORT_OK = *Monotone::AutomateStdio::EXPORT_OK;
 *EXPORT_TAGS = *Monotone::AutomateStdio::EXPORT_TAGS;
-our $VERSION = 0.01;
+our $VERSION = "0.02";
 #
 ##############################################################################
 #
@@ -114,6 +116,49 @@ sub branches($$)
     @$list = @{$this->{cached_branch_list}};
 
     return $ret_val;
+
+}
+#
+##############################################################################
+#
+#   Routine      - has_workspace
+#
+#   Description  - Gets and/or sets the has-workspace boolean property of this
+#                  object. This is needed as we always reopen the database
+#                  outside of any workspace (thus $mtn->get_ws_path() is no
+#                  use) but sometimes we need to know whether we are running
+#                  inside of one (typically for the workspace tools).
+#
+#   Data         - $this          : The object.
+#                  $has_workspace : The boolean value that this property is to
+#                                   be set to. This is optional.
+#                  Return Value   : The current value of this property.
+#
+##############################################################################
+
+
+
+sub has_workspace($;$)
+{
+
+    my ($this, $has_workspace) = @_;
+
+    # If the property doesn't exist then treat that as false.
+
+    if (defined($has_workspace))
+    {
+        $this->{has_workspace} = $has_workspace ? 1 : 0;
+        return $this->{has_workspace};
+    }
+    else
+    {
+        if (exists($this->{has_workspace}))
+        {
+            return $this->{has_workspace};
+        }
+    }
+
+    return 0;
 
 }
 

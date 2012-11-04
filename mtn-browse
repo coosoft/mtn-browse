@@ -66,6 +66,7 @@ use Data::Dumper;
 use Digest::MD5 qw(md5);
 use Encode;
 use File::Basename;
+use File::Copy qw();
 use File::Spec;
 use File::Temp qw(tempdir);
 use Glib qw(FALSE TRUE);
@@ -162,6 +163,7 @@ sub advanced_find_button_clicked_cb($$);
 sub annotate_button_clicked_cb($$);
 sub close_toolbutton_clicked_cb($$);
 sub compare_arbitrary_revisions_activate_cb($$);
+sub compare_workspace_activate_cb($$);
 sub connect_to_server_activate_cb($$);
 sub context_help_activate_cb($$);
 sub create_browser_widgets();
@@ -339,8 +341,9 @@ sub view_button_clicked_cb($$);
 
             eval
             {
-                my $db;
-                $mtn = CachingAutomateStdio->new();
+                my ($db,
+                    $has_workspace);
+                $mtn = check_and_create_mtn_object(undef, undef, 1);
                 $mtn->get_option(\$db, "database");
                 if ($user_preferences->{workspace}->{auto_select})
                 {
@@ -353,8 +356,10 @@ sub view_button_clicked_cb($$);
 
                     $branch = undef if (! defined($revision_id));
                 }
+                $has_workspace = 1 if (defined($mtn->get_ws_path()));
                 $mtn = undef;
-                $mtn = CachingAutomateStdio->new($db);
+                $mtn = check_and_create_mtn_object(undef, $db);
+                $mtn->has_workspace($has_workspace);
             };
 
         }
@@ -421,6 +426,7 @@ sub view_button_clicked_cb($$);
                         undef,
                         undef,
                         undef,
+                        undef,
                         "mtn",
                         "automate",
                         "keys"))
@@ -481,7 +487,8 @@ sub view_button_clicked_cb($$);
     }
     $mtn = undef;
 
-    # Setup the callback for the <F1> accelerator key for all windows.
+    # Setup the callback for the <F1> accelerator key for all windows and a
+    # no-help fall-back callback.
 
     WindowManager->instance()->help_connect
         (undef,
@@ -869,6 +876,48 @@ sub compare_arbitrary_revisions_activate_cb($$)
     local $browser->{in_cb} = 1;
 
     display_arbitrary_revision_comparison($browser->{mtn});
+
+}
+#
+##############################################################################
+#
+#   Routine      - compare_workspace_activate_cb
+#
+#   Description  - Callback routine called when the user selects the compare
+#                  arbitrary revisions menu option.
+#
+#   Data         - $widget  : The widget object that received the signal.
+#                  $browser : The browser instance that is associated with
+#                             this widget.
+#
+##############################################################################
+
+
+
+sub compare_workspace_activate_cb($$)
+{
+
+    my ($widget, $browser) = @_;
+
+    return if ($browser->{in_cb});
+    local $browser->{in_cb} = 1;
+
+    my $mtn;
+
+    # Create a new mtn subprocess running in the workspace.
+
+    if (defined($mtn = check_and_create_mtn_object($browser->{window}, undef)))
+    {
+
+        my $revision_id;
+
+        # Get the revision that the workspace is based on and then simply do a
+        # revision comparison.
+
+        $mtn->get_base_revision_id(\$revision_id);
+        display_revision_comparison($mtn, $revision_id, undef);
+
+    }
 
 }
 #
@@ -2079,6 +2128,7 @@ sub get_browser_window(;$$$$$)
                             "file_encoding_menuitem",
                             "choose_authentication_key_menuitem",
                             "compare_arbitrary_revisions_menuitem",
+                            "compare_workspace_menuitem",
                             "main_vbox",
                             "browser_hpaned",
                             "close_toolbutton",
@@ -2760,6 +2810,7 @@ sub update_browser_state($$)
             $browser->{close_menuitem}->set_sensitive(FALSE);
             $browser->{compare_arbitrary_revisions_menuitem}->
                 set_sensitive(FALSE);
+            $browser->{compare_workspace_menuitem}->set_sensitive(FALSE);
             $browser->{close_toolbutton}->set_sensitive(FALSE);
             $browser->{reload_toolbutton}->set_sensitive(FALSE);
             $browser->{main_vbox}->set_sensitive(FALSE);
@@ -2774,6 +2825,14 @@ sub update_browser_state($$)
             $browser->{close_menuitem}->set_sensitive(TRUE);
             $browser->{compare_arbitrary_revisions_menuitem}->
                 set_sensitive(TRUE);
+            if ($browser->{mtn}->has_workspace())
+            {
+                $browser->{compare_workspace_menuitem}->set_sensitive(TRUE);
+            }
+            else
+            {
+                $browser->{compare_workspace_menuitem}->set_sensitive(FALSE);
+            }
             $browser->{close_toolbutton}->set_sensitive(TRUE);
             $browser->{reload_toolbutton}->set_sensitive(TRUE);
             $browser->{main_vbox}->set_sensitive(TRUE);
@@ -3971,11 +4030,11 @@ sub sigchld_handler()
 {
 
     my $pid;
-
     my $wm = WindowManager->instance();
 
     while (($pid = waitpid(-1, WNOHANG)) > 0)
     {
+        my $dealt_with;
         my $exit_status = $?;
         if (WIFEXITED($exit_status) || WIFSIGNALED($exit_status))
         {
@@ -4016,10 +4075,18 @@ sub sigchld_handler()
                          busy_dialog_run($dialog);
                          $dialog->destroy();
                          $wm->reset_state();
+                         $dealt_with = 1;
                          return 1;
                      }
                      return;
                  });
+
+            # If the reaped process hasn't been dealt with then store the
+            # details so that other parts of this program can access them if
+            # they need to.
+
+            add_reaped_process_details($pid, $exit_status)
+                unless ($dealt_with);
 
         }
     }

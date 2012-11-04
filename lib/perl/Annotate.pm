@@ -879,7 +879,7 @@ sub mtn_annotate($$$$)
     my ($buffer,
         @cmd,
         $cwd,
-        $exception,
+        $error_msg,
         $ret_val);
 
     # Run mtn annotate in the root directory so as to avoid any workspace
@@ -896,11 +896,18 @@ sub mtn_annotate($$$$)
     eval
     {
         die("chdir failed: " . $!) unless (chdir(File::Spec->rootdir()));
-        $ret_val = run_command(\$buffer, undef, undef, undef, undef, @cmd);
+        $ret_val = run_command(\$buffer,
+                               undef,
+                               undef,
+                               undef,
+                               undef,
+                               \$error_msg,
+                               @cmd);
+        cleanup_mtn_error_message(\$error_msg);
     };
-    $exception = $@;
+    $error_msg = $@ if ($@);
     chdir($cwd);
-    if ($exception)
+    if ($error_msg)
     {
         my $dialog = Gtk2::MessageDialog->new_with_markup
             (undef,
@@ -908,9 +915,8 @@ sub mtn_annotate($$$$)
              "warning",
              "close",
              __x("Problem running mtn annotate, got:\n"
-                     . "<b><i>{error_message}</i></b>\n"
-                     . "This should not be happening!",
-                 error_message => Glib::Markup::escape_text($exception)));
+                     . "<b><i>{error_message}</i></b>",
+                 error_message => Glib::Markup::escape_text($error_msg)));
         busy_dialog_run($dialog);
         $dialog->destroy();
         return;

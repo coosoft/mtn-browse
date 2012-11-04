@@ -63,7 +63,7 @@
 			  <signal name="activate" handler="new_blank_activate_cb" last_modification_time="Sat, 14 Jan 2012 15:48:05 GMT"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image259">
+			    <widget class="GtkImage" id="image278">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-new</property>
 			      <property name="icon_size">1</property>
@@ -97,7 +97,7 @@
 			  <property name="use_underline">True</property>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image260">
+			    <widget class="GtkImage" id="image279">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-open</property>
 			      <property name="icon_size">1</property>
@@ -123,7 +123,7 @@
 			  <property name="use_underline">True</property>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image261">
+			    <widget class="GtkImage" id="image280">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-network</property>
 			      <property name="icon_size">1</property>
@@ -158,7 +158,7 @@
 			  <signal name="activate" handler="quit_activate_cb" last_modification_time="Fri, 20 Jun 2008 12:07:24 GMT"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image262">
+			    <widget class="GtkImage" id="image281">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-quit</property>
 			      <property name="icon_size">1</property>
@@ -207,7 +207,7 @@
 				  <signal name="activate" handler="remember_sizes_activate_cb" last_modification_time="Sat, 29 Sep 2012 15:25:04 GMT"/>
 
 				  <child internal-child="image">
-				    <widget class="GtkImage" id="image263">
+				    <widget class="GtkImage" id="image282">
 				      <property name="visible">True</property>
 				      <property name="stock">gtk-save</property>
 				      <property name="icon_size">1</property>
@@ -228,7 +228,7 @@
 				  <signal name="activate" handler="reset_sizes_activate_cb" last_modification_time="Sat, 29 Sep 2012 15:25:04 GMT"/>
 
 				  <child internal-child="image">
-				    <widget class="GtkImage" id="image264">
+				    <widget class="GtkImage" id="image283">
 				      <property name="visible">True</property>
 				      <property name="stock">gtk-revert-to-saved</property>
 				      <property name="icon_size">1</property>
@@ -294,6 +294,15 @@
 			  <signal name="activate" handler="compare_arbitrary_revisions_activate_cb" last_modification_time="Sat, 22 May 2010 14:33:22 GMT"/>
 			</widget>
 		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="compare_workspace_menuitem">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Compare _Workspace</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="compare_workspace_activate_cb" last_modification_time="Fri, 12 Oct 2012 16:49:14 GMT"/>
+			</widget>
+		      </child>
 		    </widget>
 		  </child>
 		</widget>
@@ -316,7 +325,7 @@
 			  <accelerator key="F1" modifiers="0" signal="activate"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image265">
+			    <widget class="GtkImage" id="image284">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-help</property>
 			      <property name="icon_size">1</property>
@@ -338,7 +347,7 @@
 			  <accelerator key="F1" modifiers="GDK_SHIFT_MASK" signal="activate"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image266">
+			    <widget class="GtkImage" id="image285">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-help</property>
 			      <property name="icon_size">1</property>
@@ -360,7 +369,7 @@
 			  <accelerator key="F1" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image267">
+			    <widget class="GtkImage" id="image286">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-help</property>
 			      <property name="icon_size">1</property>
@@ -387,7 +396,7 @@
 			  <signal name="activate" handler="home_page_activate_cb" last_modification_time="Sun, 15 Feb 2009 17:15:45 GMT"/>
 
 			  <child internal-child="image">
-			    <widget class="GtkImage" id="image268">
+			    <widget class="GtkImage" id="image287">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-home</property>
 			      <property name="icon_size">1</property>

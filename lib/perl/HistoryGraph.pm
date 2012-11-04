@@ -1778,6 +1778,7 @@ sub layout_graph($)
                                \&dot_input_handler_cb,
                                $instance,
                                \$instance->{stop},
+                               undef,
                                GRAPHVIZ_LAYOUT_PROGRAM, "-q", "-s" . DPI,
                                    "-Txdot"));
 

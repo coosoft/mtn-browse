@@ -149,9 +149,8 @@ sub display_revision_change_history($$$)
 
     $wm->make_busy($instance, 1);
     $instance->{appbar}->push($instance->{appbar}->get_status()->get_text());
-    $wm->update_gui();
-
     $instance->{stop_button}->set_sensitive(TRUE);
+    $wm->update_gui();
 
     # Get the list of file change revisions. Remember to include the current
     # revision in the history.
@@ -228,9 +227,8 @@ sub display_file_change_history($$$)
 
     $wm->make_busy($instance, 1);
     $instance->{appbar}->push($instance->{appbar}->get_status()->get_text());
-    $wm->update_gui();
-
     $instance->{stop_button}->set_sensitive(TRUE);
+    $wm->update_gui();
 
     # Get the list of file change revisions. Remember that a warning is
     # generated when one goes back beyond a file's addition revision, so
@@ -283,8 +281,9 @@ sub display_file_change_history($$$)
 #                                   to be used to do the comparison.
 #                  $revision_id_1 : The first revision id that is to be
 #                                   compared.
-#                  $revision_id_2 : The second revision id that is to be
-#                                   compared.
+#                  $revision_id_2 : Either the second revision id that is to be
+#                                   compared or undef if the current workspace
+#                                   is to be used.
 #                  $file_name     : Either the name of the file that the
 #                                   revision comparison should be restricted
 #                                   to or undef for a full revision
@@ -308,12 +307,16 @@ sub display_revision_comparison($$$;$)
     $instance = get_revision_comparison_window($mtn);
     local $instance->{in_cb} = 1;
 
+    $instance->{mtn} = $mtn;
+    $instance->{revision_id_1} = $revision_id_1;
+    $instance->{revision_id_2} = $revision_id_2;
     $instance->{window}->
         set_title(__x("{type} Differences Between {rev_1} and {rev_2}",
                       type  => defined($file_name)
                                    ? __("File") : __("Revision"),
                       rev_1 => $revision_id_1,
-                      rev_2 => $revision_id_2));
+                      rev_2 => defined($instance->{revision_id_2})
+                                   ? $revision_id_2 : __("Workspace")));
     $instance->{window}->show_all();
     $instance->{window}->present();
 
@@ -322,19 +325,13 @@ sub display_revision_comparison($$$;$)
     $instance->{stop_button}->set_sensitive(TRUE);
     $wm->update_gui();
 
-    $instance->{mtn} = $mtn;
-    $instance->{revision_id_1} = $revision_id_1;
-    $instance->{revision_id_2} = $revision_id_2;
-
     # Get Monotone to do the comparison, later versions can do this via
     # automate stdio.
 
     $instance->{appbar}->set_status(__("Calculating differences"));
     $wm->update_gui();
-    if ($mtn->supports(MTN_CONTENT_DIFF_EXTRA_OPTIONS))
+    if ($instance->{mtn}->supports(MTN_CONTENT_DIFF_EXTRA_OPTIONS))
     {
-
-        my $exception;
 
         local $instance->{kill_mtn_subprocess} = 1;
         local $pulse_widget = $instance->{appbar}->get_progress();
@@ -342,28 +339,42 @@ sub display_revision_comparison($$$;$)
         # The stop button callback will kill off the mtn subprocess so suppress
         # any resultant errors.
 
-        $mtn->suppress_utf8_conversion(1);
+        $instance->{mtn}->suppress_utf8_conversion(1);
         CachingAutomateStdio->register_error_handler
             (MTN_SEVERITY_ALL,
              sub {
                  my ($severity, $message, $instance) = @_;
-                 mtn_error_handler($severity, $message)
-                     if ($severity == MTN_SEVERITY_WARNING
-                         || ! $instance->{stop});
+                 if ($severity == MTN_SEVERITY_WARNING || ! $instance->{stop})
+                 {
+                     my $dialog;
+                     cleanup_mtn_error_message(\$message);
+                     $dialog = Gtk2::MessageDialog->new_with_markup
+                         ($instance->{window},
+                          ["modal"],
+                          "warning",
+                          "close",
+                          __x("There is a problem with your comparison, "
+                                      . "Monotone gave:\n"
+                                  . "<b><i>{error_message}</i></b>",
+                              error_message =>
+                                  Glib::Markup::escape_text($message)));
+                     busy_dialog_run($dialog);
+                     $dialog->destroy();
+                     die("Bad comparison");
+                 }
              },
              $instance);
         eval
         {
-            $mtn->content_diff($instance->{diff_output},
-                               ["with-header"],
-                               $revision_id_1,
-                               $revision_id_2,
-                               $file_name);
+            $instance->{mtn}->content_diff($instance->{diff_output},
+                                           ["with-header"],
+                                           $revision_id_1,
+                                           $revision_id_2,
+                                           $file_name);
         };
-        $exception = $@;
         CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
                                                      \&mtn_error_handler);
-        $mtn->suppress_utf8_conversion(0);
+        $instance->{mtn}->suppress_utf8_conversion(0);
 
         # If we have aborted the comparison by killing off the mtn subprocess
         # then cleanly closedown and restart it, otherwise rethrow any raised
@@ -372,12 +383,8 @@ sub display_revision_comparison($$$;$)
         if ($instance->{stop})
         {
             my $dummy;
-            $mtn->closedown();
-            $mtn->interface_version(\$dummy);
-        }
-        elsif ($exception)
-        {
-            die($exception);
+            $instance->{mtn}->closedown();
+            $instance->{mtn}->interface_version(\$dummy);
         }
 
     }
@@ -386,7 +393,7 @@ sub display_revision_comparison($$$;$)
         local $pulse_widget = $instance->{appbar}->get_progress();
         mtn_diff($instance->{diff_output},
                  \$instance->{stop},
-                 $mtn->get_db_name(),
+                 $instance->{mtn},
                  $revision_id_1,
                  $revision_id_2,
                  $file_name);
@@ -1409,8 +1416,11 @@ sub external_diffs_button_clicked_cb($$)
         get($iter, CLS_FILE_NAME_COLUMN);
     $file_id_1 = $instance->{file_comparison_combobox}->get_model()->
         get($iter, CLS_FILE_ID_1_COLUMN);
-    $file_id_2 = $instance->{file_comparison_combobox}->get_model()->
-        get($iter, CLS_FILE_ID_2_COLUMN);
+    if (defined($instance->{revision_id_2}))
+    {
+        $file_id_2 = $instance->{file_comparison_combobox}->get_model()->
+            get($iter, CLS_FILE_ID_2_COLUMN);
+    }
 
     # Use the external helper application to compare the files.
 
@@ -1509,12 +1519,28 @@ sub comparison_revision_change_log_button_clicked_cb($$)
         }
     }
 
-    # Display the full revision change log.
+    # Display the full revision change log if we have one (we won't if the
+    # revision is the workspace).
 
-    display_change_log($instance->{mtn},
-                       $revision_id,
-                       $colour,
-                       $revision_name);
+    if (defined($revision_id))
+    {
+        display_change_log($instance->{mtn},
+                           $revision_id,
+                           $colour,
+                           $revision_name);
+    }
+    else
+    {
+        my $dialog = Gtk2::MessageDialog->new
+            (undef,
+             ["modal"],
+             "info",
+             "close",
+             __("This revision is infact the current workspace.\n"
+                . "As such there is no change log to display."));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+    }
 
 }
 #
@@ -2428,8 +2454,9 @@ sub get_revision_comparison_window($)
 #                                   of the file.
 #                  $new_file_name : The file name of the newer version of the
 #                                   file.
-#                  $new_file_id   : Monotone's file id for the newer version
-#                                   of the file.
+#                  $new_file_id   : Either Monotone's file id for the newer
+#                                   version of the file or undef if the file
+#                                   relates to one in a workspace.
 #
 ##############################################################################
 
@@ -2505,7 +2532,8 @@ sub external_diffs($$$$$$)
              ["modal"],
              "warning",
              "close",
-             __x("{error_message}.", error_message => $!));
+             __x("Cannot create temporary file:\n{error_message}.",
+                 error_message => $!));
         busy_dialog_run($dialog);
         $dialog->destroy();
         return;
@@ -2514,8 +2542,57 @@ sub external_diffs($$$$$$)
     binmode($new_fh);
     $mtn->get_file(\$data, $old_file_id);
     $old_fh->print($data);
-    $mtn->get_file(\$data, $new_file_id);
-    $new_fh->print($data);
+    if (defined($new_file_id))
+    {
+        $mtn->get_file(\$data, $new_file_id);
+        $new_fh->print($data);
+    }
+    else
+    {
+
+        my ($ws_dir,
+            $ws_file_name);
+
+        # Ok we are doing a workspace comparison.
+
+        # Get the workspace base directory and calculate the full path to the
+        # file.
+
+        if (! defined($ws_dir = $mtn->get_ws_path()))
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($parent,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __("The workspace location cannot be determined.\n"
+                    . "The external file comparison has been aborted."));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
+        $ws_file_name = File::Spec->catfile($ws_dir, $new_file_name);
+
+        # Copy the content of the file into the open file handle.
+
+        if (! File::Copy::syscopy($ws_file_name, $new_fh))
+        {
+            my $dialog = Gtk2::MessageDialog->new
+                ($parent,
+                 ["modal"],
+                 "warning",
+                 "close",
+                 __x("Cannot copy `{ws_file_name}' ({error_message}).\n"
+                        . "The external file comparison has been aborted.",
+                     ws_file_name => $ws_file_name,
+                     error_message => $!));
+            busy_dialog_run($dialog);
+            $dialog->destroy();
+            return;
+        }
+
+    }
+
     $old_fh->close();
     $new_fh->close();
     $old_fh = $new_fh = undef;
@@ -2545,13 +2622,13 @@ sub external_diffs($$$$$$)
 #                  $abort         : A reference to an abort flag that when
 #                                   true will cause the mtn diff process to
 #                                   stop.
-#                  $mtn_db        : The Monotone database that is to be used
-#                                   or undef if the database associated with
-#                                   the current workspace is to be used.
+#                  $mtn           : The Monotone::AutomateStdio object that is
+#                                   to be used to do the comparison.
 #                  $revision_id_1 : The first revision id that is to be
 #                                   compared.
-#                  $revision_id_2 : The second revision id that is to be
-#                                   compared.
+#                  $revision_id_2 : Either the second revision id that is to be
+#                                   compared or undef if the current workspace
+#                                   is to be used.
 #                  $file_name     : Either the name of the file that the
 #                                   revision comparison should be restricted
 #                                   to or undef for a full revision
@@ -2568,7 +2645,7 @@ sub mtn_diff($$$$$;$)
 
     my ($list,
         $abort,
-        $mtn_db,
+        $mtn,
         $revision_id_1,
         $revision_id_2,
         $file_name) = @_;
@@ -2576,7 +2653,8 @@ sub mtn_diff($$$$$;$)
     my ($buffer,
         @cmd,
         $cwd,
-        $exception,
+        $diff_wd,
+        $error_msg,
         $ret_val);
 
     # Run mtn diff in the root directory so as to avoid any workspace
@@ -2584,24 +2662,40 @@ sub mtn_diff($$$$$;$)
 
     @$list = ();
     push(@cmd, "mtn");
-    push(@cmd, "--db=" . $mtn_db) if (defined($mtn_db));
+    push(@cmd, "--db=" . $mtn->get_db_name())
+        if (defined($mtn->get_db_name()));
     push(@cmd, "diff");
     push(@cmd, "-r");
     push(@cmd, "i:" . $revision_id_1);
-    push(@cmd, "-r");
-    push(@cmd, "i:" . $revision_id_2);
+    if (defined($revision_id_2))
+    {
+        push(@cmd, "-r");
+        push(@cmd, "i:" . $revision_id_2);
+        $diff_wd = File::Spec->rootdir();
+    }
+    else
+    {
+        $diff_wd = $mtn->get_ws_path();
+    }
     push(@cmd, $file_name) if (defined($file_name));
     $cwd = getcwd();
     eval
     {
-        die("chdir failed: " . $!) unless (chdir(File::Spec->rootdir()));
-        $ret_val = run_command(\$buffer, undef, undef, undef, $abort, @cmd);
+        die(__("chdir failed: ") . $!) unless (chdir($diff_wd));
+        $ret_val = run_command(\$buffer,
+                               undef,
+                               undef,
+                               undef,
+                               $abort,
+                               \$error_msg,
+                               @cmd);
+        cleanup_mtn_error_message(\$error_msg);
     };
-    $exception = $@;
+    $error_msg = $@ if ($@);
     chdir($cwd);
     if (! $$abort)
     {
-        if ($exception)
+        if ($error_msg)
         {
             my $dialog = Gtk2::MessageDialog->new_with_markup
                 (undef,
@@ -2609,9 +2703,8 @@ sub mtn_diff($$$$$;$)
                  "warning",
                  "close",
                  __x("Problem running mtn diff, got:\n"
-                         . "<b><i>{error_message}</i></b>\n"
-                         . "This should not be happening!",
-                     error_message => Glib::Markup::escape_text($exception)));
+                         . "<b><i>{error_message}</i></b>",
+                     error_message => Glib::Markup::escape_text($error_msg)));
             busy_dialog_run($dialog);
             $dialog->destroy();
             return;

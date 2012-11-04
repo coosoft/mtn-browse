@@ -77,15 +77,23 @@ my %file_chooser_dir_locations;
 
 my %help_ref_to_url_map;
 
+# A list of reaped process details.
+
+my @reaped_process_details_list;
+
 # ***** FUNCTIONAL PROTOTYPES *****
 
 # Public routines.
 
+sub add_reaped_process_details($$);
 sub adjust_time($$$);
 sub busy_dialog_run($);
 sub cache_extra_file_info($$$);
+sub cached_waitpid($$$);
 sub calculate_update_interval($;$);
+sub check_and_create_mtn_object($$;$);
 sub check_and_open_database($$$);
+sub cleanup_mtn_error_message($;$);
 sub colour_to_string($);
 sub create_format_tags($);
 sub data_is_binary($);
@@ -105,7 +113,7 @@ sub mtn_time_string_to_time($);
 sub open_database($$$);
 sub program_valid($;$);
 sub register_help_callbacks($$@);
-sub run_command($$$$$@);
+sub run_command($$$$$$@);
 sub save_as_file($$$);
 sub set_label_value($$);
 sub set_window_size($$);
@@ -185,6 +193,13 @@ sub generate_tmp_path($)
 #                  $abort       : Either a reference to a boolean that is set
 #                                 to true if the command is to be aborted or
 #                                 undef if no abort checking is required.
+#                  $err_buffer  : Either a reference to a buffer that is to
+#                                 contain what was read from the subprocess's
+#                                 STDERR file descriptor or undef if the
+#                                 caller wants this routine to handle it by
+#                                 displaying any error message in a dialog
+#                                 window if the subprocess should exit in
+#                                 error.
 #                  $args        : A list containing the command to run and its
 #                                 arguments.
 #                  Return Value : True if the command worked, otherwise false
@@ -194,10 +209,11 @@ sub generate_tmp_path($)
 
 
 
-sub run_command($$$$$@)
+sub run_command($$$$$$@)
 {
 
-    my ($buffer, $c_locale, $input_cb, $details, $abort, @args) = @_;
+    my ($buffer, $c_locale, $input_cb, $details, $abort, $err_buffer, @args)
+        = @_;
 
     my ($dummy_flag,
         @err,
@@ -320,6 +336,7 @@ sub run_command($$$$$@)
     else
     {
         @err = $fd_err->getlines() unless ($$abort);
+        $$err_buffer = join("", @err) if (defined($err_buffer));
     }
 
     $fd_in->close() if ($fd_in->opened());
@@ -331,6 +348,7 @@ sub run_command($$$$$@)
     for (my $i = 0; $i < 4; ++ $i)
     {
 
+        my $exit_status;
         my $wait_status = 0;
 
         # Wait for the subprocess to exit (preserving the current state of $@
@@ -343,7 +361,7 @@ sub run_command($$$$$@)
             {
                 local $SIG{ALRM} = sub { die(WAITPID_INTERRUPT); };
                 alarm(5);
-                $wait_status = waitpid($pid, 0);
+                $wait_status = cached_waitpid($pid, 0, \$exit_status);
                 alarm(0);
             };
             $wait_status = 0
@@ -357,25 +375,27 @@ sub run_command($$$$$@)
         {
             if (! $$abort)
             {
-                my $exit_status = $?;
                 if (WIFEXITED($exit_status) && WEXITSTATUS($exit_status) != 0)
                 {
-                    my $dialog = Gtk2::MessageDialog->new_with_markup
-                        (undef,
-                         ["modal"],
-                         "warning",
-                         "close",
-                         __x("The {name} subprocess failed with an exit "
-                                 . "status\n"
-                                 . "of {exit_code} and printed the following "
-                                 . "on stderr:\n"
-                                 . "<b><i>{error_message}</i></b>",
-                             name => Glib::Markup::escape_text($args[0]),
-                             exit_code => WEXITSTATUS($exit_status),
-                             error_message => Glib::Markup::escape_text
-                                              (join("", @err))));
-                    busy_dialog_run($dialog);
-                    $dialog->destroy();
+                    if (! defined($err_buffer))
+                    {
+                        my $dialog = Gtk2::MessageDialog->new_with_markup
+                            (undef,
+                             ["modal"],
+                             "warning",
+                             "close",
+                             __x("The {name} subprocess failed with an exit "
+                                         . "status\n"
+                                     . "of {exit_code} and printed the "
+                                         . "following on stderr:\n"
+                                     . "<b><i>{error_message}</i></b>",
+                                 name => Glib::Markup::escape_text($args[0]),
+                                 exit_code => WEXITSTATUS($exit_status),
+                                 error_message => Glib::Markup::escape_text
+                                                  (join("", @err))));
+                        busy_dialog_run($dialog);
+                        $dialog->destroy();
+                    }
                     return;
                 }
                 elsif (WIFSIGNALED($exit_status))
@@ -609,8 +629,9 @@ sub open_database($$$)
 #
 #   Routine      - check_and_open_database
 #
-#   Description  - Opens the specified database making sure that it is a valid
-#                  database or telling the user if it isn't.
+#   Description  - Opens the specified database making sure that it is
+#                  accessible and a valid database or telling the user if it
+#                  isn't.
 #
 #   Data         - $parent      : The parent window for any dialogs that are
 #                                 to be displayed.
@@ -630,8 +651,7 @@ sub check_and_open_database($$$)
 
     my ($parent, $database, $mtn) = @_;
 
-    my ($exception,
-        $fh,
+    my ($fh,
         $mtn_obj,
         $ret_val);
 
@@ -658,42 +678,10 @@ sub check_and_open_database($$$)
         $fh->close();
         $fh = undef;
 
-        # Ok it is a readable file, try and open it but deal with any errors in
-        # a nicer way than normal.
+        # Ok it is a readable file, so now actually try and open it.
 
-        CachingAutomateStdio->register_error_handler
-            (MTN_SEVERITY_ALL,
-             sub {
-                 my ($severity, $message) = @_;
-                 my $dialog;
-                 $message =~ s/mtn: misuse: //g;
-                 $message =~ s/^Corrupt\/missing mtn [^\n]+\n//g;
-                 $message =~ s/ at .+ line \d+$//g;
-                 $message =~ s/\s+$//g;
-                 $message =~ s/\n/ /g;
-                 $message .= "." unless ($message =~ m/.+\.$/);
-                 $dialog = Gtk2::MessageDialog->new_with_markup
-                     ($parent,
-                      ["modal"],
-                      "warning",
-                      "close",
-                      __x("There is a problem opening {database}. The details "
-                              . "are:\n<b><i>{error_message}</i></b>",
-                          database => $database,
-                          error_message =>
-                              Glib::Markup::escape_text($message)));
-                 busy_dialog_run($dialog);
-                 $dialog->destroy();
-                 die("Bad open");
-             });
-        eval
-        {
-            $mtn_obj = CachingAutomateStdio->new($database);
-        };
-        $exception = $@;
-        CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
-                                                     \&mtn_error_handler);
-        if (! $exception)
+        if (defined($mtn_obj = check_and_create_mtn_object($parent,
+                                                           $database)))
         {
 
             # Seems to be ok so tell the caller.
@@ -706,6 +694,76 @@ sub check_and_open_database($$$)
     }
 
     return $ret_val;
+
+}
+#
+##############################################################################
+#
+#   Routine      - check_and_create_mtn_object
+#
+#   Description  - Opens the specified database making sure that it is a valid
+#                  database or telling the user if it isn't.
+#
+#   Data         - $parent             : The parent window for any dialogs
+#                                        that are to be displayed.
+#                  $database           : Either the name of the Monotone
+#                                        database that is to be opened or
+#                                        undef if the current workspace is to
+#                                        be used.
+#                  $suppress_ws_errors : True if `Invalid workspace...' type
+#                                        errors are not to be displayed to the
+#                                        user. This is optional.
+#                  Return Value        : Either a newly created
+#                                        Monotone::AutomateStdio object on
+#                                        success, otherwise undef on failure.
+#
+##############################################################################
+
+
+
+sub check_and_create_mtn_object($$;$)
+{
+
+    my ($parent, $database, $suppress_ws_errors) = @_;
+
+    my $mtn;
+
+    # Try and open the specified database but deal with any errors in a nicer
+    # way than normal.
+
+    CachingAutomateStdio->register_error_handler
+        (MTN_SEVERITY_ALL,
+         sub {
+             my ($severity, $message) = @_;
+             if (! $suppress_ws_errors || $message !~ m/^Invalid workspace/)
+             {
+                 my $dialog;
+                 cleanup_mtn_error_message(\$message, 1);
+                 $dialog = Gtk2::MessageDialog->new_with_markup
+                     ($parent,
+                      ["modal"],
+                      "warning",
+                      "close",
+                      __x("There is a problem opening {database}. The details "
+                              . "are:\n<b><i>{error_message}</i></b>",
+                          database => defined($database)
+                                          ? $database
+                                          : __("the workspace's database"),
+                          error_message =>
+                              Glib::Markup::escape_text($message)));
+                 busy_dialog_run($dialog);
+                 $dialog->destroy();
+             }
+             die("Bad open");
+         });
+    eval
+    {
+        $mtn = CachingAutomateStdio->new($database);
+    };
+    CachingAutomateStdio->register_error_handler(MTN_SEVERITY_ALL,
+                                                 \&mtn_error_handler);
+
+    return $mtn;
 
 }
 #
@@ -785,7 +843,8 @@ sub save_as_file($$$)
                          ["modal"],
                          "warning",
                          "close",
-                         __x("{error_message}.", error_message => $!));
+                         __x("Cannot open file:\n{error_message}.",
+                             error_message => $!));
                     busy_dialog_run($dialog);
                     $dialog->destroy();
                 }
@@ -2309,6 +2368,116 @@ sub busy_dialog_run($)
     }
 
     return $choice;
+
+}
+#
+##############################################################################
+#
+#   Routine      - cached_waitpid
+#
+#   Description  - Does the same thing as waitpid() but checks a list of
+#                  reaped processes first.
+#
+#   Data         - $pid         : Either the id of the process that has is to
+#                                 be checked or -1 if you want to check the
+#                                 status of any waiting process.
+#                  $flags       : The waitpid() style flags.
+#                  $status      : A reference to a variable that is to contain
+#                                 the exit status of the reaped process.
+#                  Return Value : Either the process id of the reaped process,
+#                                 0 if there are processes still running or -1
+#                                 on error.
+#
+##############################################################################
+
+
+
+sub cached_waitpid($$$)
+{
+
+    my ($pid, $flags, $status) = @_;
+
+    my $ret_val;
+
+    # First check the list of reaped processes (removing and returning the
+    # entry if found).
+
+    foreach my $i (reverse(0 .. $#reaped_process_details_list))
+    {
+        if ($pid == -1 || $reaped_process_details_list[$i]->{pid} == $pid)
+        {
+            $$status = $reaped_process_details_list[$i]->{status};
+            splice(@reaped_process_details_list, $i, 1);
+            return $pid;
+        }
+    }
+
+    # Nothing can be found so make a call to waitpid().
+
+    $ret_val = waitpid($pid, $flags);
+    $$status = $?;
+
+    return $ret_val;
+
+}
+#
+##############################################################################
+#
+#   Routine      - add_reaped_process_details
+#
+#   Description  - Records the details about a newly reaped process in the
+#                  reaped processes list.
+#
+#   Data         - $pid    : The id of the process that has just been reaped.
+#                  $status : The status of the process that has just been
+#                            reaped.
+#
+##############################################################################
+
+
+
+sub add_reaped_process_details($$)
+{
+
+    my ($pid, $status) = @_;
+
+    # Simply push these details onto the reaped process details list.
+
+    push(@reaped_process_details_list, {pid => $pid, status => $status});
+
+}
+#
+##############################################################################
+#
+#   Routine      - cleanup_mtn_error_message
+#
+#   Description  - Attempts to cleanup the specified error string that
+#                  originally came from Montone.
+#
+#   Data         - $message  : A reference to the buffer containing the error
+#                              message that is to be cleaned up.
+#                  $strip_nl : True if new line chacters are to be stripped
+#                              out of the message, otherwise false if they are
+#                              to be left alone (apart from the last one. This
+#                              is optional.
+#
+##############################################################################
+
+
+
+sub cleanup_mtn_error_message($;$)
+{
+
+    my ($message, $strip_nl) = @_;
+
+    $$message =~ s/mtn: //g;
+    $$message =~ s/misuse: //g;
+    $$message =~ s/^Corrupt\/missing mtn [^\n]+\n//g;
+    $$message =~ s/ at .+ line \d+$//g;
+    $$message =~ s/\s+$//g;
+    $$message =~ s/\n/ /g if ($strip_nl);
+    $$message =~ s/\n$//g;
+    $$message .= "." unless ($$message =~ m/.+\.$/);
 
 }
 #
