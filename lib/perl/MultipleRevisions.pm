@@ -205,10 +205,18 @@ sub get_multiple_revisions_window($)
     $instance->{window}->show_all();
     $instance->{window}->present();
 
-    # If necessary, register the window for management.
+    # If necessary, register the window for management and set up the help
+    # callbacks.
 
-    $wm->manage($instance, $window_type, $instance->{window})
-        if (defined($glade));
+    if (defined($glade))
+    {
+        $wm->manage($instance, $window_type, $instance->{window});
+        register_help_callbacks
+            ($instance,
+             $glade,
+             {widget   => undef,
+              help_ref => __("mtnb-mcqc-simple-queries")});
+    }
 
     return $instance;
 

@@ -1708,8 +1708,6 @@ sub register_help_callbacks($$@)
                           $widget,
                           sub {
                               my ($widget, $instance) = @_;
-                              return if ($instance->{in_cb});
-                              local $instance->{in_cb} = 1;
                               display_help($help_ref);
                           });
     }

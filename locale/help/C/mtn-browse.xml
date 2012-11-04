@@ -1320,7 +1320,7 @@ GNOME or DocBook.
               </row>
               <row valign="top">
                 <entry><para><inlinegraphic fileref="figures/external-compare-button.png" format="png" valign="middle"/></para></entry>
-                <entry><para>Performs a comparison of the file selected in the <guilabel>Jump to file</guilabel> button using the external helper application specified in the <guilabel>Preferences</guilabel> dialog window (see <xref linkend="mtnb-upc-the-preferences-dialog-window"/>). This is set to <command>kompare</command> by default.</para></entry>
+                <entry><para>Performs a comparison of the file selected in the <guilabel>Jump to file</guilabel> combobox using the external helper application specified in the <guilabel>Preferences</guilabel> dialog window (see <xref linkend="mtnb-upc-the-preferences-dialog-window"/>).</para></entry>
               </row>
               <row valign="top">
                 <entry><para><inlinegraphic fileref="figures/save-button.png" format="png" valign="middle"/></para></entry>
