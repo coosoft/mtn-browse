@@ -2898,7 +2898,7 @@ current branch are to be listed</property>
 			  <child>
 			    <widget class="GtkEventBox" id="search_term_label_eventbox">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Enter an advanced Monotone selection query - 
+			      <property name="tooltip" translatable="yes">Enter an advanced Monotone selection query -
 you can use the helper tools directly below this
 entry field if you cannot remember the syntax</property>
 			      <property name="visible_window">True</property>
