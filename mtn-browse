@@ -45,13 +45,19 @@ require 5.008005;
 BEGIN
 {
     use constant APPLICATION_NAME        => "mtn-browse";
-    use constant APPLICATION_VERSION     => "1.00";
-    use constant FILE_COMPARE_CMD        => "@INST:FILE_COMPARE_CMD@";
-    use constant HTML_VIEWER_CMD         => "@INST:HTML_VIEWER_CMD@";
-    use constant GRAPHVIZ_LAYOUT_PROGRAM => "@INST:GRAPHVIZ_LAYOUT_PROGRAM@";
-    use constant LIB_DIR                 => "@INST:LIB_DIR@";
-    use constant MIME_GLOB_FILE          => "@INST:GLOBS_FILE@";
-    use constant PREFIX_DIR              => "@INST:PREFIX_DIR@";
+    use constant APPLICATION_VERSION     => "1.10";
+#    use constant FILE_COMPARE_CMD        => "@INST:FILE_COMPARE_CMD@";
+    use constant FILE_COMPARE_CMD        => "kompare";
+#    use constant HTML_VIEWER_CMD         => "@INST:HTML_VIEWER_CMD@";
+    use constant HTML_VIEWER_CMD         => "";
+#    use constant GRAPHVIZ_LAYOUT_PROGRAM => "@INST:GRAPHVIZ_LAYOUT_PROGRAM@";
+    use constant GRAPHVIZ_LAYOUT_PROGRAM => "dot";
+#    use constant LIB_DIR                 => "@INST:LIB_DIR@";
+    use constant LIB_DIR                 => "/home/aecoope/code/monotone.ca/mtn-browse/lib";
+#    use constant MIME_GLOB_FILE          => "@INST:GLOBS_FILE@";
+    use constant MIME_GLOB_FILE          => "/usr/share/mime/globs";
+#    use constant PREFIX_DIR              => "@INST:PREFIX_DIR@";
+    use constant PREFIX_DIR              => "/home/aecoope/code/monotone.ca/mtn-browse";
 }
 use locale;
 use strict;
@@ -231,6 +237,18 @@ sub view_button_clicked_cb($$);
         $mtn,
         $revision_id);
 
+    # Load in optional modules (loosing any exception data that may be
+    # generated).
+
+    {
+        local $@;
+        eval
+        {
+            require File::LibMagic;
+            import File::LibMagic;
+        };
+    }
+
     # Initialise stuff.
 
     Gnome2::Program->init
@@ -386,7 +404,7 @@ sub view_button_clicked_cb($$);
     # these both need to be set up before creating any windows.
 
     @encodings = sort(Encode->encodings(":all"));
-    if (defined($mtn))
+    if (defined($mtn) && 0)
     {
         my @list;
         $mtn->keys(\@list);
@@ -3800,9 +3818,28 @@ sub determine_mime_type($$$$)
     }
 
     # If that didn't work then try determining the MIME type based upon its
+    # contents using Gnome.
+
+    $$mime_type = Gnome2::VFS->get_mime_type_for_data($$contents);
+
+    # 
+
+    # If that failed and we were able to load the File::LibMagic module (it's
+    # an optional dependency) then try doing the equivalent of a file -i on the
     # contents.
 
-    $$mime_type = Gnome2::VFS->get_mime_type_for_data($contents);
+    print ($$mime_type . "\n");
+    if ((! defined($$mime_type) || $$mime_type eq "text/plain")
+        && defined(%File::LibMagic::))
+    {
+        local $@;
+        eval
+        {
+            my $magic = File::LibMagic->new();
+            $$mime_type = $magic->checktype_contents($$contents);
+            print ($$mime_type . "\n");
+        };
+    }
 
     # If we now have a MIME type then do another lookup with it but by matching
     # MIME type names and not file name patterns.
