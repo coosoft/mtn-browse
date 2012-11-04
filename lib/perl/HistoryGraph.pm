@@ -3955,7 +3955,8 @@ sub get_change_history_graph_window($)
             ($instance,
              $glade,
              {widget   => undef,
-              help_ref => __("mtnb-uhg-the-change-history-graph-window")});
+              help_ref => __("mtnb-uhg-the-change-history-graph-dialog-"
+                             . "window")});
 
     }
     else
