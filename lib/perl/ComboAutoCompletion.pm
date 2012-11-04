@@ -540,6 +540,9 @@ sub completions_treeselection_changed_cb($$)
         my $move_to_end = $completions->{details}->{move_to_end};
         my $old_value = $combo_details->{value};
 
+        return if ($instance->{in_cb});
+        local $instance->{in_cb} = 1;
+
         # Get the selected entry. Please note that we specifically don't update
         # the combo_details' filter field here as selections from a completions
         # list do not update that list (this is like the old ComboBoxEntry
@@ -687,6 +690,9 @@ sub update_completions_list_window($$$$$)
                      return 1 if ($instance->{window}->mapped());
                  })))
     {
+
+        return if ($instance->{in_cb});
+        local $instance->{in_cb} = 1;
 
         # Only update the completion list if we have to.
 
