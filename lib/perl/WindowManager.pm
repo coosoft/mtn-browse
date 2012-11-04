@@ -94,7 +94,7 @@ sub cond_find($$&);
 sub display_window_help($$);
 sub event_handler($;&$);
 sub find_unused($$);
-sub help_connect($$$$);
+sub help_connect($$$$;$);
 sub make_busy($$$;$);
 sub manage($$$$;$);
 sub reset_state($;$);
@@ -149,13 +149,25 @@ sub instance($)
                         [],
                         [],
                         sub {
+                            my ($accel, $widget, $key_code, $modifier) = @_;
+                            my ($entry,
+                                $instance);
                             my $this = WindowManager->instance();
+                            if (defined($entry =
+                                        $this->find_window_record($widget)))
+                            {
+                                $instance = $entry->{instance};
+                            }
                             if (defined($this->{help_contents_cb}))
                             {
-                                &{$this->{help_contents_cb}}(undef, undef);
-                                return TRUE;
+                                &{$this->{help_contents_cb}}($widget,
+                                                             $instance);
                             }
-                            return FALSE;
+                            elsif (defined($this->{no_help_cb}))
+                            {
+                                &{$this->{no_help_cb}}($widget, $instance);
+                            }
+                            return TRUE;
                         });
         $accel->connect($Gtk2::Gdk::Keysyms{F1},
                         ["shift-mask"],
@@ -164,11 +176,15 @@ sub instance($)
                             my ($accel, $widget, $key_code, $modifier) = @_;
                             my $entry;
                             my $this = WindowManager->instance();
-                            return TRUE
-                                unless (defined($entry =
-                                                $this->find_window_record
-                                                    ($widget)));
-                            $this->display_window_help($entry->{instance});
+                            if (defined($entry =
+                                        $this->find_window_record($widget)))
+                            {
+                                $this->display_window_help($entry->{instance});
+                            }
+                            elsif (defined($this->{no_help_cb}))
+                            {
+                                &{$this->{no_help_cb}}($widget, undef);
+                            }
                             return TRUE;
                         });
         $accel->connect($Gtk2::Gdk::Keysyms{F1},
@@ -191,6 +207,7 @@ sub instance($)
                       help_cursor              => Gtk2::Gdk::Cursor->
                                                       new("question-arrow"),
                       help_contents_cb         => undef,
+                      no_help_cb               => undef,
                       custom_event_handler     => undef,
                       custom_event_client_data => undef};
         return bless($singleton, $class);
@@ -296,41 +313,46 @@ sub manage($$$$;$)
 #   Description  - Register the specified help callback for the specified
 #                  window instance and widget.
 #
-#   Data         - $this     : The object.
-#                  $instance : Either the window instance that is to have a
-#                              context sensitive help callback registered or
-#                              undef if the top level help contents callback
-#                              is to be registered.
-#                  $widget   : Either the containing widget inside which the
-#                              help event needs to occur for this callback to
-#                              be invoked or undef if this callback is to be
-#                              invoked if there are no more specific callbacks
-#                              registered for the help event.
-#                  $callback : A reference to the help callback routine that
-#                              is to be called.
+#   Data         - $this       : The object.
+#                  $instance   : Either the window instance that is to have a
+#                                context sensitive help callback registered or
+#                                undef if the top level help contents callback
+#                                is to be registered.
+#                  $widget     : Either the containing widget inside which the
+#                                help event needs to occur for this callback
+#                                to be invoked or undef if this callback is to
+#                                be invoked if there are no more specific
+#                                callbacks registered for the help event.
+#                  $callback   : A reference to the help callback routine that
+#                                is to be called.
+#                  $no_help_cb : Either a reference to the help callback
+#                                routine that is to be called when there is no
+#                                help at all for the current context or undef
+#                                if no action is to be taken. This is
+#                                optional.
 #
 ##############################################################################
 
 
 
-sub help_connect($$$$)
+sub help_connect($$$$;$)
 {
 
-    my ($this, $instance, $widget, $callback) = @_;
-
-    $widget = "" if (! defined($widget));
+    my ($this, $instance, $widget, $callback, $no_help_cb) = @_;
 
     # Simply store the callback details depending upon its type.
 
     if (defined($instance))
     {
         my $entry = $this->find_record($instance);
+        $widget = "" if (! defined($widget));
         $entry->{help_callbacks}->{$widget} = $callback;
     }
     else
     {
         $this->{help_contents_cb} = $callback;
     }
+    $this->{no_help_cb} = $no_help_cb if (scalar(@_) > 4);
 
 }
 #
@@ -769,8 +791,15 @@ sub display_window_help($$)
 
     my $entry = $this->find_record($instance);
 
-    &{$entry->{help_callbacks}->{""}}($entry->{window}, $entry->{instance})
-        if (exists($entry->{help_callbacks}->{""}));
+    if (exists($entry->{help_callbacks}->{""}))
+    {
+        &{$entry->{help_callbacks}->{""}}($entry->{window},
+                                          $entry->{instance});
+    }
+    elsif (defined($this->{no_help_cb}))
+    {
+        &{$this->{no_help_cb}}($entry->{window}, $entry->{instance});
+    }
 
 }
 #
@@ -1296,7 +1325,9 @@ sub help_event_filter($$)
                 # Now find the relevant help callback for the widget or one of
                 # its containing parents. If nothing is found then check to see
                 # if there is a default help callback for the window (indicated
-                # by having the widget set to '').
+                # by having the widget set to ''). Failing that then don't
+                # display any help, obviously, but do go on to deactivate
+                # context sensitive help.
 
                 $widget = $event_widget;
                 do
@@ -1306,15 +1337,20 @@ sub help_event_filter($$)
                 }
                 while (defined($widget = $widget->get_parent())
                        && ! defined($help_cb));
-                if (! defined($help_cb))
+                if (! defined($help_cb)
+                    && exists($entry->{help_callbacks}->{""}))
                 {
-                    return unless (exists($entry->{help_callbacks}->{""}));
                     $help_cb = $entry->{help_callbacks}->{""};
                 }
+                if (! defined($help_cb) && defined($this->{no_help_cb}))
+                {
+                    $help_cb = $this->{no_help_cb};
+                }
 
-                # Now simply call the help callback.
+                # Now simply call the help callback if we have one.
 
-                &$help_cb($event_widget, $entry->{instance});
+                &$help_cb($event_widget, $entry->{instance})
+                    if (defined($help_cb));
 
                 $this->activate_context_sensitive_help(0);
 

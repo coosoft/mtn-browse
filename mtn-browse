@@ -483,9 +483,21 @@ sub view_button_clicked_cb($$);
 
     # Setup the callback for the <F1> accelerator key for all windows.
 
-    WindowManager->instance()->help_connect(undef,
-                                            undef,
-                                            sub { display_help(); });
+    WindowManager->instance()->help_connect
+        (undef,
+         undef,
+         sub { display_help(); },
+         sub {
+             my ($window, $instance) = @_;
+             my $dialog = Gtk2::MessageDialog->new
+                 (defined($instance) ? $instance->{window} : undef,
+                  ["modal"],
+                  "info",
+                  "close",
+                  __("Sorry no help is available\nfor that item."));
+             busy_dialog_run($dialog);
+             $dialog->destroy();
+         });
 
     # Hand control over to Gtk2.
 
@@ -3874,7 +3886,7 @@ sub mtn_db_locked_handler($$)
         ($parent,
          ["modal"],
          "info",
-         "ok",
+         "close",
          __("The Monotone database is currently locked, please\n"
             . "dismiss this dialog when this is no longer the case."));
     busy_dialog_run($dialog);
