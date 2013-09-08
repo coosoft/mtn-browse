@@ -1137,6 +1137,8 @@ sub get_branch_revisions($$$$$)
 
     my ($mtn, $branch, $tags, $appbar, $revisions) = @_;
 
+    my $wm = WindowManager->instance();
+
     @$revisions = ();
 
     # If we have a branch name then escape any special selection characters in
@@ -1166,7 +1168,7 @@ sub get_branch_revisions($$$$$)
             $mtn->tags(\@tags, $branch);
         }
         $appbar->set_progress_percentage(0.5) if (defined($appbar));
-        WindowManager->update_gui();
+        $wm->update_gui();
 
         # Does the list need truncating (in which case we need to sort by date
         # to keep the most recent tags) or does the user want to sort tags by
@@ -1266,16 +1268,16 @@ sub get_branch_revisions($$$$$)
             if ($user_preferences->{query}->{id}->{sort_chronologically})
             {
                 $appbar->set_progress_percentage(0.33) if (defined($appbar));
-                WindowManager->update_gui();
+                $wm->update_gui();
                 $mtn->toposort($revisions, @$revisions);
                 $appbar->set_progress_percentage(0.66) if (defined($appbar));
-                WindowManager->update_gui();
+                $wm->update_gui();
                 @$revisions = reverse(@$revisions);
             }
             else
             {
                 $appbar->set_progress_percentage(0.5) if (defined($appbar));
-                WindowManager->update_gui();
+                $wm->update_gui();
                 @$revisions = sort(@$revisions);
             }
 
@@ -1286,7 +1288,7 @@ sub get_branch_revisions($$$$$)
             # Yes so truncate and then sort it.
 
             $appbar->set_progress_percentage(0.33) if (defined($appbar));
-            WindowManager->update_gui();
+            $wm->update_gui();
             $mtn->toposort($revisions, @$revisions);
             $appbar->set_progress_percentage(0.66) if (defined($appbar));
             splice(@$revisions,
@@ -1307,7 +1309,7 @@ sub get_branch_revisions($$$$$)
     }
 
     $appbar->set_progress_percentage(1) if (defined($appbar));
-    WindowManager->update_gui();
+    $wm->update_gui();
 
 }
 #

@@ -98,7 +98,7 @@ sub help_connect($$$$;$);
 sub make_busy($$$;$);
 sub manage($$$$;$);
 sub reset_state($;$);
-sub update_gui();
+sub update_gui($);
 
 # Private routines.
 
@@ -602,13 +602,13 @@ sub make_busy($$$;$)
 #                  to update the GUI whilst the application is busy doing
 #                  something.
 #
-#   Data         - None.
+#   Data         - $this : The object.
 #
 ##############################################################################
 
 
 
-sub update_gui()
+sub update_gui($)
 {
 
     # Only allow this if we are actually running inside Gtk2.

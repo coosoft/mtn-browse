@@ -59,11 +59,11 @@ use constant CLS_FILE_ID_2_COLUMN     => 4;
 
 # The translated history strings.
 
-my $__revision_id           = __("Revision id");
+my $__revision_id = __("Revision id");
 
 # Pre-compiled regular expressions.
 
-my $revision_id_re = qr/^\Q${__revision_id}:\E [0-9a-f]{40}$/;
+my $revision_id_re         = qr/^\Q${__revision_id}:\E [0-9a-f]{40}$/;
 my $revision_id_extract_re = qr/^\Q${__revision_id}:\E ([0-9a-f]{40})$/;
 
 # ***** FUNCTIONAL PROTOTYPES *****
@@ -1085,7 +1085,7 @@ sub history_textview_populate_popup_cb($$$)
                   sub {
 
                       my ($instance, $revision_id, $iter) = @_;
-                                      
+
                       $instance->{first_revision_id} = $revision_id;
                       set_label_value($instance->{revision_id_1_value_label},
                                       $revision_id);
@@ -2198,7 +2198,7 @@ sub get_file_history_helper($$$)
 
             set_label_value($instance->{numbers_value_label},
                             scalar(keys(%{$instance->{revision_hits}})));
-            WindowManager->update_gui();
+            WindowManager->instance()->update_gui();
 
             # Now repeat for each parent, remembering to track file renames.
 
@@ -2247,7 +2247,7 @@ sub get_revision_history_helper($$)
     $instance->{revision_hits}->{$revision_id} = 1;
     set_label_value($instance->{numbers_value_label},
                     scalar(keys(%{$instance->{revision_hits}})));
-    WindowManager->update_gui();
+    WindowManager->instance()->update_gui();
     $instance->{mtn}->parents(\@parents, $revision_id);
     foreach my $parent (@parents)
     {
