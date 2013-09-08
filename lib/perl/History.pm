@@ -59,26 +59,12 @@ use constant CLS_FILE_ID_2_COLUMN     => 4;
 
 # The translated history strings.
 
-my $__annotate_file         = __("Annotate File");
-my $__annotate_file_ttip    = __("Annotate the file in a\n"
-                                 . "new annotation window");
-my $__browse_file           = __("Browse File");
-my $__browse_file_ttip      = __("Browse the file in\na new browser window");
-my $__browse_rev            = __("Browse Revision");
-my $__browse_rev_ttip       = __("Browse the revision in\n"
-                                 . "a new browser window");
-my $__full_changelog        = __("Full Change Log");
-my $__full_changelog_ttip   = __("View the revision's full change log");
-my $__select_id_1           = __("Select As Id 1");
-my $__select_id_2           = __("Select As Id 2");
-my $__select_id_file_1_ttip = __("Select this file revision for\n"
-                                 . "comparison as the first file");
-my $__select_id_file_2_ttip = __("Select this file revision for\n"
-                                 . "comparison as the second file");
-my $__select_id_rev_1_ttip  = __("Select this revision for comparison\n"
-                                 . "as the first revision");
-my $__select_id_rev_2_ttip  = __("Select this revision for comparison\n"
-                                 . "as the second revision");
+my $__revision_id           = __("Revision id");
+
+# Pre-compiled regular expressions.
+
+my $revision_id_re = qr/^\Q${__revision_id}:\E [0-9a-f]{40}$/;
+my $revision_id_extract_re = qr/^\Q${__revision_id}:\E ([0-9a-f]{40})$/;
 
 # ***** FUNCTIONAL PROTOTYPES *****
 
@@ -104,7 +90,7 @@ sub get_file_history_helper($$$);
 sub get_history_window();
 sub get_revision_comparison_window($);
 sub get_revision_history_helper($$);
-sub history_list_button_clicked_cb($$);
+sub history_textview_populate_popup_cb($$$);
 sub mtn_diff($$$$$;$);
 sub restrict_to_combobox_changed_cb($$);
 sub save_differences_button_clicked_cb($$);
@@ -1015,150 +1001,344 @@ sub display_arbitrary_revision_comparison($)
 #
 ##############################################################################
 #
-#   Routine      - history_list_button_clicked_cb
+#   Routine      - history_textview_populate_popup_cb
 #
-#   Description  - Callback routine called when the user clicks on any of the
-#                  buttons displayed in the history list in a history window.
+#   Description  - Callback routine called when the user right clicks on the
+#                  history textview window.
 #
-#   Data         - $widget  : The widget object that received the signal.
-#                  $details : A reference to an anonymous hash containing the
-#                             window instance, revision and action that is
-#                             associated with this widget.
+#   Data         - $widget   : The widget object that received the signal.
+#                  $menu     : The Gtk2::Menu widget that is to be updated.
+#                  $instance : The window instance that is associated with
+#                              this widget.
 #
 ##############################################################################
 
 
 
-sub history_list_button_clicked_cb($$)
+sub history_textview_populate_popup_cb($$$)
 {
 
-    my ($widget, $details) = @_;
-
-    my ($instance,
-        $revision_id);
-
-    $instance = $details->{instance};
-    $revision_id = $details->{revision_id};
+    my ($widget, $menu, $instance) = @_;
 
     return if ($instance->{in_cb});
     local $instance->{in_cb} = 1;
 
-    if ($details->{button_type} eq "1" || $details->{button_type} eq "2")
-    {
-        if ($details->{button_type} eq "1")
-        {
-            $instance->{first_revision_id} = $revision_id;
-            set_label_value($instance->{revision_id_1_value_label},
-                            $revision_id);
-            if ($instance->{first_revision_id}
-                eq $instance->{second_revision_id})
-            {
-                $instance->{second_revision_id} = "";
-                set_label_value($instance->{revision_id_2_value_label}, "");
-            }
-        }
-        else
-        {
-            $instance->{second_revision_id} = $revision_id;
-            set_label_value($instance->{revision_id_2_value_label},
-                            $revision_id);
-            if ($instance->{second_revision_id}
-                eq $instance->{first_revision_id})
-            {
-                $instance->{first_revision_id} = "";
-                set_label_value($instance->{revision_id_1_value_label}, "");
-            }
-        }
-        if ($instance->{first_revision_id} ne ""
-            && $instance->{second_revision_id} ne "")
-        {
-            $instance->{compare_button}->set_sensitive(TRUE);
-        }
-        else
-        {
-            $instance->{compare_button}->set_sensitive(FALSE);
-        }
-    }
-    elsif ($details->{button_type} eq "browse-revision")
+    my ($iter,
+        $menu_item,
+        $revision_id,
+        $separator,
+        $x,
+        $y);
+
+    # Extract the revision id relating to the block of text directly under the
+    # mouse cursor.
+
+    ($x, $y) = ($widget->window()->get_pointer())[1 .. 2];
+    ($x, $y) = $widget->window_to_buffer_coords("widget", $x, $y);
+    if (defined($iter = ($widget->get_line_at_y($y))[0]))
     {
 
-        my ($branch,
-            @certs_list);
+        my ($no_more,
+            $text);
+        my $end_iter = $iter->copy();
+        my $start_iter = $iter->copy();
+        my $text_buffer = $widget->get_buffer();
 
-        # First find out what branch the revision is on (take the first one).
-
-        $instance->{mtn}->certs(\@certs_list, $revision_id);
-        $branch = "";
-        foreach my $cert (@certs_list)
+        $end_iter->forward_to_line_end() unless ($end_iter->ends_line());
+        $text = $text_buffer->get_text($start_iter, $end_iter, TRUE);
+        while ($text !~ m/$revision_id_re/)
         {
-            if ($cert->{name} eq "branch")
+            if (! $start_iter->backward_line())
             {
-                $branch = $cert->{value};
+                $no_more = 1;
                 last;
             }
+            $end_iter->backward_line();
+            $end_iter->forward_to_line_end() unless ($end_iter->ends_line());
+            $text = $text_buffer->get_text($start_iter, $end_iter, TRUE);
         }
-
-        # Get a new browser window preloaded with the desired file.
-
-        get_browser_window($instance->{mtn}, $branch, $revision_id);
+        ($revision_id) = ($text =~ m/$revision_id_extract_re/)
+            unless ($no_more);
 
     }
-    elsif ($details->{button_type} eq "browse-file")
+
+    # Add the selection, browse, annotate and full change log options to the
+    # right-click menu that act on the revision responsible for the text
+    # directly under the mouse cursor.
+
+    $separator = Gtk2::SeparatorMenuItem->new();
+    $separator->show();
+    $menu->append($separator);
+
+    $menu_item = Gtk2::MenuItem->new(__("Select As Id _1"));
+    if (! defined($revision_id))
     {
-
-        my ($branch,
-            @certs_list,
-            $dir,
-            $file,
-            $path_ref);
-
-        # First find out what branch the revision is on (take the first one).
-
-        $instance->{mtn}->certs(\@certs_list, $revision_id);
-        $branch = "";
-        foreach my $cert (@certs_list)
-        {
-            if ($cert->{name} eq "branch")
-            {
-                $branch = $cert->{value};
-                last;
-            }
-        }
-
-        # Split the file name into directory and file components.
-
-        $path_ref = $instance->{revision_hits}->{$revision_id};
-        $dir = dirname($$path_ref);
-        $dir = "" if ($dir eq ".");
-        $file = basename($$path_ref);
-
-        # Get a new browser window preloaded with the desired file.
-
-        get_browser_window($instance->{mtn},
-                           $branch,
-                           $revision_id,
-                           $dir,
-                           $file);
-
-    }
-    elsif ($details->{button_type} eq "revision-changelog")
-    {
-
-        # Display the full revision change log.
-
-        display_change_log($instance->{mtn}, $revision_id);
-
+        $menu_item->set_sensitive(FALSE);
     }
     else
     {
+        $menu_item->signal_connect
+            ("activate",
+             \&revision_context_textview_popup_menu_item_cb,
+             {instance         => $instance,
+              cb               =>
+                  sub {
 
-        # Annotate the file.
+                      my ($instance, $revision_id, $iter) = @_;
+                                      
+                      $instance->{first_revision_id} = $revision_id;
+                      set_label_value($instance->{revision_id_1_value_label},
+                                      $revision_id);
+                      if ($instance->{first_revision_id}
+                          eq $instance->{second_revision_id})
+                      {
+                          $instance->{second_revision_id} = "";
+                          set_label_value($instance->
+                                              {revision_id_2_value_label},
+                                          "");
+                      }
+                      if ($instance->{first_revision_id} ne ""
+                          && $instance->{second_revision_id} ne "")
+                      {
+                          $instance->{compare_button}->set_sensitive(TRUE);
+                      }
+                      else
+                      {
+                          $instance->{compare_button}->set_sensitive(FALSE);
+                      }
 
-        display_annotation($instance->{mtn},
-                           $revision_id,
-                           ${$instance->{revision_hits}->{$revision_id}});
-
+                  },
+              progress_message => __("Selecting revision as id 1"),
+              revision_id      => $revision_id,
+              iter             => $iter});
     }
+    $menu_item->show();
+    $menu->append($menu_item);
+
+    $menu_item = Gtk2::MenuItem->new(__("Select As Id _2"));
+    if (! defined($revision_id))
+    {
+        $menu_item->set_sensitive(FALSE);
+    }
+    else
+    {
+        $menu_item->signal_connect
+            ("activate",
+             \&revision_context_textview_popup_menu_item_cb,
+             {instance         => $instance,
+              cb               =>
+                  sub {
+
+                      my ($instance, $revision_id, $iter) = @_;
+
+                      $instance->{second_revision_id} = $revision_id;
+                      set_label_value($instance->{revision_id_2_value_label},
+                                      $revision_id);
+                      if ($instance->{second_revision_id}
+                          eq $instance->{first_revision_id})
+                      {
+                          $instance->{first_revision_id} = "";
+                          set_label_value($instance->
+                                          {revision_id_1_value_label},
+                                          "");
+                      }
+                      if ($instance->{first_revision_id} ne ""
+                          && $instance->{second_revision_id} ne "")
+                      {
+                          $instance->{compare_button}->set_sensitive(TRUE);
+                      }
+                      else
+                      {
+                          $instance->{compare_button}->set_sensitive(FALSE);
+                      }
+
+                  },
+              progress_message => __("Selecting revision as id 2"),
+              revision_id      => $revision_id,
+              iter             => $iter});
+    }
+    $menu_item->show();
+    $menu->append($menu_item);
+
+    $separator = Gtk2::SeparatorMenuItem->new();
+    $separator->show();
+    $menu->append($separator);
+
+    if (defined($instance->{file_name}))
+    {
+        $menu_item = Gtk2::MenuItem->new(__("_Browse File"));
+        if (! defined($revision_id))
+        {
+            $menu_item->set_sensitive(FALSE);
+        }
+        else
+        {
+            $menu_item->signal_connect
+                ("activate",
+                 \&revision_context_textview_popup_menu_item_cb,
+                 {instance         => $instance,
+                  cb               =>
+                      sub {
+
+                          my ($instance, $revision_id, $iter) = @_;
+
+                          my (@certs_list,
+                              $dir,
+                              $file,
+                              $path_ref);
+                          my $branch = "";
+
+                          # First find out what branch the revision is on (take
+                          # the first one alphabetically).
+
+                          $instance->{mtn}->certs(\@certs_list, $revision_id);
+                          foreach my $cert (@certs_list)
+                          {
+                              if ($cert->{name} eq "branch"
+                                  && ($branch eq ""
+                                      || $cert->{value} lt $branch))
+                              {
+                                  $branch = $cert->{value};
+                              }
+                          }
+
+                          # Split the file name into directory and file
+                          # components.
+
+                          $path_ref =
+                              $instance->{revision_hits}->{$revision_id};
+                          $dir = dirname($$path_ref);
+                          $dir = "" if ($dir eq ".");
+                          $file = basename($$path_ref);
+
+                          # Get a new browser window preloaded with the desired
+                          # file.
+
+                          get_browser_window($instance->{mtn},
+                                             $branch,
+                                             $revision_id,
+                                             $dir,
+                                             $file);
+
+                      },
+                  progress_message => __("Displaying file in a new browser"),
+                  revision_id      => $revision_id,
+                  iter             => $iter});
+        }
+        $menu_item->show();
+        $menu->append($menu_item);
+
+        $menu_item = Gtk2::MenuItem->new(__("A_nnotate File"));
+        if (! defined($revision_id))
+        {
+            $menu_item->set_sensitive(FALSE);
+        }
+        else
+        {
+            $menu_item->signal_connect
+                ("activate",
+                 \&revision_context_textview_popup_menu_item_cb,
+                 {instance         => $instance,
+                  cb               =>
+                      sub {
+
+                          my ($instance, $revision_id, $iter) = @_;
+
+                          # Annotate the file.
+
+                          display_annotation($instance->{mtn},
+                                             $revision_id,
+                                             ${$instance->{revision_hits}->
+                                                 {$revision_id}});
+
+                      },
+                  progress_message => __("Doing file annotation"),
+                  revision_id      => $revision_id,
+                  iter             => $iter});
+        }
+        $menu_item->show();
+        $menu->append($menu_item);
+    }
+    else
+    {
+        $menu_item = Gtk2::MenuItem->new(__("_Browse Revision"));
+        if (! defined($revision_id))
+        {
+            $menu_item->set_sensitive(FALSE);
+        }
+        else
+        {
+            $menu_item->signal_connect
+                ("activate",
+                 \&revision_context_textview_popup_menu_item_cb,
+                 {instance         => $instance,
+                  cb               =>
+                      sub {
+
+                          my ($instance, $revision_id, $iter) = @_;
+
+                          my @certs_list;
+                          my $branch = "";
+
+                          # First find out what branch the revision is on (take
+                          # the first one alphabetically).
+
+                          $instance->{mtn}->certs(\@certs_list, $revision_id);
+                          foreach my $cert (@certs_list)
+                          {
+                              if ($cert->{name} eq "branch"
+                                  && ($branch eq ""
+                                      || $cert->{value} lt $branch))
+                              {
+                                  $branch = $cert->{value};
+                              }
+                          }
+
+                          # Get a new browser window preloaded with the desired
+                          # revision.
+
+                          get_browser_window($instance->{mtn},
+                                             $branch,
+                                             $revision_id);
+
+                      },
+                  progress_message => __("Displaying revision in a new "
+                                         . "browser"),
+                  revision_id      => $revision_id,
+                  iter             => $iter});
+        }
+        $menu_item->show();
+        $menu->append($menu_item);
+    }
+
+    $menu_item = Gtk2::MenuItem->new(__("Display Full Change _Log"));
+    if (! defined($revision_id))
+    {
+        $menu_item->set_sensitive(FALSE);
+    }
+    else
+    {
+        $menu_item->signal_connect
+            ("activate",
+             \&revision_context_textview_popup_menu_item_cb,
+             {instance         => $instance,
+              cb               =>
+                  sub {
+
+                      my ($instance, $revision_id, $iter) = @_;
+
+                      display_change_log($instance->{mtn},
+                                         $revision_id,
+                                         "",
+                                         undef);
+
+                  },
+              progress_message => __("Displaying full change log"),
+              revision_id      => $revision_id,
+              iter             => $iter});
+    }
+    $menu_item->show();
+    $menu->append($menu_item);
 
 }
 #
@@ -1613,14 +1793,8 @@ sub generate_history_report($$)
     my ($instance, $history) = @_;
 
     my (@branches,
-        $browse_button,
-        $browse_button_ttip,
-        $browse_button_type,
-        $button,
         @certs_list,
         $no_branch_history,
-        $select_id_1_ttip,
-        $select_id_2_ttip,
         $update_interval);
     my $counter = 0;
     my $wm = WindowManager->instance();
@@ -1650,25 +1824,15 @@ sub generate_history_report($$)
         $instance->{branch_history} = {};
     }
 
-    # Determine the buttons to display, their tool tips and update interval
-    # depending upon whether we are displaying a revision or file history.
+    # Determine the update interval depending upon whether we are displaying a
+    # revision or file history.
 
     if (defined($instance->{file_name}))
     {
-        $select_id_1_ttip = \$__select_id_file_1_ttip;
-        $select_id_2_ttip = \$__select_id_file_2_ttip;
-        $browse_button_ttip = \$__browse_file_ttip;
-        $browse_button = \$__browse_file;
-        $browse_button_type = "browse-file";
         $update_interval = 10;
     }
     else
     {
-        $select_id_1_ttip = \$__select_id_rev_1_ttip;
-        $select_id_2_ttip = \$__select_id_rev_2_ttip;
-        $browse_button_ttip = \$__browse_rev_ttip;
-        $browse_button = \$__browse_rev;
-        $browse_button_type = "browse-revision";
         $update_interval = 100;
     }
 
@@ -1711,91 +1875,6 @@ sub generate_history_report($$)
                                  $revision_id,
                                  \@certs_list,
                                  "");
-        $instance->{history_buffer}->
-            insert($instance->{history_buffer}->get_end_iter(), "\n\n ");
-
-        # Add the buttons.
-
-        $button = Gtk2::Button->new($__select_id_1);
-        $button->signal_connect("clicked",
-                                \&history_list_button_clicked_cb,
-                                {instance    => $instance,
-                                 revision_id => $revision_id,
-                                 button_type => "1"});
-        $tooltips->set_tip($button, $$select_id_1_ttip);
-        $instance->{history_textview}->add_child_at_anchor
-            ($button,
-             $instance->{history_buffer}->
-                 create_child_anchor($instance->{history_buffer}->
-                                     get_end_iter()));
-        $button->show_all();
-
-        $instance->{history_buffer}->
-            insert($instance->{history_buffer}->get_end_iter(), " ");
-        $button = Gtk2::Button->new($__select_id_2);
-        $button->signal_connect("clicked",
-                                \&history_list_button_clicked_cb,
-                                {instance    => $instance,
-                                 revision_id => $revision_id,
-                                 button_type => "2"});
-        $tooltips->set_tip($button, $$select_id_2_ttip);
-        $instance->{history_textview}->add_child_at_anchor
-            ($button,
-             $instance->{history_buffer}->
-                 create_child_anchor($instance->{history_buffer}->
-                                     get_end_iter()));
-        $button->show_all();
-
-        $instance->{history_buffer}->
-            insert($instance->{history_buffer}->get_end_iter(), " ");
-        $button = Gtk2::Button->new($$browse_button);
-        $button->signal_connect("clicked",
-                                \&history_list_button_clicked_cb,
-                                {instance    => $instance,
-                                 revision_id => $revision_id,
-                                 button_type => $browse_button_type});
-        $tooltips->set_tip($button, $$browse_button_ttip);
-        $instance->{history_textview}->add_child_at_anchor
-            ($button,
-             $instance->{history_buffer}->
-                 create_child_anchor($instance->{history_buffer}->
-                                     get_end_iter()));
-        $button->show_all();
-
-        if (defined($instance->{file_name}))
-        {
-            $instance->{history_buffer}->
-                insert($instance->{history_buffer}->get_end_iter(), " ");
-            $button = Gtk2::Button->new($__annotate_file);
-            $button->signal_connect("clicked",
-                                    \&history_list_button_clicked_cb,
-                                    {instance    => $instance,
-                                     revision_id => $revision_id,
-                                     button_type => "annotate-file"});
-            $tooltips->set_tip($button, $__annotate_file_ttip);
-            $instance->{history_textview}->add_child_at_anchor
-                ($button,
-                 $instance->{history_buffer}->
-                     create_child_anchor($instance->{history_buffer}->
-                                         get_end_iter()));
-            $button->show_all();
-        }
-
-        $instance->{history_buffer}->
-            insert($instance->{history_buffer}->get_end_iter(), " ");
-        $button = Gtk2::Button->new($__full_changelog);
-        $button->signal_connect("clicked",
-                                \&history_list_button_clicked_cb,
-                                {instance    => $instance,
-                                 revision_id => $revision_id,
-                                 button_type => "revision-changelog"});
-        $tooltips->set_tip($button, $__full_changelog_ttip);
-        $instance->{history_textview}->add_child_at_anchor
-            ($button,
-             $instance->{history_buffer}->
-                 create_child_anchor($instance->{history_buffer}->
-                                     get_end_iter()));
-        $button->show_all();
 
         if (($counter % $update_interval) == 0)
         {

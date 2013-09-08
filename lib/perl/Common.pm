@@ -113,6 +113,7 @@ sub mtn_time_string_to_time($);
 sub open_database($$$);
 sub program_valid($;$);
 sub register_help_callbacks($$@);
+sub revision_context_textview_popup_menu_item_cb($$);
 sub run_command($$$$$$@);
 sub save_as_file($$$);
 sub set_label_value($$);
@@ -869,6 +870,73 @@ sub save_as_file($$$)
     $file_chooser_dir_locations{save_as_dir} =
         $chooser_dialog->get_current_folder();
     $chooser_dialog->destroy();
+
+}
+#
+##############################################################################
+#
+#   Routine      - revision_context_textview_popup_menu_item_cb
+#
+#   Description  - Callback routine called when the user selects an item on
+#                  a textview's popup menu that acts upon the revision context
+#                  underneath the mouse cursor.
+#
+#   Data         - $widget  : The widget object that received the signal.
+#                  $menu    : The Gtk2::Menu widget that is to be updated.
+#                  $details : A reference to an anonymous hash containing the
+#                             window instance, callback routine, progress
+#                             message, the revision id (or part) extracted
+#                             from the textview listing and the Gtk2::TextIter
+#                             for the start of the text line under the mouse
+#                             when the user right clicked.
+#
+##############################################################################
+
+
+
+sub revision_context_textview_popup_menu_item_cb($$)
+{
+
+    my ($widget, $details) = @_;
+
+    return if ($details->{instance}->{in_cb});
+    local $details->{instance}->{in_cb} = 1;
+
+    my ($nr_revisions,
+        @revision_ids);
+    my $wm = WindowManager->instance();
+
+    $wm->make_busy($details->{instance}, 1);
+    $details->{instance}->{appbar}->
+        push($details->{instance}->{appbar}->get_status()->get_text());
+    $details->{instance}->{appbar}->set_status($details->{progress_message});
+    $wm->update_gui();
+
+    $details->{instance}->{mtn}->
+        select(\@revision_ids, "i:" . $details->{revision_id});
+    $nr_revisions = scalar(@revision_ids);
+    if ($nr_revisions == 1)
+    {
+        $details->{cb}($details->{instance},
+                       $revision_ids[0],
+                       $details->{iter});
+    }
+    else
+    {
+        my $dialog = Gtk2::MessageDialog->new
+            ($details->{instance}->{window},
+             ["modal"],
+             "warning",
+             "close",
+             ($nr_revisions == 0)
+                 ? __("Cannot access a valid revision id.")
+                 : __("Cannot access a unique revision id."));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+    }
+
+    $details->{instance}->{appbar}->pop();
+    $wm->make_busy($details->{instance}, 0);
 
 }
 #

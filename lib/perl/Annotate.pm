@@ -63,7 +63,6 @@ sub display_annotation($$$;$$);
 
 sub annotate_previous_version($$$);
 sub annotation_textview_populate_popup_cb($$$);
-sub annotation_textview_popup_menu_item_cb($$);
 sub compare_file_with_previous($$);
 sub compare_revision_with_parent($$);
 sub get_annotation_window();
@@ -361,7 +360,7 @@ sub annotation_textview_populate_popup_cb($$$)
     {
         $menu_item->signal_connect
             ("activate",
-             \&annotation_textview_popup_menu_item_cb,
+             \&revision_context_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
                                       my ($instance, $revision_id, $iter) = @_;
@@ -371,7 +370,7 @@ sub annotation_textview_populate_popup_cb($$$)
                                                          undef);
                                   },
               progress_message => __("Displaying change log"),
-              revision_part    => $revision_part,
+              revision_id      => $revision_part,
               iter             => $iter});
     }
     $menu_item->show();
@@ -386,7 +385,7 @@ sub annotation_textview_populate_popup_cb($$$)
     {
         $menu_item->signal_connect
             ("activate",
-             \&annotation_textview_popup_menu_item_cb,
+             \&revision_context_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
                                       my ($instance, $revision_id, $iter) = @_;
@@ -402,7 +401,7 @@ sub annotation_textview_populate_popup_cb($$$)
                                            $old_file_name);
                                   },
               progress_message => __("Displaying file history"),
-              revision_part    => $revision_part,
+              revision_id      => $revision_part,
               iter             => $iter});
     }
     $menu_item->show();
@@ -417,7 +416,7 @@ sub annotation_textview_populate_popup_cb($$$)
     {
         $menu_item->signal_connect
             ("activate",
-             \&annotation_textview_popup_menu_item_cb,
+             \&revision_context_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
                                       my ($instance, $revision_id, $iter) = @_;
@@ -427,7 +426,7 @@ sub annotation_textview_populate_popup_cb($$$)
                                            $revision_id);
                                   },
               progress_message => __("Displaying revision history"),
-              revision_part    => $revision_part,
+              revision_id      => $revision_part,
               iter             => $iter});
     }
     $menu_item->show();
@@ -446,7 +445,7 @@ sub annotation_textview_populate_popup_cb($$$)
     {
         $menu_item->signal_connect
             ("activate",
-             \&annotation_textview_popup_menu_item_cb,
+             \&revision_context_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
                                       my ($instance, $revision_id, $iter) = @_;
@@ -482,7 +481,7 @@ sub annotation_textview_populate_popup_cb($$$)
                                                          $file);
                                   },
               progress_message => __("Displaying file in a new browser"),
-              revision_part    => $revision_part,
+              revision_id      => $revision_part,
               iter             => $iter});
     }
     $menu_item->show();
@@ -502,7 +501,7 @@ sub annotation_textview_populate_popup_cb($$$)
     {
         $menu_item->signal_connect
             ("activate",
-             \&annotation_textview_popup_menu_item_cb,
+             \&revision_context_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
                                       my ($instance, $revision_id, $iter) = @_;
@@ -510,7 +509,7 @@ sub annotation_textview_populate_popup_cb($$$)
                                                                  $revision_id);
                                   },
               progress_message => __("Doing file comparison"),
-              revision_part    => $revision_part,
+              revision_id      => $revision_part,
               iter             => $iter});
     }
     $menu_item->show();
@@ -526,7 +525,7 @@ sub annotation_textview_populate_popup_cb($$$)
     {
         $menu_item->signal_connect
             ("activate",
-             \&annotation_textview_popup_menu_item_cb,
+             \&revision_context_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
                                       my ($instance, $revision_id, $iter) = @_;
@@ -534,7 +533,7 @@ sub annotation_textview_populate_popup_cb($$$)
                                           ($instance, $revision_id);
                                   },
               progress_message => __("Doing revision comparison"),
-              revision_part    => $revision_part,
+              revision_id      => $revision_part,
               iter             => $iter});
     }
     $menu_item->show();
@@ -554,7 +553,7 @@ sub annotation_textview_populate_popup_cb($$$)
     {
         $menu_item->signal_connect
             ("activate",
-             \&annotation_textview_popup_menu_item_cb,
+             \&revision_context_textview_popup_menu_item_cb,
              {instance         => $instance,
               cb               => sub {
                                       my ($instance, $revision_id, $iter) = @_;
@@ -562,73 +561,11 @@ sub annotation_textview_populate_popup_cb($$$)
                                           ($instance, $revision_id, $iter);
                                   },
               progress_message => __("Doing file annotation"),
-              revision_part    => $revision_part,
+              revision_id      => $revision_part,
               iter             => $iter});
     }
     $menu_item->show();
     $menu->append($menu_item);
-
-}
-#
-##############################################################################
-#
-#   Routine      - annotation_textview_popup_menu_item_cb
-#
-#   Description  - Callback routine called when the user selects an item on
-#                  the annotation textview's popup menu.
-#
-#   Data         - $widget  : The widget object that received the signal.
-#                  $menu    : The Gtk2::Menu widget that is to be updated.
-#                  $details : A reference to an anonymous hash containing the
-#                             window instance, callback routine, progress
-#                             message, the start of the revision id extracted
-#                             from the annotated listing and the
-#                             Gtk2::TextIter for the start of the text line
-#                             under the mouse when the user right clicked.
-#
-##############################################################################
-
-
-
-sub annotation_textview_popup_menu_item_cb($$)
-{
-
-    my ($widget, $details) = @_;
-
-    return if ($details->{instance}->{in_cb});
-    local $details->{instance}->{in_cb} = 1;
-
-    my @revision_ids;
-    my $wm = WindowManager->instance();
-
-    $wm->make_busy($details->{instance}, 1);
-    $details->{instance}->{appbar}->
-        push($details->{instance}->{appbar}->get_status()->get_text());
-    $details->{instance}->{appbar}->set_status($details->{progress_message});
-    $wm->update_gui();
-
-    $details->{instance}->{mtn}->
-        select(\@revision_ids, "i:" . $details->{revision_part});
-    if (scalar(@revision_ids) == 1)
-    {
-        $details->{cb}($details->{instance},
-                       $revision_ids[0],
-                       $details->{iter});
-    }
-    else
-    {
-        my $dialog = Gtk2::MessageDialog->new
-            ($details->{instance}->{window},
-             ["modal"],
-             "warning",
-             "close",
-             __("Cannot access a unique revision id."));
-        busy_dialog_run($dialog);
-        $dialog->destroy();
-    }
-
-    $details->{instance}->{appbar}->pop();
-    $wm->make_busy($details->{instance}, 0);
 
 }
 #
