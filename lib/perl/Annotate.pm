@@ -279,8 +279,8 @@ sub display_annotation($$$;$$)
 #
 #   Routine      - annotation_textview_populate_popup_cb
 #
-#   Description  - Callback routine called when the user right clicks on any
-#                  textview window.
+#   Description  - Callback routine called when the user right clicks on the
+#                  annotation textview window.
 #
 #   Data         - $widget   : The widget object that received the signal.
 #                  $menu     : The Gtk2::Menu widget that is to be updated.
@@ -481,7 +481,7 @@ sub annotation_textview_populate_popup_cb($$$)
                                                          $dir,
                                                          $file);
                                   },
-              progress_message => __("Displaying revision in a new browser"),
+              progress_message => __("Displaying file in a new browser"),
               revision_part    => $revision_part,
               iter             => $iter});
     }
