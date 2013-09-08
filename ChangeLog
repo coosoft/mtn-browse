@@ -1,6 +1,6 @@
 Revision history for mtn-browse.
 
-1.10  Sun Nov 04 10:04:00 2012 Anthony Cooper <support@coosoft.plus.com>
+1.10  Thu Apr 11 14:22:00 2013 Anthony Cooper <support@coosoft.plus.com>
 	- Release of 1.10.
 	- Implemented a workspace comparison tool.
 	- Implemented the ability to annotate files from a file's history list
@@ -10,9 +10,16 @@ Revision history for mtn-browse.
 	- Implemented a facility for saving the current window sizes and
 	  resetting them back to their default settings.
 	- Added a go to text line button to the main browser window.
+	- Now use a right click context menu instead of dedicated revision
+	  buttons inside revision and file history windows. Using the buttons
+	  on some platforms causes a really big slowdown in rendering the
+	  history. Using a context menu, whilst slightly less user friendly, is
+	  vastly more efficient.
 	- Now provide a `{line}' token that contains the number of the line
 	  currently displayed in the middle of the file viewer when launching
 	  external viewer applications.
+	- Made some of the annotation code more generic as we are now using
+	  similar techniques when displaying history as well.
 	- Difference listings now prefer the new file name when referring to
 	  files in the listing.
 	- Made buttons on info dialogs consistent.
@@ -61,6 +68,8 @@ Revision history for mtn-browse.
 	  this is what the method does.
 	- Now clone iters rather than recreate them from scratch each time.
 	- Removed duplicated code in mtn-browse.
+	- Made calls to WindowManager's update_gui() method more consistent.
+	- Corrected some status text.
 	- Made some code more consistent and improved some comments.
 
 1.00  Sat Apr 07 16:42:00 2012 Anthony Cooper <support@coosoft.plus.com>
