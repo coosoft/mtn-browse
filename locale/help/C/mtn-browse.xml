@@ -6,7 +6,7 @@
 
     <!ENTITY APP "Monotone Browser">
     <!ENTITY APP-CMD "mtn-browse">
-    <!ENTITY VERSION "1.01">
+    <!ENTITY VERSION "1.02">
 
   ]
 >
@@ -150,8 +150,16 @@ GNOME or DocBook.
         </revdescription>
       </revision>
       <revision>
-        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <revnumber>&APP; Manual V1.01</revnumber>
         <date>03 November 2012</date>
+        <revdescription>
+          <para role="author">Anthony Cooper</para>
+          <para role="publisher">CooSoft</para>
+        </revdescription>
+      </revision>
+      <revision>
+        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <date>11 April 2013</date>
         <revdescription>
           <para role="author">Anthony Cooper</para>
           <para role="publisher">CooSoft</para>
@@ -1210,7 +1218,7 @@ GNOME or DocBook.
   <chapter label="5" id="mtnb-lachc">
     <title>Looking At Change Histories</title>
 
-    <para>This chapter covers the examining of revision and file histories, doing comparisons between revisions and files and finding out who was responsible for a particular piece of text within a file.</para>
+    <para>This chapter covers the examining of revision and file change histories, doing comparisons between revisions and files and finding out who was responsible for a particular piece of text within a file.</para>
 
     <sect1 id="mtnb-lachc-the-revision-and-file-history-windows">
       <title>The Revision And File History Windows</title>
@@ -1223,24 +1231,71 @@ GNOME or DocBook.
         <title>A Revision History Window</title>
         <screenshot>
           <screeninfo>A <guilabel>Revision History</guilabel> window.</screeninfo>
-          <graphic fileref="figures/revision-history-window.png" format="png"/>
+          <graphic fileref="figures/revision-history-window-with-menu.png" format="png"/>
         </screenshot>
       </figure>
 
-      <para>The <guilabel>Revision History</guilabel> window shows the change history from the revision currently displayed in the parent <guilabel>Monotone Browser</guilabel> window right back to the base revision. Each revision has a summary change log displayed, separated from the next revision by a red line.</para>
+      <para>The <guilabel>Revision History</guilabel> window shows the change history from the revision currently displayed in the parent <guilabel>Monotone Browser</guilabel> window right back to the base revision. Each revision has a summary change log displayed, separated from the next entry by a red line.</para>
+
+      <para>If one right clicks on the scrolling change history window then a menu pops up that allows you to perform certain actions on the revision entry directly under the mouse cursor. These menu options do the following:</para>
+
+      <informaltable>
+        <tgroup cols="2">
+          <thead>
+            <row>
+              <entry><para>Menu Option</para></entry>
+              <entry><para>Description</para></entry>
+            </row>
+          </thead>
+          <tbody>
+            <row valign="top">
+              <entry><para><guilabel>Select As Id 1</guilabel></para></entry>
+              <entry><para>Selects that revision as the first revision that is to be compared. Its revision id is displayed in the <guilabel>First revision id</guilabel> field at the bottom of the window.</para></entry>
+            </row>
+            <row valign="top">
+              <entry><para><guilabel>Select As Id 2</guilabel></para></entry>
+              <entry><para>Selects that revision as the second revision that is to be compared. Its revision id is displayed in the <guilabel>Second revision id</guilabel> field at the bottom of the window.</para></entry>
+            </row>
+            <row valign="top">
+              <entry><para><guilabel>Browse Revision</guilabel></para></entry>
+              <entry><para>Displays a new <guilabel>Monotone Browser</guilabel> window showing the contents of that revision. This menu option is only displayed in <guilabel>Revision History</guilabel> windows.</para></entry>
+            </row>
+            <row valign="top">
+              <entry><para><guilabel>Browse File</guilabel></para></entry>
+              <entry><para>Displays a new <guilabel>Monotone Browser</guilabel> window showing the contents of that version of the file. This menu option is only displayed in <guilabel>File History</guilabel> windows.</para></entry>
+            </row>
+            <row valign="top">
+              <entry><para><guilabel>Annotate File</guilabel></para></entry>
+              <entry><para>Displays a <guilabel>Annotated Listing</guilabel> window showing an annotated listing of that version of the file. This menu option is only displayed in <guilabel>File History</guilabel> windows.</para></entry>
+            </row>
+            <row valign="top">
+              <entry><para><guilabel>Full Change Log</guilabel></para></entry>
+              <entry><para>Displays a <guilabel>Change Log</guilabel> window containing the full change log for that revision. In addition to the summary information already displayed, a full change log also contains the list of files changed and the parent and manifest ids.</para></entry>
+            </row>
+            <row valign="top">
+              <entry><para><guilabel>Find</guilabel></para></entry>
+              <entry><para>Calls up the standard <guilabel>Find Text</guilabel> dialog window that can be used to find text within the change history.</para></entry>
+            </row>
+            <row valign="top">
+              <entry><para><guilabel>Go To Line</guilabel></para></entry>
+              <entry><para>Calls up the standard <guilabel>Go To Line</guilabel> dialog window that can be used to jump to a specific line within the change history.</para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
 
       <note>
         <para>Whilst the <guilabel>Number of revisions</guilabel> field is pretty self explanatory, please remember that it shows the number of revisions actually displayed and may be less than what could have been found in the database if the <guilabel>Stop</guilabel> button was pressed. For example, above I pressed the <guilabel>Stop</guilabel> button early on but had I not done so then the number of revisions would have been more like eight thousand rather than one hundred.</para>
       </note>
 
       <warning>
-        <para>Do think twice before loading up revision histories that are very large. Normally one would only want to look at the first fifty or so items. Do make use of the <guilabel>Stop</guilabel> button. Although it will work as expected, displaying thousands of revisions will take a very long time in both gathering the information and cleaning up afterwards.</para>
+        <para>Do think twice before loading up change histories that are very large. Normally one would only want to look at the first few hundred or so entries. Do make use of the <guilabel>Stop</guilabel> button. Although it will work as expected, displaying tens of thousands of revisions will take a very long time.</para>
       </warning>
 
       <sect2 id="mtnb-lachc-history-buttons">
         <title>History Buttons</title>
 
-        <para>These buttons are located after each summary change log and just below the scrolling history window. They do the following:</para>
+        <para>These buttons are located just below the scrolling change history window. They do the following:</para>
 
         <informaltable>
           <tgroup cols="2">
@@ -1252,36 +1307,12 @@ GNOME or DocBook.
             </thead>
             <tbody>
               <row valign="top">
-                <entry><para><guilabel>Select As Id 1</guilabel></para></entry>
-                <entry><para>Selects that revision as the first revision that is to be compared. It's revision id is displayed in the <guilabel>First revision id</guilabel> field at the bottom of the window.</para></entry>
-              </row>
-              <row valign="top">
-                <entry><para><guilabel>Select As Id 2</guilabel></para></entry>
-                <entry><para>Selects that revision as the second revision that is to be compared. It's revision id is displayed in the <guilabel>Second revision id</guilabel> field at the bottom of the window.</para></entry>
-              </row>
-              <row valign="top">
-                <entry><para><guilabel>Browse Revision</guilabel></para></entry>
-                <entry><para>Displays a new <guilabel>Monotone Browser</guilabel> window showing the contents of that revision. This button is only displayed in <guilabel>Revision History</guilabel> windows.</para></entry>
-              </row>
-              <row valign="top">
-                <entry><para><guilabel>Browse File</guilabel></para></entry>
-                <entry><para>Displays a new <guilabel>Monotone Browser</guilabel> window showing the contents of that version of the file. This button is only displayed in <guilabel>File History</guilabel> windows.</para></entry>
-              </row>
-              <row valign="top">
-                <entry><para><guilabel>Annotate File</guilabel></para></entry>
-                <entry><para>Displays a <guilabel>Annotated Listing</guilabel> window showing an annotated listing of that version of the file. This button is only displayed in <guilabel>File History</guilabel> windows.</para></entry>
-              </row>
-              <row valign="top">
-                <entry><para><guilabel>Full Change Log</guilabel></para></entry>
-                <entry><para>Displays a <guilabel>Change Log</guilabel> window containing the full change log for that revision. In addition to the summary information already displayed, a full change log also contains the list of files changed and the parent and manifest ids.</para></entry>
-              </row>
-              <row valign="top">
                 <entry><para><guilabel>Restrict to</guilabel></para></entry>
-                <entry><para>Allows one to restrict the file or revision history to the selected branch. Initially the entire history, irrespective of branch, is displayed.</para></entry>
+                <entry><para>Allows one to restrict the change history to the selected branch. Initially the entire history, irrespective of branch, is displayed.</para></entry>
               </row>
               <row valign="top">
                 <entry><para><inlinegraphic fileref="figures/stop-button.png" format="png" valign="middle"/></para></entry>
-                <entry><para>When pressed the first time, this button stops the traversing of revision and file histories. When pressed a second time, it stops the gathering of information about each revision. This is very useful when looking at revision histories, as these can be massive, or when looking at file histories, as these take a long time to calculate where each change happened.</para></entry>
+                <entry><para>When pressed the first time, this button stops the traversing of change histories. When pressed a second time, it stops the gathering of information about each revision. This is very useful when looking at revision histories, as these can be massive, or when looking at file histories, as these can take a long time to calculate where each change happened.</para></entry>
               </row>
               <row valign="top">
                 <entry><para><inlinegraphic fileref="figures/compare-button.png" format="png" valign="middle"/></para></entry>
@@ -1322,7 +1353,7 @@ GNOME or DocBook.
       </note>
 
       <warning>
-        <para>Do think twice before displaying very large differences as this can take a very long time in both formatting the information and cleaning up afterwards. Do make use of the <guilabel>Stop</guilabel> button. However, unlike viewing histories, if you really need to view very large comparisons then one always has the option of turning off the coloured formatting feature via the relevant preference option (see <xref linkend="mtnb-upc-the-preferences-dialog-window"/>).</para>
+        <para>Do think twice before displaying very large differences as this can take a very long time in both formatting the information and cleaning up afterwards. Do make use of the <guilabel>Stop</guilabel> button. However if you really need to view very large comparisons then one always has the option of turning off the coloured formatting feature via the relevant preference option (see <xref linkend="mtnb-upc-the-preferences-dialog-window"/>).</para>
       </warning>
 
       <sect2 id="mtnb-lachc-differences-buttons">
@@ -1442,7 +1473,9 @@ GNOME or DocBook.
         </screenshot>
       </figure>
 
-      <para>The <guilabel>Annotated Listing</guilabel> window shows the revision and author responsible for each line of text within a file, along with the date on which that change was made. If one right clicks on the window then a menu pops up that allows you to extract certain information about the revision responsible for the text directly under the mouse cursor. These menu options do the following:</para>
+      <para>The <guilabel>Annotated Listing</guilabel> window shows the revision and author responsible for each line of text within a file, along with the date on which that change was made.</para>
+
+      <para>If one right clicks on the window then a menu pops up that allows you to perform certain actions on the revision responsible for the text directly under the mouse cursor. These menu options do the following:</para>
 
       <informaltable>
         <tgroup cols="2">
@@ -1922,7 +1955,7 @@ GNOME or DocBook.
                   <tbody>
                     <row valign="top">
                       <entry><para><guilabel>Auto select head revision</guilabel></para></entry>
-                      <entry><para>If this is ticked then whenever a branch is selected, it's head revision is automatically selected as well. Otherwise the revision has to be selected manually.</para><note><para>This option only works when revisions are selected by their id rather than by their tag name, i.e. <guilabel>Tagged</guilabel> is unticked in the <guilabel>Monotone Browser</guilabel> window.</para></note></entry>
+                      <entry><para>If this is ticked then whenever a branch is selected, its head revision is automatically selected as well. Otherwise the revision has to be selected manually.</para><note><para>This option only works when revisions are selected by their id rather than by their tag name, i.e. <guilabel>Tagged</guilabel> is unticked in the <guilabel>Monotone Browser</guilabel> window.</para></note></entry>
                     </row>
                   </tbody>
                 </tgroup>
