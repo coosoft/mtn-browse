@@ -508,7 +508,7 @@ sub shell_command($)
         exec($cmd);
 
     }
-    elsif (not defined($child))
+    elsif (! defined($child))
     {
         my $prog = (split(/ /, $cmd))[0];
         my $dialog = Gtk2::MessageDialog->new_with_markup
