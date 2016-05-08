@@ -1815,13 +1815,24 @@ sub view_button_clicked_cb($$)
 
             # Use the command attribute if it is present rather than the
             # launch() method as this can crash on some systems (we need to
-            # trim white space as the command attribute can contain them).
+            # trim white space as the command attribute can contain them). If
+            # the command contains spaces other than at the beginning or the
+            # end then simply concatenate the entire command into one string
+            # (sometimes happens when commands contain multiple statements or
+            # an environment variable assignment).
 
             if (exists($app->{command}))
             {
                 my $cmd = $app->{command};
                 $cmd =~ s/(^\s+)|(\s+$)//g;
-                shell_command($cmd, $file_name);
+                if ($cmd =~ m/\s/)
+                {
+                    shell_command($cmd . " " . $file_name);
+                }
+                else
+                {
+                    shell_command($cmd, $file_name);
+                }
             }
             else
             {
