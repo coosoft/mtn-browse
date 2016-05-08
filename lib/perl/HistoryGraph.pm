@@ -1758,7 +1758,9 @@ sub layout_graph($)
     my (@arrows,
         $buffer,
         @circles,
-        $prev_lines,
+        $inside_bracket,
+        $prev_backslash_lines,
+        $prev_bracketed_lines,
         @rectangles);
     my $nre = '[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?';
 
@@ -1784,23 +1786,48 @@ sub layout_graph($)
 
     # Parse the dot output, line by line.
 
-    $prev_lines = "";
+    $prev_backslash_lines = "";
     foreach my $line (split(/\n/, $buffer))
     {
 
         my $revision_id;
 
-        # Deal with statements that span multiple lines.
+        # Deal with statements that span multiple lines using a `\'.
 
         if ($line =~ m/^(.*)\\$/)
         {
-            $prev_lines .= $1;
+            $prev_backslash_lines .= $1;
             next;
         }
-        elsif ($prev_lines ne "")
+        elsif ($prev_backslash_lines ne "")
         {
-            $line = $prev_lines . $line;
-            $prev_lines = "";
+            $line = $prev_backslash_lines . $line;
+            $prev_backslash_lines = "";
+        }
+
+        # Now deal with bracketed statements that span multiple lines.
+
+        if (! $inside_bracket)
+        {
+            if ($line =~ m/\[[^]]*$/)
+            {
+                $prev_bracketed_lines = $line;
+                $inside_bracket = 1;
+                next;
+            }
+        }
+        else
+        {
+            $prev_bracketed_lines .= " " . $line;
+            if ($line =~ m/^.*\];[ \t]*$/)
+            {
+                $line = $prev_bracketed_lines;
+                $inside_bracket = 0;
+            }
+            else
+            {
+                next;
+            }
         }
 
         # Parse statements.
