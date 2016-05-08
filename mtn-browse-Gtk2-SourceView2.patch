@@ -1,13 +1,13 @@
 #
-# old_revision [79edc903796100d175f9068b21615b765d13802c]
+# old_revision [f81afb1976fd66fa2ad20e3700d8244c1ae29cbc]
 #
 # patch "mtn-browse"
-#  from [693ee97c8c3337fb3389121a69c942715f495837]
-#    to [960aec82136330eab2da350a8b70992190b7dd9d]
+#  from [560256ded1bf9b190ce9949556b71655fe6c5b5a]
+#    to [62216e1a094218654e6fd005d9cb271ffbfff9d0]
 #
 ============================================================
---- mtn-browse	693ee97c8c3337fb3389121a69c942715f495837
-+++ mtn-browse	960aec82136330eab2da350a8b70992190b7dd9d
+--- mtn-browse	560256ded1bf9b190ce9949556b71655fe6c5b5a
++++ mtn-browse	62216e1a094218654e6fd005d9cb271ffbfff9d0
 @@ -79,7 +79,7 @@ use Gtk2::Pango;
  use Gtk2::GladeXML;
  use Gtk2::Helper;
@@ -17,7 +17,7 @@
  use IO::Dir;
  use IO::File;
  use IPC::Open3;
-@@ -2402,13 +2402,13 @@ sub get_browser_window(;$$$$$)
+@@ -2405,13 +2405,13 @@ sub get_browser_window(;$$$$$)
  
          # Setup the file file viewer (with syntax highlighting).
  
@@ -35,7 +35,7 @@
              new_with_buffer($browser->{file_view_svbuffer});
          $browser->{file_view_sv}->modify_font($mono_font);
          $browser->{file_view_sv}->set_cursor_visible(FALSE);
-@@ -3505,7 +3505,7 @@ sub update_browser_state($$)
+@@ -3508,7 +3508,7 @@ sub update_browser_state($$)
              $browser->{file_view_svbuffer}->
                  place_cursor($browser->{file_view_svbuffer}->get_start_iter());
              $browser->{file_view_svbuffer}->set_text("");
@@ -44,7 +44,7 @@
              set_label_value($browser->{file_name_value_label}, "");
              set_label_value($browser->{file_author_value_label}, "");
              set_label_value($browser->{last_update_value_label}, "");
-@@ -3631,7 +3631,7 @@ sub display_file($$)
+@@ -3634,7 +3634,7 @@ sub display_file($$)
      $browser->{file_view_svbuffer}->
          place_cursor($browser->{file_view_svbuffer}->get_start_iter());
      $browser->{file_view_svbuffer}->set_text("");
@@ -53,7 +53,7 @@
  
      # Get contents.
  
-@@ -3735,9 +3735,12 @@ sub display_file($$)
+@@ -3738,9 +3738,12 @@ sub display_file($$)
                           && $mime_details->{syntax_highlight}))
                      && defined($lang =
                                 $browser->{file_view_svlangmgr}->

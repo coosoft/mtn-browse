@@ -1,13 +1,13 @@
 #
-# old_revision [79edc903796100d175f9068b21615b765d13802c]
+# old_revision [f81afb1976fd66fa2ad20e3700d8244c1ae29cbc]
 #
 # patch "lib/perl/HistoryGraph.pm"
-#  from [12549bc5b568ae3f007bf4f36a518dd7862e13ff]
-#    to [4d0e79ae45c6f81330058bc879659833239f8ed3]
+#  from [dadaf19f899a6d3450c3f6ab4143c297008d68a0]
+#    to [3de503db9b8ecdf2e1a5bc997bad77870c4a1c3e]
 #
 ============================================================
---- lib/perl/HistoryGraph.pm	12549bc5b568ae3f007bf4f36a518dd7862e13ff
-+++ lib/perl/HistoryGraph.pm	4d0e79ae45c6f81330058bc879659833239f8ed3
+--- lib/perl/HistoryGraph.pm	dadaf19f899a6d3450c3f6ab4143c297008d68a0
++++ lib/perl/HistoryGraph.pm	3de503db9b8ecdf2e1a5bc997bad77870c4a1c3e
 @@ -53,7 +53,7 @@ use constant DPI              => 72;
  
  use constant CANVAS_BORDER    => 5;
@@ -25,7 +25,7 @@
  use constant NOT_SELECTED_BORDER_COLOUR => "Gray";
  use constant SELECTED_BORDER_COLOUR     => "Black";
  use constant SELECTION_COLOUR           => "Tomato";
-@@ -1916,25 +1915,21 @@ sub dot_input_handler_cb($$)
+@@ -1943,25 +1942,21 @@ sub dot_input_handler_cb($$)
      my ($child_db,
          $hex_id_height,
          $hex_id_width,
@@ -59,7 +59,7 @@
      $hex_id_height = max(HEIGHT, $hex_id_height + (TEXT_BORDER * 2));
      $hex_id_width = max(WIDTH, $hex_id_width + (TEXT_BORDER * 2));
  
-@@ -1980,9 +1975,9 @@ sub dot_input_handler_cb($$)
+@@ -2007,9 +2002,9 @@ sub dot_input_handler_cb($$)
              $fh_in->print("  \"" . $revision_id . "\"");
              if (defined($tag = get_node_tag($instance, $revision_id)))
              {
@@ -71,7 +71,7 @@
                                   + (TEXT_BORDER * 6));
              }
              if ($width != WIDTH)
-@@ -2055,10 +2050,6 @@ sub dot_input_handler_cb($$)
+@@ -2082,10 +2077,6 @@ sub dot_input_handler_cb($$)
      $fh_in->print("}\n");
      $fh_in->close();
  
@@ -82,7 +82,7 @@
      # Reset our locale back to the local one again.
  
      setlocale(LC_ALL, "");
-@@ -2100,7 +2091,7 @@ sub draw_graph($)
+@@ -2127,7 +2118,7 @@ sub draw_graph($)
                                    x => CANVAS_BORDER,
                                    y => CANVAS_BORDER);
  
@@ -91,7 +91,7 @@
      $instance->{graph}->{selection_box} = Gnome2::Canvas::Item->new
          ($instance->{graph}->{group},
           "Gnome2::Canvas::Rect",
-@@ -2136,7 +2127,8 @@ sub draw_graph($)
+@@ -2163,7 +2154,8 @@ sub draw_graph($)
      foreach my $rectangle (@{$instance->{graph_data}->{rectangles}})
      {
  
@@ -101,7 +101,7 @@
              $text,
              $widget);
          my $node = $child_db->{$rectangle->{revision_id}};
-@@ -2177,7 +2169,8 @@ sub draw_graph($)
+@@ -2204,7 +2196,8 @@ sub draw_graph($)
               width_pixels   => LINE_WIDTH);
  
          # Now the text, use a revision's tag and failing that use the first
@@ -111,7 +111,7 @@
  
          if (defined($tag = get_node_tag($instance, $rectangle->{revision_id})))
          {
-@@ -2187,21 +2180,20 @@ sub draw_graph($)
+@@ -2214,21 +2207,20 @@ sub draw_graph($)
          {
              $text = substr($rectangle->{revision_id}, 0, HEX_ID_LENGTH);
          }
@@ -143,7 +143,7 @@
  
          $node_group->signal_connect
              ("event",
-@@ -2526,7 +2518,8 @@ sub scroll_to_node($$)
+@@ -2553,7 +2545,8 @@ sub scroll_to_node($$)
  #
  #   Routine      - scale_canvas
  #
@@ -153,7 +153,7 @@
  #
  #   Data         - $instance : The history graph window instance.
  #
-@@ -2548,24 +2541,24 @@ sub scale_canvas($)
+@@ -2575,24 +2568,24 @@ sub scale_canvas($)
      $wm->update_gui();
  
      # Adjust the canvas zoom factor, also resize the fonts on all the text
@@ -184,7 +184,7 @@
          }
      }
  
-@@ -3336,9 +3329,9 @@ sub reset_history_graph_window($)
+@@ -3363,9 +3356,9 @@ sub reset_history_graph_window($)
  
      my $group = $instance->{graph}->{group};
  
