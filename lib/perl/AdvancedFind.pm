@@ -431,6 +431,14 @@ sub populate_button_clicked_cb($$)
     {
         $to_insert = "max(" . (($arg eq "") ? __("<Selector>") : $arg) . ")";
     }
+    elsif ($selector eq __("min()"))
+    {
+        $to_insert = "min(" . (($arg eq "") ? __("<Selector>") : $arg) . ")";
+    }
+    elsif ($selector eq __("not()"))
+    {
+        $to_insert = "not(" . (($arg eq "") ? __("<Selector>") : $arg) . ")";
+    }
     elsif ($selector eq __("parents()"))
     {
         $to_insert =
@@ -739,7 +747,13 @@ sub get_advanced_find_window($)
                              && ! $instance->{mtn}->supports(MTN_P_SELECTOR))
                          || ($value =~ m/^[a-z0-9_]+\(\)$/
                              && ! $instance->{mtn}->supports
-                                 (MTN_SELECTOR_FUNCTIONS)));
+                                 (MTN_SELECTOR_FUNCTIONS))
+                         || ($value eq __("min()")
+                             && ! $instance->{mtn}->supports
+                                 (MTN_SELECTOR_MIN_FUNCTION))
+                         || ($value eq __("not()")
+                             && ! $instance->{mtn}->supports
+                                 (MTN_SELECTOR_NOT_FUNCTION)));
                  ++ $index;
                  return FALSE;
              });
