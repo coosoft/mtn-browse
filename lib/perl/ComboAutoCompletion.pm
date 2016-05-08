@@ -531,9 +531,7 @@ sub completions_treeselection_changed_cb($$)
     {
 
         my ($iter,
-            $model,
-            $timeout_source_id,
-            $timer_active);
+            $model);
         my $change_state = $completions->{details}->{change_state};
         my $combo_details = $completions->{details}->{combo_details};
         my $entry = $completions->{details}->{entry};
@@ -570,14 +568,15 @@ sub completions_treeselection_changed_cb($$)
 
         # Dismiss the completions list window in half a second or so.
 
-        $timeout_source_id =
+        $completions->{timeout_source_id} =
             Glib::Timeout->add(500,
                                sub {
+                                   my $completions = $_[0];
+                                   $completions->{timeout_source_id} = undef;
                                    hide_completions_window();
-                                   $timer_active = undef;
                                    return FALSE;
-                               });
-        $timer_active = 1;
+                               },
+                               $completions);
 
         # Update the parent window if necessary.
 
@@ -586,7 +585,6 @@ sub completions_treeselection_changed_cb($$)
 
         # We are done so make sure that the completions list window is hidden.
 
-        Glib::Source->remove($timeout_source_id) if ($timer_active);
         hide_completions_window();
 
     }
@@ -916,6 +914,8 @@ sub get_completions_window($$$$$)
                            $instance);
 
         $instance->{context_id} = undef;
+        $instance->{details} = undef;
+        $instance->{timeout_source_id} = undef;
 
     }
     else
@@ -1037,10 +1037,6 @@ sub get_tooltip_window($$$$)
             $instance->{$widget} = $glade->get_widget($widget);
         }
 
-        # Keep track of timers.
-
-        $instance->{timer_active} = undef;
-
         # Setup the colours used for the tooltip window.
 
         $instance->{window}->modify_bg("normal",
@@ -1051,11 +1047,7 @@ sub get_tooltip_window($$$$)
     }
     else
     {
-        $instance->{in_cb} = 0;
-        local $instance->{in_cb} = 1;
-        $instance->{window}->hide();
-        Glib::Source->remove($instance->{timeout_source_id})
-            if ($instance->{timer_active});
+        hide_tooltip_window();
     }
 
     local $instance->{in_cb} = 1;
@@ -1068,12 +1060,11 @@ sub get_tooltip_window($$$$)
         Glib::Timeout->add(3000,
                            sub {
                                my $instance = $_[0];
-                               $instance->{window}->hide();
-                               $instance->{timer_active} = undef;
+                               $instance->{timeout_source_id} = undef;
+                               hide_tooltip_window();
                                return FALSE;
                            },
                            $instance);
-    $instance->{timer_active} = 1;
 
     # Position it, reparent window and display it.
 
@@ -1167,6 +1158,11 @@ sub hide_completions_window()
             $instance->{togglebutton}->set_active(FALSE);
             $instance->{togglebutton} = undef;
         }
+        if (defined($instance->{timeout_source_id}))
+        {
+            Glib::Source->remove($instance->{timeout_source_id});
+            $instance->{timeout_source_id} = undef;
+        }
     }
 
 }
@@ -1201,8 +1197,11 @@ sub hide_tooltip_window()
         $instance->{in_cb} = 0;
         local $instance->{in_cb} = 1;
         $instance->{window}->hide();
-        $instance->{timer_active} = undef;
-        Glib::Source->remove($instance->{timeout_source_id});
+        if (defined($instance->{timeout_source_id}))
+        {
+            Glib::Source->remove($instance->{timeout_source_id});
+            $instance->{timeout_source_id} = undef;
+        }
     }
 
 }
