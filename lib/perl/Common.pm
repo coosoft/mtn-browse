@@ -687,7 +687,8 @@ sub open_database($$$)
     while (! $done);
 
     $file_chooser_dir_locations{open_db_dir} =
-        $chooser_dialog->get_current_folder();
+        $chooser_dialog->get_current_folder()
+        if (defined($chooser_dialog->get_current_folder()));
     $chooser_dialog->destroy();
 
     return $ret_val;
@@ -936,7 +937,8 @@ sub save_as_file($$$)
     while (! $done);
 
     $file_chooser_dir_locations{save_as_dir} =
-        $chooser_dialog->get_current_folder();
+        $chooser_dialog->get_current_folder()
+        if (defined($chooser_dialog->get_current_folder()));
     $chooser_dialog->destroy();
 
 }
