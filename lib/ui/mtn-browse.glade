@@ -1317,7 +1317,7 @@ or more search criteria</property>
 
 					  <child>
 					    <widget class="GtkEventBox" id="file_name_value_label_eventbox">
-					      <property name="width_request">4000</property>
+					      <property name="width_request">10000</property>
 					      <property name="height_request">0</property>
 					      <property name="visible">True</property>
 					      <property name="visible_window">True</property>
@@ -1378,7 +1378,7 @@ or more search criteria</property>
 
 					  <child>
 					    <widget class="GtkEventBox" id="last_update_value_label_eventbox">
-					      <property name="width_request">4000</property>
+					      <property name="width_request">10000</property>
 					      <property name="height_request">0</property>
 					      <property name="visible">True</property>
 					      <property name="visible_window">True</property>
@@ -1522,7 +1522,7 @@ updated with respect to this revision</property>
 
 					  <child>
 					    <widget class="GtkEventBox" id="file_author_value_label_eventbox">
-					      <property name="width_request">4000</property>
+					      <property name="width_request">10000</property>
 					      <property name="height_request">0</property>
 					      <property name="visible">True</property>
 					      <property name="visible_window">True</property>
@@ -1583,7 +1583,7 @@ updated with respect to this revision</property>
 
 					  <child>
 					    <widget class="GtkEventBox" id="file_revision_id_value_label_eventbox">
-					      <property name="width_request">4000</property>
+					      <property name="width_request">10000</property>
 					      <property name="height_request">0</property>
 					      <property name="visible">True</property>
 					      <property name="visible_window">True</property>
@@ -2040,7 +2040,7 @@ into a viewer</property>
 
 				  <child>
 				    <widget class="GtkEventBox" id="database_name_value_label_eventbox">
-				      <property name="width_request">4000</property>
+				      <property name="width_request">10000</property>
 				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
 				      <property name="visible_window">True</property>
@@ -2101,7 +2101,7 @@ into a viewer</property>
 
 				  <child>
 				    <widget class="GtkEventBox" id="author_value_label_eventbox">
-				      <property name="width_request">4000</property>
+				      <property name="width_request">10000</property>
 				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
 				      <property name="visible_window">True</property>
@@ -2244,7 +2244,7 @@ into a viewer</property>
 
 				  <child>
 				    <widget class="GtkEventBox" id="date_value_label_eventbox">
-				      <property name="width_request">4000</property>
+				      <property name="width_request">10000</property>
 				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
 				      <property name="visible_window">True</property>
@@ -2305,7 +2305,7 @@ into a viewer</property>
 
 				  <child>
 				    <widget class="GtkEventBox" id="change_log_value_label_eventbox">
-				      <property name="width_request">4000</property>
+				      <property name="width_request">10000</property>
 				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
 				      <property name="visible_window">True</property>
@@ -3855,7 +3855,7 @@ to the selected branch</property>
 
 				  <child>
 				    <widget class="GtkEventBox" id="revision_id_1_value_label_eventbox">
-				      <property name="width_request">4000</property>
+				      <property name="width_request">10000</property>
 				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
 				      <property name="visible_window">True</property>
@@ -3916,7 +3916,7 @@ to the selected branch</property>
 
 				  <child>
 				    <widget class="GtkEventBox" id="revision_id_2_value_label_eventbox">
-				      <property name="width_request">4000</property>
+				      <property name="width_request">10000</property>
 				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
 				      <property name="visible_window">True</property>
@@ -8185,7 +8185,7 @@ where the search will start from</property>
 
 					  <child>
 					    <widget class="GtkEventBox" id="searching_from_value_label_eventbox">
-					      <property name="width_request">4000</property>
+					      <property name="width_request">10000</property>
 					      <property name="height_request">0</property>
 					      <property name="visible">True</property>
 					      <property name="visible_window">True</property>
@@ -9094,7 +9094,7 @@ MB</property>
 
 				      <child>
 					<widget class="GtkEventBox" id="author_value_label_eventbox">
-					  <property name="width_request">4000</property>
+					  <property name="width_request">10000</property>
 					  <property name="height_request">0</property>
 					  <property name="visible">True</property>
 					  <property name="visible_window">True</property>
@@ -9156,7 +9156,7 @@ MB</property>
 
 				      <child>
 					<widget class="GtkEventBox" id="last_update_value_label_eventbox">
-					  <property name="width_request">4000</property>
+					  <property name="width_request">10000</property>
 					  <property name="height_request">0</property>
 					  <property name="visible">True</property>
 					  <property name="visible_window">True</property>
@@ -9301,7 +9301,7 @@ updated with respect to this revision</property>
 
 				      <child>
 					<widget class="GtkEventBox" id="file_id_value_label_eventbox">
-					  <property name="width_request">4000</property>
+					  <property name="width_request">10000</property>
 					  <property name="height_request">0</property>
 					  <property name="visible">True</property>
 					  <property name="visible_window">True</property>
@@ -9364,7 +9364,7 @@ file was last changed</property>
 
 				      <child>
 					<widget class="GtkEventBox" id="file_revision_id_value_label_eventbox">
-					  <property name="width_request">4000</property>
+					  <property name="width_request">10000</property>
 					  <property name="height_request">0</property>
 					  <property name="visible">True</property>
 					  <property name="visible_window">True</property>
@@ -11045,7 +11045,7 @@ in a new browser window</property>
 
 				  <child>
 				    <widget class="GtkEventBox" id="author_value_label_eventbox">
-				      <property name="width_request">4000</property>
+				      <property name="width_request">10000</property>
 				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
 				      <property name="visible_window">True</property>
@@ -11106,8 +11106,8 @@ in a new browser window</property>
 				  <property name="vadjustment">0 0 17 10 15.3 17</property>
 
 				  <child>
-				    <widget class="GtkEventBox" id="branch_value_eventbox">
-				      <property name="width_request">0</property>
+				    <widget class="GtkEventBox" id="branch_value_label_eventbox">
+				      <property name="width_request">10000</property>
 				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
 				      <property name="visible_window">True</property>
@@ -11250,8 +11250,8 @@ in a new browser window</property>
 				  <property name="vadjustment">0 0 17 10 15.3 17</property>
 
 				  <child>
-				    <widget class="GtkEventBox" id="date_value_eventbox">
-				      <property name="width_request">0</property>
+				    <widget class="GtkEventBox" id="date_value_label_eventbox">
+				      <property name="width_request">10000</property>
 				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
 				      <property name="visible_window">True</property>
@@ -11313,8 +11313,8 @@ file was last changed</property>
 				  <property name="vadjustment">0 0 17 10 15.3 17</property>
 
 				  <child>
-				    <widget class="GtkEventBox" id="change_log_value_eventbox">
-				      <property name="width_request">0</property>
+				    <widget class="GtkEventBox" id="change_log_value_label_eventbox">
+				      <property name="width_request">10000</property>
 				      <property name="height_request">0</property>
 				      <property name="visible">True</property>
 				      <property name="visible_window">True</property>
