@@ -1,6 +1,6 @@
 Revision history for mtn-browse.
 
-1.20  Sat Mat 07 17:46:00 2016 Anthony Cooper <support@coosoft.plus.com>
+1.20  Sat Mat 07 19:21:00 2016 Anthony Cooper <support@coosoft.plus.com>
 	- Changes made to support Monotone version 1.10.
 	- Fixed the system() issue by using my own routine. There seemed to be
 	  some interference between system() and my signal handler.

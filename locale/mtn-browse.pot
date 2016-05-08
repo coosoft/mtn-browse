@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mtn-browse 0.1\n"
 "Report-Msgid-Bugs-To: support@coosoft.plus.com\n"
-"POT-Creation-Date: 2016-05-07 18:22+0100\n"
+"POT-Creation-Date: 2016-05-07 19:22+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -106,7 +106,7 @@ msgstr ""
 msgid "Unknown file type, not viewing."
 msgstr ""
 
-#: mtn-browse:1836
+#: mtn-browse:1847
 #, perl-brace-format
 msgid ""
 "Gnome cannot launch the helper application\n"
@@ -115,7 +115,7 @@ msgid ""
 "<b><i>{gnome_error_message}</i></b>"
 msgstr ""
 
-#: mtn-browse:1853
+#: mtn-browse:1864
 #, perl-brace-format
 msgid ""
 "No application is associated with\n"
@@ -123,102 +123,102 @@ msgid ""
 "using Vi instead."
 msgstr ""
 
-#: mtn-browse:2245
+#: mtn-browse:2256
 #, perl-brace-format
 msgid "Changed file encoding from `{old_encoding}' to `{new_encoding}'"
 msgstr ""
 
-#: mtn-browse:2273
+#: mtn-browse:2284
 msgid "All Encodings"
 msgstr ""
 
-#: mtn-browse:2289
+#: mtn-browse:2300
 #, perl-brace-format
 msgid "Changed authentication key from `{old_key}' to `{new_key}'"
 msgstr ""
 
-#: mtn-browse:2292 mtn-browse:2294 mtn-browse:2297
+#: mtn-browse:2303 mtn-browse:2305 mtn-browse:2308
 msgid "Unspecified"
 msgstr ""
 
-#: mtn-browse:2322
+#: mtn-browse:2333
 msgid "No Keys"
 msgstr ""
 
-#: mtn-browse:2349
+#: mtn-browse:2360
 msgid "File Name"
 msgstr ""
 
-#: mtn-browse:2372
+#: mtn-browse:2383
 msgid "Last Update"
 msgstr ""
 
-#: mtn-browse:2382 lib/perl/AdvancedFind.pm:347 lib/perl/AdvancedFind.pm:806
+#: mtn-browse:2393 lib/perl/AdvancedFind.pm:347 lib/perl/AdvancedFind.pm:806
 #: lib/ui/mtn-browse.glade:12308
 msgid "Author"
 msgstr ""
 
-#: mtn-browse:2453
+#: mtn-browse:2464
 msgid "mtnb-gsc-menus"
 msgstr ""
 
-#: mtn-browse:2455
+#: mtn-browse:2466
 msgid "mtnb-gsc-tool-bar"
 msgstr ""
 
-#: mtn-browse:2457
+#: mtn-browse:2468
 msgid "mtnb-gsc-selecting-a-branch-and-revision"
 msgstr ""
 
-#: mtn-browse:2459 mtn-browse:2463 mtn-browse:2469
+#: mtn-browse:2470 mtn-browse:2474 mtn-browse:2480
 #: lib/perl/FindTextAndGoToLine.pm:926 lib/perl/FindTextAndGoToLine.pm:1046
 msgid "mtnb-gsc-browser-buttons"
 msgstr ""
 
-#: mtn-browse:2461 mtn-browse:2465
+#: mtn-browse:2472 mtn-browse:2476
 msgid "mtnb-gsc-selecting-a-file-to-display"
 msgstr ""
 
-#: mtn-browse:2467 mtn-browse:2471
+#: mtn-browse:2478 mtn-browse:2482
 msgid "mtnb-gsc-information-fields"
 msgstr ""
 
-#: mtn-browse:2473
+#: mtn-browse:2484
 msgid "mtnb-gsc-monotone-browser-window-at-a-glance"
 msgstr ""
 
-#: mtn-browse:2612 lib/perl/Preferences.pm:289 lib/perl/Preferences.pm:364
+#: mtn-browse:2623 lib/perl/Preferences.pm:289 lib/perl/Preferences.pm:364
 #, perl-brace-format
 msgid "open failed: {error_message}\n"
 msgstr ""
 
-#: mtn-browse:2778
+#: mtn-browse:2789
 msgid "No Bookmarks"
 msgstr ""
 
-#: mtn-browse:2786 lib/ui/mtn-browse.glade:9852
+#: mtn-browse:2797 lib/ui/mtn-browse.glade:9852
 msgid "Manage Server Bookmarks"
 msgstr ""
 
-#: mtn-browse:2877
+#: mtn-browse:2888
 #, perl-brace-format
 msgid "<Service> ({service_name})"
 msgstr ""
 
-#: mtn-browse:2891
+#: mtn-browse:2902
 #, perl-brace-format
 msgid "<WorkSpace> ({database_name})"
 msgstr ""
 
-#: mtn-browse:2929 lib/perl/AdvancedFind.pm:971
+#: mtn-browse:2940 lib/perl/AdvancedFind.pm:971
 msgid "Fetching branch list"
 msgstr ""
 
-#: mtn-browse:2972
+#: mtn-browse:2983
 msgid "Auto selecting head revision"
 msgstr ""
 
-#: mtn-browse:2999
+#: mtn-browse:3010
 #, perl-brace-format
 msgid ""
 "The `{branch}' branch\n"
@@ -227,16 +227,16 @@ msgid ""
 "below or use the <i>Advanced Find</i> feature."
 msgstr ""
 
-#: mtn-browse:3081 lib/perl/AdvancedFind.pm:1018 lib/perl/History.pm:148
+#: mtn-browse:3092 lib/perl/AdvancedFind.pm:1018 lib/perl/History.pm:148
 #: lib/perl/History.pm:227
 msgid "Fetching revision list"
 msgstr ""
 
-#: mtn-browse:3135
+#: mtn-browse:3146
 msgid "Fetching manifest"
 msgstr ""
 
-#: mtn-browse:3161
+#: mtn-browse:3172
 #, perl-brace-format
 msgid ""
 "The `{tag_name}' tag is not unique on this\n"
@@ -244,32 +244,32 @@ msgid ""
 "combobox below or use the <i>Advanced Find</i> feature."
 msgstr ""
 
-#: mtn-browse:3345
+#: mtn-browse:3356
 msgid "Populating file details"
 msgstr ""
 
-#: mtn-browse:3663
+#: mtn-browse:3674
 msgid "Unknown Contents"
 msgstr ""
 
-#: mtn-browse:3720
+#: mtn-browse:3731
 msgid "Hex dump:\n"
 msgstr ""
 
-#: mtn-browse:3923
+#: mtn-browse:3934
 msgid ""
 "Your version of Monotone does not support\n"
 "suspend certificates. I will adjusted your\n"
 "preferences accordingly."
 msgstr ""
 
-#: mtn-browse:3985
+#: mtn-browse:3996
 msgid ""
 "The Monotone database is currently locked, please\n"
 "dismiss this dialog when this is no longer the case."
 msgstr ""
 
-#: mtn-browse:4024
+#: mtn-browse:4035
 #, perl-brace-format
 msgid ""
 "Problem with Monotone request, got:\n"
@@ -277,7 +277,7 @@ msgid ""
 "This should not be happening!"
 msgstr ""
 
-#: mtn-browse:4041
+#: mtn-browse:4052
 #, perl-brace-format
 msgid ""
 "The Monotone subprocess unexpectedly exited with:\n"
@@ -285,17 +285,17 @@ msgid ""
 "This should not be happening!"
 msgstr ""
 
-#: mtn-browse:4093
+#: mtn-browse:4104
 #, perl-brace-format
 msgid "terminated by signal {number}"
 msgstr ""
 
-#: mtn-browse:4099
+#: mtn-browse:4110
 #, perl-brace-format
 msgid "exited with status {number}"
 msgstr ""
 
-#: mtn-browse:4107
+#: mtn-browse:4118
 #, perl-brace-format
 msgid ""
 "The Monotone subprocess just unexpectedly\n"
@@ -304,12 +304,12 @@ msgid ""
 "It will be restarted when needed."
 msgstr ""
 
-#: mtn-browse:4130
+#: mtn-browse:4141
 #, perl-brace-format
 msgid "waitpid failed: {error_message}"
 msgstr ""
 
-#: mtn-browse:4160
+#: mtn-browse:4171
 #, perl-brace-format
 msgid "pipe failed: {error_message}"
 msgstr ""
