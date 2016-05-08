@@ -6,7 +6,7 @@
 
     <!ENTITY APP "Monotone Browser">
     <!ENTITY APP-CMD "mtn-browse">
-    <!ENTITY VERSION "1.02">
+    <!ENTITY VERSION "1.03">
 
   ]
 >
@@ -158,8 +158,16 @@ GNOME or DocBook.
         </revdescription>
       </revision>
       <revision>
-        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <revnumber>&APP; Manual V1.02</revnumber>
         <date>11 April 2013</date>
+        <revdescription>
+          <para role="author">Anthony Cooper</para>
+          <para role="publisher">CooSoft</para>
+        </revdescription>
+      </revision>
+      <revision>
+        <revnumber>&APP; Manual V&VERSION;</revnumber>
+        <date>02 May 2016</date>
         <revdescription>
           <para role="author">Anthony Cooper</para>
           <para role="publisher">CooSoft</para>
@@ -883,6 +891,12 @@ GNOME or DocBook.
             </listitem>
             <listitem>
               <para><guilabel>max()</guilabel> - This composite selector allows one to select all revisions that match the specified selector but are not themselves ancestors of other revisions that match that same selector. In effect this composite selector selects the youngest revision on each branch or fork in the revision history specified by the selector. It takes one parameter, a revision selector.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>min()</guilabel> - This composite selector allows one to select all revisions that match the specified selector but are not themselves descendants of other revisions that match that same selector. In effect this composite selector selects the oldest revision on each branch or fork in the revision history specified by the selector. It takes one parameter, a revision selector.</para>
+            </listitem>
+            <listitem>
+              <para><guilabel>not()</guilabel> - This composite selector allows one to select all revisions that do not match the specified selector. It takes one parameter, a revision selector.</para>
             </listitem>
             <listitem>
               <para><guilabel>parents()</guilabel> - This composite selector allows one to select all revisions that are parents of the revisions that match the specified selector. It takes one parameter, a revision selector.</para>
