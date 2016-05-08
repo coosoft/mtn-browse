@@ -1815,7 +1815,7 @@ sub view_button_clicked_cb($$)
 
             # Use the command attribute if it is present rather than the
             # launch() method as this can crash on some systems (we need to
-            # trim white space as the commands attribute can contain them).
+            # trim white space as the command attribute can contain them).
 
             if (exists($app->{command}))
             {
