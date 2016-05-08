@@ -1,3 +1,29 @@
+Overview Of Changes In mtn-browse 1.20 (2016-05-07 17:46:00)
+============================================================
+
+New:
+- Release of 1.20.
+- Support for Monotone version 1.10.
+
+Changes:
+- Now cater for not only multiple versions of Gtk2::SourceView but also
+  Digest::SHA.
+
+Defects Fixed:
+- Fixed breakages due to later versions of libraries, Monotone, Graphviz, Perl
+  and operating system:
+  - mtn-browse no longer crashes when launching external helper applications.
+  - The summary in file and revision differences is formatted more consistently
+    across versions of Monotone.
+  - Fixed the history graphing where no lines appear by improving the parsing
+    of output from dot.
+  - Removed grey blocks that appeared in the GUI under KDE 4.x using the Oxygen
+    theme.
+  - Made a number of changes in order to mostly stop warning messages coming
+    from Glib and Gtk2. The only one left is actually from a fault in Gtk2 or
+    Gnome.
+
+
 Overview Of Changes In mtn-browse 1.10 (2013-04-11 14:22:00)
 ============================================================
 

@@ -1,5 +1,35 @@
 Revision history for mtn-browse.
 
+1.20  Sat Mat 07 17:46:00 2016 Anthony Cooper <support@coosoft.plus.com>
+	- Changes made to support Monotone version 1.10.
+	- Fixed the system() issue by using my own routine. There seemed to be
+	  some interference between system() and my signal handler.
+	- Removed the " &" `run in the background' shell characters for spawned
+	  off shell commands as it's not needed. Also now break out commands
+	  into a list of separate arguments so that the command can be exec'ed
+	  more efficiently.
+	- Changed the revision differences code so as to cope with a varied
+	  number of leading blank comment lines.
+	- Improved dot parsing by making sure bracketed statements are merged
+	  into one line.
+	- Made all eventboxes used in truncatable labels 10000 pixels wide so
+	  as to get consistent look and feel under KDE 4.x.
+	- Strip off leading and trailing white space from the command attribute
+	  contained within Gnome's mine object as it can contain pointless
+	  white space.
+	- Now cater for not only multiple versions of Gtk2::SourceView but also
+	  Digest::SHA.
+	- Now guard against file open/save dialogs returning undef as the
+	  selected folder when the user selected something from recents.
+	- Glib::Timeout->remove() now whines about non-existent timer sources
+	  if the specified timer has expired so I now have to guard against
+	  this brain dead behaviour.
+	- The DependencyChecker module now appends multiple errors into the one
+	  string.
+	- Assorted code consistency changes and cleanups.
+	- Updated patch files.
+	- Upped the version number to 1.20.
+
 1.10  Thu Apr 11 14:22:00 2013 Anthony Cooper <support@coosoft.plus.com>
 	- Release of 1.10.
 	- Implemented a workspace comparison tool.

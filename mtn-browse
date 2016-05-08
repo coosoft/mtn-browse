@@ -45,7 +45,7 @@ require 5.008005;
 BEGIN
 {
     use constant APPLICATION_NAME        => "mtn-browse";
-    use constant APPLICATION_VERSION     => "1.11";
+    use constant APPLICATION_VERSION     => "1.20";
     use constant FILE_COMPARE_CMD        => "@INST:FILE_COMPARE_CMD@";
     use constant HTML_VIEWER_CMD         => "@INST:HTML_VIEWER_CMD@";
     use constant GRAPHVIZ_LAYOUT_PROGRAM => "@INST:GRAPHVIZ_LAYOUT_PROGRAM@";
