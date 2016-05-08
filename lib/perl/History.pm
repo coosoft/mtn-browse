@@ -445,7 +445,7 @@ sub display_revision_comparison($$$;$)
         }
 
         # Display the result, highlighting according to the diff output.
-        # Remember the first two lines are just empty comment lines.
+        # Remember the few lines are just empty comment lines.
 
         $instance->{appbar}->
             set_status(__("Formatting and displaying differences"));
@@ -454,9 +454,13 @@ sub display_revision_comparison($$$;$)
         $line = substr(" Summary" . $padding, 0, $max_len);
         $instance->{comparison_buffer}->insert_with_tags_by_name
             ($instance->{comparison_buffer}->get_end_iter(),
-             $line . "\n",
+             $line . "\n\n",
              "compare-info");
-        for ($i = 1; $i < scalar(@lines); ++ $i)
+        for ($i = 0; $i < scalar(@lines); ++ $i)
+        {
+            last if ($lines[$i] !~ m/^\s*\#\s*$/);
+        }
+        for (; $i < scalar(@lines); ++ $i)
         {
 
             # Deal with the initial comment lines that summarise the entire set
@@ -1775,8 +1779,8 @@ sub comparison_revision_change_log_button_clicked_cb($$)
 #
 #   Routine      - generate_history_report
 #
-#   Description  - Generate a revision history report, complete with buttons,
-#                  for the specified revision ids.
+#   Description  - Generate a revision history report for the specified
+#                  revision ids.
 #
 #   Data         - $instance    : The revision history window instance.
 #                  $history     : A reference to a list of revision ids that
@@ -2754,7 +2758,7 @@ sub external_diffs($$$$$$)
 
     # Launch it.
 
-    shell_command($cmd . " &");
+    shell_command($cmd);
 
 }
 #

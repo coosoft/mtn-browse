@@ -45,7 +45,7 @@ require 5.008005;
 BEGIN
 {
     use constant APPLICATION_NAME        => "mtn-browse";
-    use constant APPLICATION_VERSION     => "1.10";
+    use constant APPLICATION_VERSION     => "1.11";
     use constant FILE_COMPARE_CMD        => "@INST:FILE_COMPARE_CMD@";
     use constant HTML_VIEWER_CMD         => "@INST:HTML_VIEWER_CMD@";
     use constant GRAPHVIZ_LAYOUT_PROGRAM => "@INST:GRAPHVIZ_LAYOUT_PROGRAM@";
@@ -86,7 +86,7 @@ use IPC::Open3;
 use List::Util qw(max);
 use Locale::TextDomain (APPLICATION_NAME,
                         File::Spec->catfile(PREFIX_DIR, "share", "locale"));
-use POSIX qw(:errno_h :locale_h :sys_wait_h floor strftime);
+use POSIX qw(:errno_h :locale_h :sys_wait_h _exit floor strftime);
 use Scalar::Util qw(blessed refaddr);
 use Symbol qw(gensym);
 use Text::Tabs;
@@ -1784,7 +1784,7 @@ sub view_button_clicked_cb($$)
 
         # Launch it.
 
-        shell_command($helper . " &");
+        shell_command($helper);
 
     }
     else
@@ -1814,11 +1814,14 @@ sub view_button_clicked_cb($$)
         {
 
             # Use the command attribute if it is present rather than the
-            # launch() method as this can crash on some systems.
+            # launch() method as this can crash on some systems (we need to
+            # trim white space as the commands attribute can contain them).
 
             if (exists($app->{command}))
             {
-                shell_command($app->{command} . " " . $file_name . " &");
+                my $cmd = $app->{command};
+                $cmd =~ s/(^\s+)|(\s+$)//g;
+                shell_command($cmd, $file_name);
             }
             else
             {
@@ -1852,7 +1855,7 @@ sub view_button_clicked_cb($$)
                      mime_type => $mime_type));
             busy_dialog_run($dialog);
             $dialog->destroy();
-            shell_command("xterm -e vi " . $file_name . " &");
+            shell_command("xterm", "-e", "vi", $file_name);
         }
 
     }

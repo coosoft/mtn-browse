@@ -118,7 +118,7 @@ sub run_command($$$$$$@);
 sub save_as_file($$$);
 sub set_label_value($$);
 sub set_window_size($$);
-sub shell_command($);
+sub shell_command(@);
 sub treeview_column_searcher($$$$);
 sub treeview_setup_search_column_selection($@);
 
@@ -479,38 +479,50 @@ sub run_command($$$$$$@)
 #                  for system(), which interferes with signal handling on some
 #                  systems.
 #
-#   Data         - $cmd : The command that is to be run, special shell
-#                         characters are allowed.
+#   Data         - @cmd : The command that is to be run. This can be in the
+#                         form of either a single string containing the
+#                         command with space separated arguments (optionally
+#                         using special shell characters if so desired) or
+#                         each work separated out into a list of separate
+#                         strings.
 #
 ##############################################################################
 
 
 
-sub shell_command($)
+sub shell_command(@)
 {
 
-    my $cmd = $_[0];
+    my @cmd = @_;
 
-    my $child;
+    my ($child,
+        $exit_status);
 
-    $child = fork();
-    if ($child == 0)
+    if (($child = fork()) == 0)
     {
 
-        # In Perl all file handles have FD_CLOEXEC set by default and so we only
-        # need to worry about resetting signal handlers to their default
+        # In Perl all file handles have FD_CLOEXEC set by default and so we
+        # only need to worry about resetting signal handlers to their default
         # disposition before making the exec call.
 
         foreach my $sig (keys(%SIG))
         {
             $SIG{$sig} = "DEFAULT";
         }
-        exec($cmd);
+        exec(@cmd) or _exit($!);
 
     }
-    elsif (! defined($child))
+
+    # Wait a bit and them make sure that things have worked ok.
+
+    sleep(1);
+    if (! defined($child)
+        || (cached_waitpid($child, WNOHANG, \$exit_status) == $child
+            && ! (WIFEXITED($exit_status) && WEXITSTATUS($exit_status) == 0)))
     {
-        my $prog = (split(/ /, $cmd))[0];
+        $! = WEXITSTATUS($exit_status)
+            if (defined($exit_status) && WIFEXITED($exit_status));
+        my $prog = (split(/ /, $cmd[0]))[0];
         my $dialog = Gtk2::MessageDialog->new_with_markup
             (undef,
              ["modal"],
@@ -1849,7 +1861,7 @@ sub display_html($)
 
         # Launch it.
 
-        shell_command($cmd . " &");
+        shell_command($cmd);
 
     }
 
