@@ -97,7 +97,7 @@ sub check($$)
 
     my $met = 1;
 
-    $$err_msg = undef;
+    $$err_msg = "";
 
     foreach my $dep (sort(keys(%$dependencies)))
     {
@@ -114,9 +114,9 @@ sub check($$)
 
             # Not installed.
 
-            $$err_msg = sprintf("Prerequisite %s %s not found.",
-                                $dep,
-                                $dependencies->{$dep});
+            $$err_msg .= sprintf("Prerequisite %s %s not found.\n",
+                                 $dep,
+                                 $dependencies->{$dep});
             $met = undef;
 
         }
@@ -137,8 +137,8 @@ sub check($$)
 
             if ($version < $dependencies->{$dep})
             {
-                $$err_msg =
-                    sprintf("Prerequisite %s %s not found. We have %s.",
+                $$err_msg .=
+                    sprintf("Prerequisite %s %s not found. We have %s.\n",
                             $dep,
                             $dependencies->{$dep},
                             $version);

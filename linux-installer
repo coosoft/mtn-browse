@@ -105,6 +105,7 @@ sub program_is_valid($);
         $prefix_dir,
         $prefix_dest_dir,
         $quiet,
+        $sha_lib,
         $use_dists_mas_lib,
         $use_labels_in_graph,
         $use_source_view_2);
@@ -157,7 +158,8 @@ sub program_is_valid($);
 
         # Build up the dependency list.
 
-        %deps = ("Glib"               => 1.144,
+        %deps = ("Digest::SHA"        => 5.00,
+                 "Glib"               => 1.144,
                  "Gnome2"             => 1.040,
                  "Gnome2::Canvas"     => 1.002,
                  "Gnome2::VFS"        => 1.080,
@@ -165,26 +167,31 @@ sub program_is_valid($);
                  "Gtk2::GladeXML"     => 1.006,
                  "Gtk2::SourceView2"  => 0.10,
                  "Locale::TextDomain" => 1.16);
-        $deps{"Monotone::AutomateStdio"} = 1.02 if (! $use_dists_mas_lib);
+        $deps{"Monotone::AutomateStdio"} = 1.10 if (! $use_dists_mas_lib);
 
         # Do the check.
 
         $met = DependencyChecker::check(\%deps, \$err_msg);
 
-        # If the error was down to a missing Gtk2::SourceView2 package then
-        # look for Gtk2::SourceView.
+        # If the error was down to a missing Digest::SHA or Gtk2::SourceView2
+        # package then look for Digest::SHA1 and Gtk2::SourceView respectively.
 
-        if ($met)
+        if (! $met)
         {
-            $use_source_view_2 = 1;
-        }
-        else
-        {
-            if ($err_msg =~ m/Gtk2::SourceView2 [0-9.]+ not found\.$/)
+            foreach my $details ({package             => "Digest::SHA",
+                                  replacement_package => "Digest::SHA1",
+                                  version             => 2.00},
+                                 {package             => "Gtk2::SourceView2",
+                                  replacement_package => "Gtk2::SourceView",
+                                  version             => 1.000})
             {
-                delete($deps{"Gtk2::SourceView2"});
-                $deps{"Gtk2::SourceView"} = 1.000;
-                $met = DependencyChecker::check(\%deps, \$err_msg);
+                if ($err_msg =~ m/$details->{package} [0-9.]+ not found\.$/m)
+                {
+                    delete($deps{$details->{package}});
+                    $deps{$details->{replacement_package}} =
+                        $details->{version};
+                    $met = DependencyChecker::check(\%deps, \$err_msg);
+                }
             }
         }
 
@@ -198,6 +205,19 @@ sub program_is_valid($);
             exit(1) if ($dep_level < 3);
         }
         exit(0) if ($dep_level == 1);
+
+        # Work out which Digest::SHA and Gtk::SourceView libraries we are going
+        # to use.
+
+        if (exists($deps{"Digest::SHA"}))
+        {
+            $sha_lib = "SHA";
+        }
+        else
+        {
+            $sha_lib = "SHA1";
+        }
+        $use_source_view_2 = 1 if (exists($deps{"Gtk2::SourceView2"}));
 
     }
 
@@ -409,6 +429,7 @@ sub program_is_valid($);
         $input =~ s/\@INST:HTML_VIEWER_CMD\@/$html_viewer/g;
         $input =~ s/\@INST:LIB_DIR\@/$lib_prefix_dir/g;
         $input =~ s/\@INST:PREFIX_DIR\@/$prefix_dir/g;
+        $input =~ s/\@INST:SHA_LIB\@/$sha_lib/g;
         $outfile->print($input);
     }
     $infile->close();

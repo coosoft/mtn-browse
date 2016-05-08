@@ -64,7 +64,7 @@ use warnings;
 use Cwd qw(getcwd);
 use Data::Dumper;
 use Digest::MD5 qw(md5);
-use Digest::SHA qw(sha1);
+use Digest::@INST:SHA_LIB@ qw(sha1);
 use Encode;
 use File::Basename;
 use File::Copy qw();
