@@ -2754,7 +2754,7 @@ sub external_diffs($$$$$$)
 
     # Launch it.
 
-    system($cmd . " &");
+    shell_command($cmd . " &");
 
 }
 #

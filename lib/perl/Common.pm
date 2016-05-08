@@ -118,6 +118,7 @@ sub run_command($$$$$$@);
 sub save_as_file($$$);
 sub set_label_value($$);
 sub set_window_size($$);
+sub shell_command($);
 sub treeview_column_searcher($$$$);
 sub treeview_setup_search_column_selection($@);
 
@@ -260,13 +261,13 @@ sub run_command($$$$$$@)
 
             # In the parent process so deal with the error in the usual way.
 
-            my $dialog = Gtk2::MessageDialog->new
+            my $dialog = Gtk2::MessageDialog->new_with_markup
                 (undef,
                  ["modal"],
                  "warning",
                  "close",
                  __x("The {name} subprocess could not start,\n"
-                         . "the system gave:\n<b><i>{error_message}</b></i>",
+                         . "the system gave:\n<b><i>{error_message}</i></b>",
                      name => Glib::Markup::escape_text($args[0]),
                      error_message => Glib::Markup::escape_text($@)));
             busy_dialog_run($dialog);
@@ -467,6 +468,61 @@ sub run_command($$$$$$@)
     }
 
     return 1;
+
+}
+#
+##############################################################################
+#
+#   Routine      - shell_command
+#
+#   Description  - Run the specified command in a shell. A simple replacement
+#                  for system(), which interferes with signal handling on some
+#                  systems.
+#
+#   Data         - $cmd : The command that is to be run, special shell
+#                         characters are allowed.
+#
+##############################################################################
+
+
+
+sub shell_command($)
+{
+
+    my $cmd = $_[0];
+
+    my $child;
+
+    $child = fork();
+    if ($child == 0)
+    {
+
+        # In Perl all file handles have FD_CLOEXEC set by default and so we only
+        # need to worry about resetting signal handlers to their default
+        # disposition before making the exec call.
+
+        foreach my $sig (keys(%SIG))
+        {
+            $SIG{$sig} = "DEFAULT";
+        }
+        exec($cmd);
+
+    }
+    elsif (not defined($child))
+    {
+        my $prog = (split(/ /, $cmd))[0];
+        my $dialog = Gtk2::MessageDialog->new_with_markup
+            (undef,
+             ["modal"],
+             "warning",
+             "close",
+             __x("The {name} subprocess could not start,\n"
+                     . "the system gave:\n<b><i>{error_message}</i></b>",
+                 name => Glib::Markup::escape_text($prog),
+                 error_message => Glib::Markup::escape_text($!)));
+        busy_dialog_run($dialog);
+        $dialog->destroy();
+    }
 
 }
 #
@@ -1793,7 +1849,7 @@ sub display_html($)
 
         # Launch it.
 
-        system($cmd . " &");
+        shell_command($cmd . " &");
 
     }
 

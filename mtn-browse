@@ -64,7 +64,7 @@ use warnings;
 use Cwd qw(getcwd);
 use Data::Dumper;
 use Digest::MD5 qw(md5);
-use Digest::SHA1 qw(sha1);
+use Digest::SHA qw(sha1);
 use Encode;
 use File::Basename;
 use File::Copy qw();
@@ -1784,7 +1784,7 @@ sub view_button_clicked_cb($$)
 
         # Launch it.
 
-        system($helper . " &");
+        shell_command($helper . " &");
 
     }
     else
@@ -1818,7 +1818,7 @@ sub view_button_clicked_cb($$)
 
             if (exists($app->{command}))
             {
-                system($app->{command} . " " . $file_name . " &");
+                shell_command($app->{command} . " " . $file_name . " &");
             }
             else
             {
@@ -1852,7 +1852,7 @@ sub view_button_clicked_cb($$)
                      mime_type => $mime_type));
             busy_dialog_run($dialog);
             $dialog->destroy();
-            system("xterm -e vi " . $file_name . " &");
+            shell_command("xterm -e vi " . $file_name . " &");
         }
 
     }
